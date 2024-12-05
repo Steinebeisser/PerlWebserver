@@ -1,4 +1,13 @@
-UserData/
-Data/Calender/
-Data/Blog/
+UserData/*
+!UserData/.gitkeep
+Data/Calender/*
+!Data/Calender/.gitkeep
+Data/Blog/Announcements/*
+!Data/Blog/Announcements/.gitkeep
+Data/Blog/Posts/*
+!Data/Blog/Posts/.gitkeep
+Data/Blog/Timeouts/*
+!Data/Blog/Timeouts/.gitkeep
 fonts/Inter/static/
+Data/Blog/upload_date.txt
+Data/Blog/views.txt
