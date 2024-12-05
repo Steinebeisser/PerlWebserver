@@ -1,0 +1,72 @@
+{
+    "0": {
+        "name": "iron",
+        "benefits" : {
+            "max_storage": 536870912
+        },
+        "price": 0
+    },
+    "1": {
+        "name": "bronze",
+        "benefits" : {
+            "max_storage": 1073741824
+        },
+        "price": 100
+    },
+    "2": {
+        "name": "silver",
+        "benefits" : {
+            "max_storage": 1610612736
+        },
+        "price": 200
+    },
+    "3": {
+        "name": "gold",
+        "benefits" : {
+            "max_storage": 2147483648
+        },
+        "price": 300
+    },
+    "4": {
+        "name": "platinum",
+        "benefits" : {
+            "max_storage": 2684354560
+        },
+        "price": 400
+    },
+    "5": {
+        "name": "emerald",
+        "benefits" : {
+            "max_storage": 3221225472
+        },
+        "price": 500
+    },
+    "6": {
+        "name": "diamond",
+        "benefits" : {
+            "max_storage": 3758096384
+        },
+        "price": 600
+    },
+    "7": {
+        "name": "master",
+        "benefits" : {
+            "max_storage": 4294967296
+        },
+        "price": 700
+    },
+    "8": {
+        "name": "grandmaster",
+        "benefits" : {
+            "max_storage": 4831838208
+        },
+        "price": 800
+    },
+    "9": {
+        "name": "challenger",
+        "benefits" : {
+            "max_storage": 5368709120
+        },
+        "price": 900
+    }
+}

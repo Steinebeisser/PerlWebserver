@@ -1,0 +1,20 @@
+{
+    "profile": "Profile",
+    "username": "Username",
+    "upload": "Upload",
+    "download": "Download",
+    "delete": "Delete",
+    "uploaded_at": "Uploaded at",
+    "filename": "Filename",
+    "actions": "Actions",
+    "size": "Size",
+    "storageInfo": "Storage Information",
+    "storageUsed": "Storage Used",
+    "storageFree": "Storage Free",
+    "storageTotal": "Storage Total",
+    "upgradeStorage": "Upgrade Storage",
+    "back": "Back",
+    "buy": "Buy",
+    "alreadyRank": "You already have this rank",
+    "ploud": "Perl-Cloud"
+}

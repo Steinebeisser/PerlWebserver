@@ -1,0 +1,55 @@
+package get_profile_ploud_upgrade_rank;
+
+use strict;
+use warnings;
+
+sub get_profile_ploud_upgrade_rank {
+    my ($rank_to_purchase, $username) = @_;
+
+    my $human_username = utils::get_username();
+
+    my $translations = language_utils::load_language("profile, ploud");
+
+    print("UPGRADEEEEEEEEE\n");
+
+    my $html_body = <<HTML;
+    <h1>$translations->{ploud}</h1>
+    <br>
+    <p>$translations->{username}: $human_username</p>
+HTML
+
+    $html_body .= html_utils::create_breadcrumbs("profile, ploud, upgrade, $rank_to_purchase");
+
+    my $userdata = utils::get_json_data($username);
+    my $rank_id = $userdata->{rank}{id};
+    my $rank_to_purchase_id = utils::get_rank_id($rank_to_purchase);
+
+    if ($rank_id >= $rank_to_purchase_id) {
+        $html_body .= <<HTML;
+        <p>$translations->{alreadyRank}</p>
+        <a href="/profile/ploud/upgrade">$translations->{back}</a>
+        <br>
+HTML
+        my $html_content = html_structure::get_html($html_body, "Profile");
+
+        return ($html_content);
+    }
+
+    $html_body .= <<HTML;
+    <br>
+    <div class="upgrade_rank_button">
+        <form action="/profile/ploud/upgrade/$rank_to_purchase" method="post">
+            <input type="submit" value="$translations->{buy}">
+        </form>
+    </div>
+    <a href="/profile/ploud/upgrade">$translations->{back}</a>
+    <br>
+HTML
+    
+    my $html_content = html_structure::get_html($html_body, "Profile");
+
+    return ($html_content);
+
+}
+
+1;

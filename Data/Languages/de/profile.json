@@ -1,0 +1,14 @@
+{
+    "username": "Benutzername",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "phone": "Telefon",
+    "address": "Adresse",
+    "ploud": "Perl-Cloud",
+    "logout": "Abmelden",
+    "returnToIndex": "Zur&uuml;ck zum Index",
+    "upload": "Hochladen",
+    "download": "Herunterladen",
+    "delete": "L&ouml;schen",
+    "profile": "Profil"
+}

@@ -1,0 +1,17 @@
+{
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "profile": "Profile",
+    "calender": "Calender",
+    "adminMenu": "Admin Menu",
+    "languageSelection": "Choose a language",
+    "changeLanguageButton": "Change Language",
+    "shutdownServer": "Shutdown Server",
+    "english": "English",
+    "german": "German",
+    "userCount": "User Count",
+    "ploud": "Perl-Cloud",
+    "blog": "Blog",
+    "gameroom": "Game Room"
+}

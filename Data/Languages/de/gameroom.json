@@ -1,0 +1,17 @@
+{
+    "ticTacToe": "Tic Tac Toe",
+    "rockPaperScissors": "Schere Stein Papier",
+    "chess": "Schach",
+    "memory": "Memory",
+    "snake": "Schlange",
+    "onlineStatus": "Online Status",
+    "isOnline": "Online",
+    "isOffline": "Offline, Melde dich an, um mit anderen Spielern zu spielen",
+    "onePlayer": "1 Spieler",
+    "twoPlayers": "2 Spieler",
+    "restart": "Neustart",
+    "back": "Zur&uuml;ck",
+    "memoryBackCard": "Sinc Logo als R&uuml;ckseite",
+    "player1": "Spieler 1",
+    "player2": "Spieler 2"
+}

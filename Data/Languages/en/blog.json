@@ -1,0 +1,19 @@
+{
+    "blog": "Blog",
+    "posts": "Posts",
+    "newest": "Newest",
+    "oldest": "Oldest",
+    "sort": "Sort",
+    "createPost": "Create Post",
+    "announcements": "Announcements",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "officialAnnouncements": "Official Announcements",
+    "page": "Page",
+    "author": "Author",
+    "createdAt": "Created At",
+    "views": "Views",
+    "lastEdited": "Last Edited",
+    "alphabetical": "Alphabetical",
+    "sortBy": "Sort By"
+}
