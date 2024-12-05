@@ -1,0 +1,20 @@
+{
+    "profile": "Profil",
+    "username": "Benutzername",
+    "upload": "Hochladen",
+    "download": "Herunterladen",
+    "delete": "L&ouml;schen",
+    "uploaded_at": "Hochgeladen am",
+    "filename": "Dateiname",
+    "actions": "Aktionen",
+    "size": "Gr&ouml;&szlig;e",
+    "storageInfo": "Speicherinformationen",
+    "storageUsed": "Speicherplatz verwendet",
+    "storageFree": "Speicherplatz frei",
+    "storageTotal": "Speicherplatz gesamt",
+    "upgradeStorage": "Speicherplatz erweitern",
+    "back": "Zur&uuml;ck",
+    "buy": "Kaufen",
+    "alreadyRank": "Du hast diesen Rang bereits",
+    "ploud": "Perl-Cloud"
+}

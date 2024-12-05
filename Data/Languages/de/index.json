@@ -1,0 +1,17 @@
+{
+    "login": "Anmelden",
+    "register": "Registrieren",
+    "logout": "Abmelden",
+    "profile": "Profil",
+    "calender": "Kalender",
+    "adminMenu": "Admin Men&uuml;",
+    "languageSelection": "Sprache w&auml;hlen",
+    "changeLanguageButton": "Sprache &auml;ndern",
+    "shutdownServer": "Server herunterfahren",
+    "english": "Englisch",
+    "german": "Deutsch",
+    "userCount": "Benutzeranzahl",
+    "ploud": "Perl-Cloud",
+    "blog": "Blog",
+    "gameroom": "Spiel Halle"
+}

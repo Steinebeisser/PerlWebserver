@@ -1,0 +1,19 @@
+{
+    "blog": "Blog",
+    "posts": "Beitr&auml;ge",
+    "newest": "Neueste",
+    "oldest": "&Auml;lteste",
+    "sort": "Sortieren",
+    "createPost": "Beitrag erstellen",
+    "announcements": "Ank&uumlndigungen",
+    "profile": "Profil",
+    "notifications": "Benachrichtigungen",
+    "officialAnnouncements": "Offizielle Ank&uumlndigungen",
+    "page": "Seite",
+    "author": "Autor",
+    "createdAt": "Erstellt am",
+    "views": "Ansichten",
+    "lastEdited": "Zuletzt bearbeitet",
+    "alphabetical": "Alphabetisch",
+    "sortBy": "Sortieren nach"
+}
