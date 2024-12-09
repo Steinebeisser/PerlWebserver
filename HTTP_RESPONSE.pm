@@ -151,7 +151,11 @@ sub REDIRECT_303_WITH_DATA {
 }
 
 sub ERROR_400 {
+    my ($additional_info) = @_;
     my $html_content = "<h1>400 Bad Request</h1>";
+    if ($additional_info) {
+        $html_content .= "<p>$additional_info</p>";
+    }
     my $content_length = length($html_content);
     my $response = "HTTP/1.1 400 Bad Request\r\n"
                 . "Content-Type: text/html; charset=utf-8\r\n"
@@ -159,6 +163,17 @@ sub ERROR_400 {
                 . "Connection: close\r\n"
                 . "\r\n"
                 . $html_content;
+
+    return $response;
+}
+
+sub ERROR_400_WEBSOCKET_VERSION {
+    my ($supported_version) = @_;
+
+    my $response = "HTTP/1.1 400 Bad Request\r\n"
+                . "Sec-WebSocket-Version: $supported_version\r\n"
+                . "Connection: close\r\n"
+                . "\r\n";
 
     return $response;
 }

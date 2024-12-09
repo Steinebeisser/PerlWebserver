@@ -20,7 +20,6 @@ my $accept_language;
 $cookie::empty_cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 my $is_post;
 my $user;
-$main::isLoggedIn;
 my $is_shutdown = 0;
 my $port = 80;
 # my %memory::spectate_games;
@@ -64,7 +63,7 @@ my %index_router = (
     "/fonts" => \&load_fonts::get_fonts,
     "/ExternalJS" => \&load_js::get_external_js,
 
-    "/calender" => "WEWINDWOSSSSSSSSSSS",
+    "/calender" => "just chilling",
     
     "/admin" => \&get_admin_page::get_admin,
     "/admin/users" => \&get_admin_users_pages::get_admin_users,
@@ -75,7 +74,6 @@ my %index_router = (
 
 
     
-    "/shutdown" => \&get_shutdown_page::get_shutdown,
 );
 
 my %post_router = (
@@ -91,6 +89,7 @@ my %post_router = (
     "/blog/create" => \&post_blog_pages::post_blog_create,
     "/blog/announcement/create" => \&post_blog_pages::post_announcement_create,
 
+    "/shutdown" => \&get_shutdown_page::get_shutdown,
     # "/shutdown" => \&get_shutdown,
 
     "/change_language" => \&post_preferences::post_change_language,
@@ -144,6 +143,7 @@ sub epoll_loop {
                 # print("CLIEND FD: " . fileno($client_socket) . "\n");
                 $epoll::clients{fileno($client_socket)} = {};
                 $epoll::clients{fileno($client_socket)}{"socket"} = $client_socket;
+                print("ADDING CLIENT '" . fileno($client_socket) . "'\n$client_socket\n");
                 epoll_ctl($main::epoll, EPOLL_CTL_ADD, fileno $client_socket, EPOLLIN) >= 0 || die "Can't add client socket to main::epoll: $!";
 
             } else {
@@ -168,15 +168,18 @@ sub handle_client {
     # print("BYTES READ: $buffer\n");
 
     if (!$epoll::clients{$client_fd}{"header"}) {
+        print("1");
         websocket_utils::handle_websocket_communication($client_fd);
         return;
     }
 
     if ($epoll::clients{$client_fd}{"header"} =~ /Sec-WebSocket-Version: (.*)\r\n/) {
+        print("2");
         websocket_utils::handle_websocket_request($client_socket, $epoll::clients{$client_fd}{"header"});
         return;
     } else {
         connection_utils::handle_client_data($client_fd, $client_socket);
+        remove_client($client_fd);
     }
 
     # if (!$buffer) {
@@ -185,6 +188,12 @@ sub handle_client {
     #     delete $epoll::clients{$client_fd};
     #     return;
     # }
+}
+
+sub remove_client {
+    my ($client_fd) = @_;
+    close($epoll::clients{$client_fd}{"socket"});
+    delete $epoll::clients{$client_fd};
 }
 
 sub handle_normal_request {

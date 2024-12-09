@@ -5,8 +5,8 @@ use warnings;
 
 
 sub get_profile {
-    my $username = user_utils::get_username();
-    my $password = user_utils::get_password();
+    my $username = user_utils::decode_uri(user_utils::get_username());
+    my $password = user_utils::decode_uri(user_utils::get_password());
 
     my $human_username = 
 

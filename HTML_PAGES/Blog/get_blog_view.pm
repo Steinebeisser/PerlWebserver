@@ -18,7 +18,7 @@ sub get_blog_view {
     my $human_blog_name = user_utils::decode_uri($blog_name);
     my $blog_data = blog_utils::get_blog_data($blog_name, $is_announcement);
     if (!$blog_data) {
-        main::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Blog not found"));
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Blog not found"));
         return;
     }
     $html_body .= <<HTML;
@@ -46,7 +46,10 @@ HTML
                 <img src="" alt="$translations->{profilePic}">
             </div>
             <div class="user_name">
-                $translations->{author}: $blog_data->{author}
+HTML
+    my $author = user_utils::decode_uri($blog_data->{author});
+    $html_body .= <<HTML;
+                $translations->{author}: $author
             </div>
             <div class="post_date">
                 $translations->{createdAt}: $blog_data->{date}

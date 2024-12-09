@@ -10,9 +10,9 @@ var myUsername = "placeholder";
 var currentPlayer = player1;
 
 function flipCard(card_id) {
-    console.log("CURRENT PLAYER: " + decodeURIComponent(currentPlayer));
-    console.log("MY USERNAME: " + decodeURIComponent(myUsername));
-    if (currentPlayer !== myUsername) {
+    console.log("CURRENT PLAYER: " + decodeURI(currentPlayer));
+    console.log("MY USERNAME: " + decodeURI(myUsername));
+    if (decodeURI(currentPlayer) !== decodeURI(myUsername)) {
         console.log("NOT YOUR TURN");
         return;
     }
@@ -147,4 +147,9 @@ socket.onmessage = function(event) {
         moveUtils(card_id);
     }
 
+};
+
+socket.onclose = function(event) {
+    alert("Lost connection to server. Redirecting to main page.");
+    window.location.href = "/gameroom/memory";
 };

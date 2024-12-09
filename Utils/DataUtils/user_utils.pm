@@ -499,6 +499,9 @@ sub get_metadata {
     my $json = <$file>;
     # print("JSON: $json\n");
     close $file;
+    if (!$json) {
+        return 0;
+    }
     my $metadata = decode_json($json);
     # print("METADATA: $metadata\n");
     return $metadata;

@@ -11,3 +11,5 @@ Data/Blog/Timeouts/*
 fonts/Inter/static/
 Data/Blog/upload_date.txt
 Data/Blog/views.txt
+HTML_PAGES/Gameroom/Memory/activeGames
+!HTML_PAGES/Gameroom/Memory/activeGames/.gitkeep
