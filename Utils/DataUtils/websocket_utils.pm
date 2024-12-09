@@ -14,19 +14,30 @@ my %memory_types = (
 
 sub receive_msg {
     my ($client_socket) = @_;
+    my $client_fd = fileno $client_socket;
+    print("RECEIVING FOR CLIENT $client_fd\n");
 
-    my $message = $epoll::clients{fileno $client_socket}{"request"};
-    print("MESSAGE: $message\n");
-    if ($epoll::clients{fileno $client_socket}{"more"} != 0) {
+    my $message = $epoll::clients{$client_fd}{"request"};
+    if ($epoll::clients{$client_fd}{"more"} != 0) {
+        print("RECEIVING MESSAGE\n");
         recv($client_socket, my $buffer, 1024, 0);
         $message .= $buffer;
-        $epoll::clients{fileno $client_socket}{"request"} .= $buffer;
+        $epoll::clients{$client_fd}{"request"} .= $buffer;
         if (length($buffer) < 1024) {
-            $epoll::clients{fileno $client_socket}{"more"} = 0;
+            $epoll::clients{$client_fd}{"more"} = 0;
         }
     }
 
-    print("RECEIVING MESSAGE\n");
+    if (!$message) {
+        print("REMOVING DISCONNECTED CLIENT ".($client_fd)."\n");
+        close($client_socket);
+        delete $epoll::clients{$client_fd};
+        remove_from_games($client_fd);
+        return;
+    }
+
+    print("RAW MESSAGE: " . unpack("H*", $message) . ".\n");
+
     # my $message;
     # while (1) {
     #     recv($client_socket, my $buffer, 1024, 0);
@@ -35,12 +46,13 @@ sub receive_msg {
     #     last if length($buffer) < 1024;
     # }
 
-    if ($epoll::clients{fileno $client_socket}{"more"} != 0) {
+    if ($epoll::clients{$client_fd}{"more"} != 0) {
         return;
     }
 
+    print("MESSAGE: $message\n");
     my $decoded_message = decode_frame($message, $client_socket);
-    # print("DECODED MESSAGE: $decoded_message\n");
+    print("DECODED MESSAGE: $decoded_message\n");
 
     # my $answer_frame = encode_frame("Hello from server");
     # send($client_socket, $answer_frame, 0);
@@ -55,12 +67,19 @@ sub encode_frame {
     my $frame = "";
 
     if ($message_length < 125) {
+        print("ENCODING MSG UNDER 125\n");
+        my $byte1 = pack("C", 0b10000001);
         $frame = pack("C", 0b10000001) . pack("C", $message_length) . $message;
     } elsif ($message_length < 65536) {
+        print("ENCODING MSG UNDER 65536\n");
         $frame = pack("C", 0b10000001) . pack("C", 126) . pack("n", $message_length) . $message;
     } else {
-        $frame = pack("C", 0b10000001) . pack("C", 127) . pack("Q", $message_length) . $message;
+        print("ENCODING MSG OVER 65536\n");
+        $frame = pack("C", 0b10000001) . pack("C", 127) . pack("Q>", $message_length) . $message;
     }
+
+    print("FRAME: $frame\n");
+    print("DECODED FRAME: " . unpack("H*", $frame) . "\n");
 
     return $frame;
 }
@@ -84,10 +103,17 @@ sub decode_frame {
     my $opcode = $byte1 & 0b00001111;
 
     # print("FIN: $fin\n");
-    # print("RSV1: $rsv1\n");
+    print("RSV1: $rsv1\n");
     # print("RSV2: $rsv2\n");
     # print("RSV3: $rsv3\n");
-    # print("OPCODE: $opcode\n");
+    print("OPCODE: $opcode\n");
+
+    if ($opcode == 0x8) {
+        print("CLOSING CONNECTION\n");
+        send($client_socket, pack("C", 0x88), 0);
+        close($client_socket);
+        return;
+    }
 
     my $mask = unpack("C", substr($message, 1, 1)) >> 7 & 0b00000001;
     # print("MASK: $mask\n");
@@ -193,8 +219,15 @@ sub get_masking_key {
 sub handle_websocket_request {
     my ($client_socket, $request) = @_;
 
-    print("WEBSOCKET REQUEST\n");
-    print("REQUEST: $request\n");
+    # print("WEBSOCKET REQUEST\n");
+    # print("REQUEST: $request\n");
+    if ($request =~ /Sec-WebSocket-Version: (.*)\r\n/) {
+        my $version = $1;
+        if ($version ne "13") {
+            http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400_WEBSOCKET_VERSION("Unsupported WebSocket version"));
+            return;
+        }
+    }
     if ($request =~ /Sec-WebSocket-Key: (.*)\r\n/) {
         my $key = $1;
 
@@ -218,6 +251,8 @@ sub handle_websocket_communication {
     print("HANDLING WEBSOCKET COMMUNICATION\n");
     my $client_socket = $epoll::clients{$client_fd}{"socket"};
 
+    # send($client_socket, "Hello from server", 0) or die "send: $!";
+
     my $message = websocket_utils::receive_msg($client_socket);
     if (!$message) {
         return;
@@ -237,6 +272,7 @@ sub handle_websocket_communication {
     if (!$message_hash) {
         $response = "msg: BONJOUR";
     } else {
+        print("GETTING RESPONSE\n");
         $response = get_response($message_hash, $client_socket);
     }
 
@@ -247,12 +283,13 @@ sub handle_websocket_communication {
 
     $response = encode_json($response);
 
+    print("ENCODED RESPONSE: $response\n");
     $response = websocket_utils::encode_frame($response);
-    send($client_socket, $response, 0);
+    print("SENDING RESPONSE: $response to CLIENT SOCKET $client_socket\n");
+    send($client_socket, $response, 0) or warn "Failed to send response: $!";
     # my $client_socket = $epoll::clients{$client_fd};
     # my $response = HTTP_RESPONSE::OK("HELLO");
     # close($client_socket);
-    main::epoll_loop();
 }
 
 
@@ -261,7 +298,7 @@ sub get_response {
     if (ref($message) ne "HASH") {
         return("HELLO FROM SERVER");
     }
-    print("HELLOOOOO\n");
+
     if ($message->{"game"} eq "memory") {
         return handle_memory($message, $client_socket);
     }
@@ -277,8 +314,8 @@ sub handle_memory {
     # print("SORTED TYPES: @sorted_types\n");
 
     foreach my $type (@sorted_types) {
-        print("TYPE: $type\n");
         if ($message->{"type"} eq $type) {
+            print("HANDLING MEMORY TYPE: $type\n");
             return $memory_types{$type}->($message, $client_socket);
         }
     }
@@ -294,11 +331,21 @@ sub join_queue {
     }
     
     if ($memory::open_games{$game_id} && $memory::open_games{$game_id} == 1) {
-        start_game($game_id, $client_socket);
+        print("STARTING GAME\n");
+        my $response = start_game($game_id, $client_socket);
+        if ($response eq "Same player") {
+            add_to_queue_again($game_id, $client_socket);
+        }
     } else {
+        print("CREATING GAME\n");
         create_game($game_id, $client_socket);
     } 
+}
 
+sub add_to_queue_again {
+    my ($game_id, $client_socket) = @_;
+    $memory::user_in_queue{$game_id} = $client_socket;
+    main::epoll_loop();
 }
 
 sub start_game {
@@ -308,6 +355,17 @@ sub start_game {
     print("PLAYER1: $player1\n");
     my $player2 = $client_socket;
 
+
+    if (!$player1) {
+        print("NO PLAYER 1\n");
+        return;
+    }
+
+    if ($player1 == $player2) {
+        print("SAME PLAYER\n");
+        return;
+    }
+
     my $cookie_data = request_utils::get_cookie_data($main::header);
     if (!$cookie_data) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("No cookie data"));
@@ -315,8 +373,9 @@ sub start_game {
     }
     my $username = $cookie_data->{"username"};
     if ($username eq $memory::game_info{$game_id}{"player1"}) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("You are already in the queue"));
-        return;
+        print("SAME PLAYER\n");
+        # http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("You are already in the queue"));
+        return "Same player";
     }
     if (!$username) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("No username"));
@@ -367,6 +426,7 @@ sub send_to_game_players {
     my %response = %$response_ref;
 
     my $json_response = encode_json(\%response);
+    print("GAME MOOVE ENCODED RESPONSE: $json_response\n");
     my $frame_response = websocket_utils::encode_frame($json_response);
     if (!$player1 || !$player2) {
         $player1 = $memory::game_controllers{"game_id"}{$game_id}{"player1"};
@@ -374,6 +434,7 @@ sub send_to_game_players {
     }
     if (!$player1 || !$player2) {
         if ($client_socket) {
+            print("SENDING TO SOLO GUY\n");
             send($client_socket, $frame_response, 0);
         } else {
             print("BOHOOOO\n");
@@ -387,8 +448,8 @@ sub send_to_game_players {
     print("PLAYER2: $player2, $memory::game_info{$game_id}{player2}\n");
     print("RESPONSE: $frame_response\n");
 
-    send($player1, $frame_response, 0);
-    send($player2, $frame_response, 0);
+    send($player1, $frame_response, 0) or warn "Failed to send to player1: $!";
+    send($player2, $frame_response, 0) or warn "Failed to send to player2: $!";
 }
 
 sub create_game {
@@ -442,6 +503,7 @@ sub move_waiting_player {
 
 
     $response = encode_json($response);
+    print("MOVING ENCODING RESPONSE: $response\n");
     $response = websocket_utils::encode_frame($response);
 
     send($waiting_player_socket, $response, 0);
@@ -490,12 +552,23 @@ sub flip_card {
         game_id => $game_id
     );
 
-    print("RESPONSE: %response\n");
     send_to_game_players(\%response, $game_id, undef, undef, $client_socket);
 
     # my $response;
     # return $card_name;
+    return "NO RESPONSE";
 }
 
+sub remove_from_games {
+    my ($client_fd) = @_;
+
+    foreach my $game_id (keys %memory::game_controllers) {
+        if ($memory::game_controllers{$game_id}{"player1"} == $client_fd) {
+            delete $memory::game_controllers{$game_id}{"player1"};
+        } elsif ($memory::game_controllers{$game_id}{"player2"} == $client_fd) {
+            delete $memory::game_controllers{$game_id}{"player2"};
+        }
+    }
+}
 
 1;

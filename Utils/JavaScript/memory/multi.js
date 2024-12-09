@@ -49,9 +49,9 @@ socket.onopen = function(event) {
 // };
 
 
-socket.onclose = function(event) {
-    console.log("WebSocket is closed now.");
-};
+// socket.onclose = function(event) {
+//     console.log("WebSocket is closed now.");
+// };
 
 socket.onerror = function(error) {
     console.log("WebSocket error:", error);

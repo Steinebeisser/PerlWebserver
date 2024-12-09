@@ -62,7 +62,10 @@ HTML
                     </div>
                     <div class="official_announcement_creation">
                         <div class="official_announcement_author">
-                            <p>$translations->{author}: $announcement->{author}</p>
+HTML
+    my $author = user_utils::decode_uri($announcement->{author});
+    $html_body .= <<HTML;
+                            <p>$translations->{author}: $author</p>
                         </div>
                         <div class="official_announcement_created">
                             <p>$translations->{createdAt}: $announcement->{date}</p>
@@ -74,9 +77,10 @@ HTML
                         </div>
 HTML
     if ($announcement->{lastEdited} ne "") {
+        $author = user_utils::decode_uri($announcement->{lastEditedBy});
         $html_body .= <<HTML;
                         <div class="official_announcement_last_edited">
-                            <p>$translations->{lastEdited}: $announcement->{lastEdited} - $announcement->{lastEditedBy}</p>
+                            <p>$translations->{lastEdited}: $announcement->{lastEdited} - $author</p>
                         </div>
 HTML
     }
@@ -125,7 +129,10 @@ HTML
                     </div>
                     <div class="blog_post_creation">
                         <div class="blog_post_author">
-                            <p>$translations->{author}: $post->{author}</p>
+HTML
+    my $author = user_utils::decode_uri($post->{author});
+    $html_body .= <<HTML;
+                            <p>$translations->{author}: $author</p>
                         </div>
                         <div class="blog_post_created">
                             <p>$translations->{createdAt}: $post->{date}</p>
@@ -137,9 +144,10 @@ HTML
                         </div>
 HTML
     if ($post->{lastEdited} ne "") {
+        $author = user_utils::decode_uri($post->{lastEditedBy});
         $html_body .= <<HTML;                       
                         <div class="blog_post_last_edited">
-                            <p>$translations->{lastEdited}: $post->{lastEdited} - $post->{lastEditedBy}</p>
+                            <p>$translations->{lastEdited}: $post->{lastEdited} - $author</p>
                         </div>
 HTML
     }

@@ -132,7 +132,7 @@ sub create_field {
     close $fh;
 
     my $both_script_path = $base_path . "/Utils/JavaScript/memory/both.js";
-    open my $fh, "<", $both_script_path or do 
+    open $fh, "<", $both_script_path or do 
     {
         print "Can't open file: $!";
         return;
@@ -157,7 +157,7 @@ sub create_field {
 
     $script .= $script_v2;
     
-    my $script = <<SCRIPT;
+    my $script_embed = <<SCRIPT;
     <script>
         $script 
     </script>
@@ -165,7 +165,7 @@ SCRIPT
 
 
     my $html .= <<HTML;
-    $script
+    $script_embed
     <div class="memory_game">
 HTML
 
@@ -183,7 +183,7 @@ HTML
         <!-- </div> -->
 HTML
     if (!$card_pairs->{$field_id}) {
-        print("FIELD ID DOESNT EXIST, ADDING: $field_id\n");
+        # print("FIELD ID DOESNT EXIST, ADDING: $field_id\n");
         $card_pairs->{$field_id} = $cards[$field_id - 1];
     }
     }
@@ -202,9 +202,9 @@ HTML
 sub preload_images_script {
     my (@cards) = @_;
     my $script = "window.onload = function() {\n";
-    print("CARDS: @cards\n");
+    # print("CARDS: @cards\n");
     foreach my $card (@cards) {
-        print("CARD: $card\n");
+        # print("CARD: $card\n");
         $script .= <<SCRIPT;
         var img = new Image();
         img.src = "$card";

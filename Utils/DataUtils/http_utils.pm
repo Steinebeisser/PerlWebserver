@@ -23,4 +23,14 @@ sub serve_error {
     close($client_socket);
 }
 
+sub encode_characters {
+    my ($string) = @_;
+    $string =~ s/&/&amp;/g;
+    $string =~ s/</&lt;/g;
+    $string =~ s/>/&gt;/g;
+    $string =~ s/"/&quot;/g;
+    $string =~ s/'/&#39;/g;
+    return $string;
+}
+
 1;
