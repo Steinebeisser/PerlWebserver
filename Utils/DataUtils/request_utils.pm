@@ -10,7 +10,7 @@ sub get_cookie_data {
         my $cookie = $1;
         # print("COOOOKIE: $cookie\n");
         my %cookie_data;
-        if ($cookie =~ /username=(.*)[;| |\r]/) {
+        if ($cookie =~ /username=([^\s;]+)/) {
             # print("USERNAME $1\n");
             $cookie_data{username} = $1;
         }
@@ -18,7 +18,7 @@ sub get_cookie_data {
             # print("SCHEME $1\n");
             $cookie_data{scheme} = $1;
         }
-        if ($cookie =~ /language=(.*)[;| |\r]/) {
+        if ($cookie =~ /language=([^\s;]+)]/) {
             # print("LANGUAGE $1\n");
             $cookie_data{language} = $1;
         }
@@ -45,9 +45,10 @@ sub get_cookie {
     if (!$request) {
         return;
     }
+    print("REQUEST FOR COOKIE: $request\n");
     if ($request =~ /Cookie: (.*)/) {
         $cookie = $1;
-        # print "Cookie: $cookie\n";
+        print "Cookie: $cookie\n";
         if ($cookie =~ /username=([^\s;]+)/) {
             $main::isLoggedIn = 1;
             user_utils::populate_user($cookie);

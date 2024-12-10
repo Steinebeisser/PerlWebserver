@@ -236,4 +236,32 @@ sub get_memory_2player_waiting {
     # return $html;
 }
 
+sub get_memory_end {
+    my ($client_socket, $request) = @_;
+
+    my $game_id;
+
+    if ($request =~ /\/memory\/end\/(.*) HTTP/) {
+        $game_id = $1;
+    }
+    my $cookie_data = request_utils::get_cookie_data($request);
+    if (!$cookie_data) {
+        print("COOKIE DATA EROR\n");
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page"));
+        return;
+    }
+    if (!$game_id) {
+        $game_id = $cookie_data->{memory};
+        if (!$game_id) {
+            print("GAME ID EROR\n");
+            http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page"));
+            return;
+        }
+    }
+
+    my $html = get_memory_end::get_memory_end($game_id, $client_socket);
+
+    return $html;
+}
+
 1;

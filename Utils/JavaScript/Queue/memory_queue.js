@@ -4,7 +4,7 @@ var socket = new WebSocket("http://10.31.0.18/gameroom/memory/queue");
 var game_id_value = "game_id_placeholder";
 socket.onopen = function(event) {
     console.log("WebSocket is open now.");
-    socket.send(JSON.stringify({ type: "join_queue", game: "memory", game_id: game_id_value }));
+    socket.send(JSON.stringify({ type: "join_queue", game: "memory", game_id: game_id_value, wstype: "game" }));
 };
 
 socket.onmessage = function(event) {

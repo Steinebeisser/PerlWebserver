@@ -3,7 +3,7 @@ var socket = new WebSocket("http://10.31.0.18/gameroom/memory/multi");
 socket.onopen = function(event) {
     console.log("WebSocket is open now.");
     game_id_value = document.cookie.split('; ').find(row => row.startsWith('memory=')).split('=')[1];
-    msg = JSON.stringify({ game_id: game_id_value, type: "multi_start_game", game: "memory" });
+    msg = JSON.stringify({ game_id: game_id_value, type: "multi_start_game", game: "memory", wstype: "game" });
     socket.send(msg);
     console.log("Sent message: " + msg);
 
