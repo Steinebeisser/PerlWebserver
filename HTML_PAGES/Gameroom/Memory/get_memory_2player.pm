@@ -51,7 +51,7 @@ HTML
     </div>
 HTML
 
-    $html .= html_utils::get_memory_restart_button($translations);
+    # $html .= html_utils::get_memory_restart_button($translations);
 
     $html .= <<HTML;
     <br>

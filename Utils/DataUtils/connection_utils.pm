@@ -5,6 +5,7 @@ use warnings;
 
 sub get_client_data {
     my ($client_fd, $client_socket) = @_;
+    print("HELLOOOOOO\n");
 
     my $buffer;
     
@@ -65,12 +66,14 @@ sub get_client_data {
             }
         }
     }
+    print("FINITO GETTING DATA\n");
 }
 
 sub handle_client_data {
     my ($client_fd, $client_socket) = @_;
 
     my $buffer;
+    print("HANDLE CLIENT DATA\n");
 
     if ($epoll::clients{$client_fd}{"content_length"} && $epoll::clients{$client_fd}{"bytes_read"} < $epoll::clients{$client_fd}{"content_length"}) {
         recv($client_socket, $buffer, 1024, 0);
@@ -83,6 +86,7 @@ sub handle_client_data {
         if ($epoll::clients{$client_fd}{"bytes_read"} >= $epoll::clients{$client_fd}{"content_length"}) {
             print("FINISHED READING REQUEST\n");
             main::handle_normal_request($client_fd, $epoll::clients{$client_fd}{"request"});
+            main::remove_client($client_fd);
             # epoll_ctl($epoll, EPOLL_CTL_DEL, $client_fd, 0) >= 0 || die "Can't remove client socket from epoll: $!";
             # close($client_socket);
             # delete $epoll::clients{$client_fd};
@@ -91,6 +95,7 @@ sub handle_client_data {
         # print("REQUEST: $epoll::clients{$client_fd}{request}\n");
         print("FINItO REQUEST\n");
         main::handle_normal_request($client_fd, $epoll::clients{$client_fd}{request});
+        main::remove_client($client_fd);
         # epoll_ctl($epoll, EPOLL_CTL_DEL, $client_fd, 0) >= 0 || die "Can't remove client socket from epoll: $!";
         # close($client_socket);
         # delete $epoll::clients{$client_fd};

@@ -59,6 +59,7 @@ my %index_router = (
     "/gameroom/memory/2player" => \&get_memory_pages::get_memory_2player,
     "/gameroom/memory/2player/waiting" => \&get_memory_pages::get_memory_2player_waiting,
     "/gameroom/memory/restart" => \&get_memory_pages::get_memory_restart,
+    "/gameroom/memory/end" => \&get_memory_pages::get_memory_end,
 
     "/fonts" => \&load_fonts::get_fonts,
     "/ExternalJS" => \&load_js::get_external_js,
@@ -147,7 +148,7 @@ sub epoll_loop {
                 epoll_ctl($main::epoll, EPOLL_CTL_ADD, fileno $client_socket, EPOLLIN) >= 0 || die "Can't add client socket to main::epoll: $!";
 
             } else {
-                # print("Handling client\n");
+                print("Handling client\n");
                 handle_client($event->[0]);
             }
         }
@@ -179,7 +180,6 @@ sub handle_client {
         return;
     } else {
         connection_utils::handle_client_data($client_fd, $client_socket);
-        remove_client($client_fd);
     }
 
     # if (!$buffer) {

@@ -13,5 +13,22 @@
     "back": "Back",
     "memoryBackCard": "Sinc Logo as Back Card",
     "player1": "Player 1",
-    "player2": "Player 2"
+    "player2": "Player 2",
+    "gameNotFound": "Game not found",
+    "lostMemory": "Memory Game Lost",
+    "wonMemory": "Memory Game Won",
+    "drawMemory": "Memory Game Draw",
+    "whySeeThis": "Why do I see this?",
+    "gameOver": "Game Over",
+    "gameId": "Game ID",
+    "player": "Player",
+    "opponent": "Opponent",
+    "solvedCardsAmount": "Solved Cards Amount",
+    "lost": "Lost",
+    "won": "Won",
+    "draw": "Draw",
+    "backToMemory": "Back to Memory",
+    "backToGameRoom": "Back to Game Room",
+    "backToIndex": "Back to Index",
+    "moves": "Moves"
 }

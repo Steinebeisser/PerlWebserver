@@ -44,6 +44,9 @@ sub new {
     );
 
     @cards = shuffle(@cards);
+    @cards = shuffle(@cards);
+    @cards = shuffle(@cards);
+    @cards = shuffle(@cards);
     my %card_pairs = ();
     
     my $html .= create_field(\%card_pairs, \@cards, $is_multiplayer);

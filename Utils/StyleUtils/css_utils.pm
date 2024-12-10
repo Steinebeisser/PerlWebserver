@@ -102,6 +102,7 @@ CSS
         min-height: 100vh;
         position: relative;
         overflow: auto;
+        text-align: center;
     }
 
     html {
@@ -503,7 +504,7 @@ CSS
         position: absolute;
         top: 0;
         left: 0;
-        width: 20%;
+        width: 30%;
         display: flex;
         align-items: left;
         justify-content: left;
@@ -848,6 +849,32 @@ CSS
 CSS
     }
 
+    if ($html_body =~ /class="memory_end_frame"/ || $footer =~ /class="memory_end_frame"/) {
+        $css .= <<CSS;
+    .vs_frame {
+        margin: auto;
+        justify-content: space-between;
+        width: 60%;
+        flex-wrap: wrap;
+        display: flex;
+    }
+    .p1_frame {
+        display: block;
+        width: 45%;
+    }
+    .p2_frame {
+        display: block;
+        width: 45%;
+    }
+    .vs {
+        width: 10%;
+        text-align: center;
+        margin: auto;
+    }
+CSS
+    }
+
+
     $css .= "</style>";
     return $css;
 }
@@ -862,5 +889,5 @@ sub get_font_backs {
     }
     return "../" x $count;
 }
-1;
 
+1;

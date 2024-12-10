@@ -2,7 +2,7 @@ var socket = new WebSocket("http://10.31.0.18/gameroom/memory/alone");
 
 socket.onopen = function(event) {
     console.log("WebSocket is open now.");
-    socket.send("Here's some text that the server is urgently awaiting!");
+    socket.send(JSON.stringify({ type: "alone_start", game: "memory", game_id: game_id, wstype: "game" }));
     console.log("Sent message: Here's some text that the server is urgently awaiting!");
 };
 
@@ -20,9 +20,6 @@ socket.onopen = function(event) {
 //     };
 // };
 
-socket.onclose = function(event) {
-    console.log("WebSocket is closed now.");
-};
 
 socket.onerror = function(error) {
     console.log("WebSocket error:", error);

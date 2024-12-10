@@ -4,10 +4,13 @@ var flippedCardsAmount = 0;
 var solvedCards = [];
 var knownCards = {};
 var moves = 0;
+var finish;
 var player1 = "placeholder";
 var player2 = "placeholder";
 var myUsername = "placeholder";
 var currentPlayer = player1;
+var game_id = document.cookie.split('; ').find(row => row.startsWith('memory=')).split('=')[1];
+
 
 function flipCard(card_id) {
     console.log("CURRENT PLAYER: " + decodeURI(currentPlayer));
@@ -33,12 +36,29 @@ function checkForSolvedCards() {
         solvedCards.push(firstCard, secondCard);
         console.log("cards " + firstCard + " and " + secondCard + " are solved");
         console.log("solved cards: " + solvedCards.length);
+        socket.send(JSON.stringify({ type: "solved_cards", solved_cards: firstCard + "," + secondCard, player: encodeURI(currentPlayer), game_id: game_id, game: "memory", wstype: "game" }));
+        updateSolvedCardsGui();
         if (solvedCards.length === 16) {
+            finish = true;
             console.log("all cards are solved");
-            var url = "/gameroom/memory/win/" + moves;
+            var url = "/gameroom/memory/end/" + game_id;
             window.location.href = url;
         }
         return true;
+    }
+}
+
+function updateSolvedCardsGui() {
+    if (currentPlayer === player1) {
+        currentPlayerScore = "player1_score";
+    } else {
+        currentPlayerScore = "player2_score";
+    }
+    var scoreElement = document.getElementsByClassName(currentPlayerScore)[0];
+    if (scoreElement) {
+        var player_score = parseInt(scoreElement.innerHTML);
+        player_score++;
+        scoreElement.innerHTML = player_score;
     }
 }
 
@@ -66,15 +86,13 @@ function moveUtils(card_id) {
     if (flippedCardsAmount === 2) {
         moves++;
         console.log("moves: " + moves);
-        if (checkForSolvedCards()) {
-
+        if (!checkForSolvedCards()) {
+            console.log("checked for solved cards");
+    
+            currentPlayer = currentPlayer === player1 ? player2 : player1;
+            console.log("Player turn: " + currentPlayer);
         } 
-        console.log("checked for solved cards");
-
-        currentPlayer = currentPlayer === player1 ? player2 : player1;
-        console.log("Player turn: " + currentPlayer);
     }
-
 
     if (flippedCardsAmount > 2) {
         console.log("flipped cards amount = " + flippedCardsAmount + ", resetting flipped cards");
@@ -108,8 +126,7 @@ function setImage(card_id) {
 function sendMoves(card_id) {
     return new Promise((resolve, reject) => {
         if (socket.readyState === WebSocket.OPEN) {
-            var game_id = document.cookie.split('; ').find(row => row.startsWith('memory=')).split('=')[1];
-            socket.send(JSON.stringify({ type: "flip_card", card_id: card_id, game: "memory", game_id: game_id }));
+            socket.send(JSON.stringify({ type: "flip_card", card_id: card_id, game: "memory", game_id: game_id, wstype: "game" }));
             console.log("Sent moves: " + card_id);
             
             resolve();
@@ -150,6 +167,8 @@ socket.onmessage = function(event) {
 };
 
 socket.onclose = function(event) {
-    alert("Lost connection to server. Redirecting to main page.");
-    window.location.href = "/gameroom/memory";
+    if (!finish) {
+        alert("Lost connection to server. Redirecting to main page.");
+        window.location.href = "/gameroom/memory";
+    }
 };
