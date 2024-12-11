@@ -53,12 +53,7 @@ HTML
 
     # $html .= html_utils::get_memory_restart_button($translations);
 
-    $html .= <<HTML;
-    <br>
-    <form action="/gameroom/memory/2-player" method="post">
-        <button type="submit">$translations->{restart}</button>
-    </form>
-HTML
+    $html .= html_utils::get_wait_connection_layer($translations);
 
     my $html_content = html_structure::get_html($html, "Memory");
 

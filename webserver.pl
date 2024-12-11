@@ -22,6 +22,7 @@ my $is_post;
 my $user;
 my $is_shutdown = 0;
 my $port = 80;
+$server::storage_bottleneck = 0.8;
 # my %memory::spectate_games;
 
 
@@ -37,8 +38,8 @@ my %index_router = (
     "/profile" => \&get_profile_pages::get_profile,
     "/profile/ploud" => \&get_profile_pages::get_profile_ploud,
     "/profile/ploud/upload" => \&get_profile_pages::get_profile_ploud_upload,
-    # "/profile/ploud/download" => \&post_profile_ploud_download,
-    # "/profile/ploud/delete" => \&post_profile_ploud_delete,
+    "/profile/ploud/download" => \&post_profile_pages::post_profile_ploud_download,
+    "/profile/ploud/delete" => \&post_profile_pages::post_profile_ploud_delete,
     "/profile/ploud/upgrade" => \&get_profile_pages::get_profile_ploud_upgrade,
     
     "/blog" => \&get_blog_pages::get_blog_index,
@@ -60,6 +61,7 @@ my %index_router = (
     "/gameroom/memory/2player/waiting" => \&get_memory_pages::get_memory_2player_waiting,
     "/gameroom/memory/restart" => \&get_memory_pages::get_memory_restart,
     "/gameroom/memory/end" => \&get_memory_pages::get_memory_end,
+    "/gameroom/memory/spectate" => \&get_memory_pages::get_memory_spectate,
 
     "/fonts" => \&load_fonts::get_fonts,
     "/ExternalJS" => \&load_js::get_external_js,
@@ -96,14 +98,16 @@ my %post_router = (
     "/change_language" => \&post_preferences::post_change_language,
     "/dark_mode" => \&post_preferences::post_dark_mode,
     
-    "/admin/users" => \&post_admin_user_pages::post_admin_users,
-    "/admin/users/edit" => \&post_admin_user_pages::post_admin_edit_user,
-    "/admin/users/ban" => \&post_admin_user_pages::post_admin_ban_user,
-    "/admin/users/delete" => \&post_admin_user_pages::post_admin_delete_user,
+    "/admin/users" => \&post_admin_users_pages::post_admin_users,
+    "/admin/users/edit" => \&post_admin_users_pages::post_admin_edit_user,
+    "/admin/users/ban" => \&post_admin_users_pages::post_admin_ban_user,
+    "/admin/users/delete" => \&post_admin_users_pages::post_admin_delete_user,
+
+    "/important/contact_devs" => \&post_contact_devs::post_contact_devs,
 );
 
 print("Creating main::Epoll\n");
-$main::epoll = epoll_create(10) || die "Can't create main::epoll: $!";
+$main::epoll = epoll_create(1024) || die "Can't create main::epoll: $!";
 
 print("Creating socket\n");
 socket(
@@ -118,6 +122,8 @@ setsockopt($server, SOL_SOCKET, SO_REUSEADDR, 1) || die "Can't set socket option
 print("Binding to port $port\n");
 bind($server, sockaddr_in($port, INADDR_ANY)) || die "Can't bind: $!";
 
+print("Starting SMTP Server\n");
+smtp_utils::start_smtp_server();
 
 print("Listening on port $port\n");
 listen($server, 5) || die "Can't listen: $!";
@@ -139,16 +145,16 @@ sub epoll_loop {
         for my $event (@$events) {
             if ($event->[0] == fileno $server) {
                 accept(my $client_socket, $server);
-                print("ACCEPTED NEW CONNECTION\n");
+                # print("ACCEPTED NEW CONNECTION\n");
                 # print("CLIENT SOCKET:" .$client_socket . "\n");
                 # print("CLIEND FD: " . fileno($client_socket) . "\n");
                 $epoll::clients{fileno($client_socket)} = {};
                 $epoll::clients{fileno($client_socket)}{"socket"} = $client_socket;
-                print("ADDING CLIENT '" . fileno($client_socket) . "'\n$client_socket\n");
+                # print("ADDING CLIENT '" . fileno($client_socket) . "'\n$client_socket\n");
                 epoll_ctl($main::epoll, EPOLL_CTL_ADD, fileno $client_socket, EPOLLIN) >= 0 || die "Can't add client socket to main::epoll: $!";
 
             } else {
-                print("Handling client\n");
+                # print("Handling client\n");
                 handle_client($event->[0]);
             }
         }
@@ -166,16 +172,15 @@ sub handle_client {
     if (!$epoll::clients{$client_fd}{"content_length"}) {
         connection_utils::get_client_data($client_fd, $client_socket);
     }
-    # print("BYTES READ: $buffer\n");
 
     if (!$epoll::clients{$client_fd}{"header"}) {
-        print("1");
+        # print("1");
         websocket_utils::handle_websocket_communication($client_fd);
         return;
     }
 
     if ($epoll::clients{$client_fd}{"header"} =~ /Sec-WebSocket-Version: (.*)\r\n/) {
-        print("2");
+        # print("2");
         websocket_utils::handle_websocket_request($client_socket, $epoll::clients{$client_fd}{"header"});
         return;
     } else {
@@ -210,29 +215,29 @@ sub handle_normal_request {
 
     $main::header = $epoll::clients{$client_fd}{"header"};
     
-    print("1");
+    # print("1");
     my ($new_request, $method) = handle_method($client_socket, $request);
-    print("2");
+    # print("2");
 
     my $cookie = request_utils::get_cookie($main::header);
-    print("3");
+    # print("3");
     
     language_utils::set_language($new_request);
-    print("4");
+    # print("4");
 
     scheme_utils::set_scheme();
-    print("5");
+    # print("5");
 
     if ($main::isLoggedIn) {
         user_utils::check_permissions($client_socket);
     }
-    print("6");
+    # print("6");
     
 
     my $response = handle_index($client_socket, $new_request, $method);
-    print("7");
+    # print("7");
 
-    print("8");
+    # print("8");
     http_utils::send_response($client_socket, HTTP_RESPONSE::OK($response));
     close($client_socket);
 
@@ -251,12 +256,12 @@ sub handle_method {
     }
 
     if ($request =~ /^GET /) {
-        print "Received a GET request\n";
+        # print "Received a GET request\n";
         $method = "GET";
         substr($request, 0, 4) = "";
     } elsif ($request =~ /POST /) {
         $is_post = 1;
-        print "Received a POST request\n";
+        # print "Received a POST request\n";
         $method = "POST";
         substr($request, 0, 5) = "";
     } else {
@@ -301,7 +306,7 @@ sub handle_get_index {
     foreach my $route (@sorted_routes) {
         # print "Checking route $route\n";
         if ($request =~ /^$route/) {
-            print "Received a get request for $route\n";
+            # print "Received a get request for $route\n";
             if ($route eq "/calender") {
                 $response = calender_utils::handle_calender($client_socket, $request, $route);
             } else {

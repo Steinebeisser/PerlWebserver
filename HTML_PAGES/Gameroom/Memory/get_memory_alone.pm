@@ -43,6 +43,8 @@ HTML
     </form>
 HTML
 
+    $html .= html_utils::get_wait_connection_layer($translations);
+
     my $html_content = html_structure::get_html($html, "Memory");
 
     return $html_content;

@@ -874,6 +874,28 @@ CSS
 CSS
     }
 
+    if ($html_body =~ /class="wait_connection_layer"/ || $footer =~ /class="wait_connection_layer"/) {
+        $css .= <<CSS;
+    .wait_connection_layer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    .wait_connection {
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+    }
+CSS
+    }
+
 
     $css .= "</style>";
     return $css;

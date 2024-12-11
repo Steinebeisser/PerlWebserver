@@ -187,10 +187,17 @@ sub post_profile_ploud_delete {
             );
             user_utils::update_user_metadata($username, \%data);
         }
-        unlink $file or die "Cannot delete file: $!";
+        unlink $file or do { 
+            # warn "Cannot delete file: $!";
+            return;
+        };
     }
 
-    rmdir $dir_path or die "Cannot delete directory: $!";
+    rmdir $dir_path or do 
+    {
+        # warn "Cannot delete directory: $!";
+        return;
+    };
 
     my $referer = request_utils::get_referer($request);
     my $response = HTTP_RESPONSE::REDIRECT_303($referer);

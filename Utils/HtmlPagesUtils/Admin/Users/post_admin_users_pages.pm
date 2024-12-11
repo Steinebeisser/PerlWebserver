@@ -96,7 +96,7 @@ sub post_admin_delete_user {
     # $request = request_utils::skip_to_body($request);
 
     if (!user_utils::delete_user($username)) {
-        return 0;
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Could not delete user"));
     }
     # if ($request =~ /reason=(.*)/) {
     #     my $reason = $1;

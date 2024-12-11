@@ -15,7 +15,8 @@ sub send_response {
     if (!$response) {
         $response = HTTP_RESPONSE::ERROR_500("Internal Server Error");
     }
-    send($client_socket, $response, 0);
+    send($client_socket, $response, 0) or return;
+
 }
 sub serve_error {
     my ($client_socket, $error) = @_;

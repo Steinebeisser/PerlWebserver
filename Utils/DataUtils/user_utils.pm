@@ -415,6 +415,8 @@ sub delete_user {
 
     my $filename = "UserData/$username/$username.json";
     unlink($filename);
+
+    return 1;
 }
 
 sub delete_files_recursive {
@@ -735,5 +737,33 @@ sub get_user_stats {
     }
 }
 
+sub round_up {
+    my ($number) = @_;
+
+    if ($number == int($number)) {
+        return $number;
+    }
+    return int($number + 0.5);
+}
+
+sub get_server_storage {
+    my $path = "/home/";
+
+    my $total = `df $path`;
+
+    print("TOTAL: $total\n");
+    my %storage = ();
+    if ($total =~/^.+?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+%)\s+\S+$/) {
+        $storage{mount} = $1;
+        $storage{total} = $2;
+        $storage{used} = $3;
+        $storage{free} = $4;
+        $storage{used_percentage} = $5;
+    } else {
+        return 0;
+    }
+    return \%storage;
+
+}
 
 1;

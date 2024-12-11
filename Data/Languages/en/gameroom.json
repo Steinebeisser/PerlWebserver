@@ -30,5 +30,7 @@
     "backToMemory": "Back to Memory",
     "backToGameRoom": "Back to Game Room",
     "backToIndex": "Back to Index",
-    "moves": "Moves"
+    "moves": "Moves",
+    "waitingForConnection": "Waiting for connection",
+    "spectate": "Spectate"
 }

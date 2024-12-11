@@ -11,7 +11,7 @@ my %game_types = (
 sub handle_game_index {
     my ($message, $client_socket) = @_;
 
-    print("HANDLING GAME INDEX\n");
+    # print("HANDLING GAME INDEX\n");
 
     foreach my $game (keys %game_types) {
         if ($message->{"game"} eq $game) {
@@ -20,17 +20,17 @@ sub handle_game_index {
     }
 }
 
+sub get_spectate_games {
+    my ($game) = @_;
 
-sub remove_from_games {
-    my ($client_fd) = @_;
-
-    foreach my $game_id (keys %memory::game_controllers) {
-        if ($memory::game_controllers{$game_id}{"player1"} == $client_fd) {
-            delete $memory::game_controllers{$game_id}{"player1"};
-        } elsif ($memory::game_controllers{$game_id}{"player2"} == $client_fd) {
-            delete $memory::game_controllers{$game_id}{"player2"};
-        }
+    my @spectate_games;
+    foreach my $game_id (keys %memory::spectate_games) {
+        push(@spectate_games, $game_id);
+        print("SPECTATE GAMES: $game_id\n");
     }
+
+
+    return @spectate_games;
 }
 
 1;

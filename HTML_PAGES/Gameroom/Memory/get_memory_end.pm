@@ -67,11 +67,15 @@ sub get_memory_end {
     }
 
     $username = user_utils::encode_uri($my_player);
+    my $human_opponent = user_utils::decode_uri($opponent);
     $opponent = user_utils::encode_uri($opponent);
     print("USERNAME: $username\n");
     my $solved_cards = $data->{$username}{solved_cards};
     my $solved_cards_amount_self = $data->{$username}{solved_cards_amount}/2;
     my $solved_cards_amount_enemy = $data->{$opponent}{solved_cards_amount}/2;
+
+    $solved_cards_amount_self = user_utils::round_up($solved_cards_amount_self);
+    $solved_cards_amount_enemy = user_utils::round_up($solved_cards_amount_enemy);
 
     if (!$memory::game_info{$game_id}{"alone"}) {
         if ($solved_cards_amount_self) {
@@ -113,7 +117,7 @@ HTML
             </div>
             <div class="vs">VS</div>
             <div class="p2_frame">
-                <h3>$translations->{opponent}: $opponent</h3>
+                <h3>$translations->{opponent}: $human_opponent</h3>
                 <h3>$translations->{solvedCardsAmount}: $solved_cards_amount_enemy</h3>
                 <br>
             </div>
@@ -168,7 +172,15 @@ HTML
     } else {
         $end_translation = $translations->{whySeeThis};
     }
+
+    $memory::game_info{$game_id}{used} += 1;
+    if ($memory::game_info{$game_id}{used} == 2) {
+        delete $memory::game_info{$game_id};
+    }
+
     my $html_content = html_structure::get_html($html, $end_translation);
+
+    return $html_content;
 }
 
 1;

@@ -5,7 +5,7 @@ use warnings;
 
 sub get_client_data {
     my ($client_fd, $client_socket) = @_;
-    print("HELLOOOOOO\n");
+    # print("HELLOOOOOO\n");
 
     my $buffer;
     
@@ -48,12 +48,18 @@ sub get_client_data {
         # }
 
         if ($content_length) {
-            # print("CONTENT LENGTH: $content_length\n");
-            # print("MAX STORAGE: $main::max_storage\n");
+            print("CONTENT LENGTH: $content_length\n");
+            print("MAX STORAGE: $main::max_storage\n");
 
             if ($username) {
                 my $max_storage = user_utils::get_user_max_storage($username);
                 my $max_file_size = $max_storage - user_utils::get_current_used_storage($username);
+                my $max_server_size = user_utils::get_max_server_size();
+                if ($max_file_size > $max_server_size * $server::storage_bottleneck) {
+                    print("SERVER STORAGE EXCEEDED\n");
+                    http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_413("Server storage exceeded"));
+                    return;
+                }
                 if ($content_length > $max_file_size) {
                     print("File too large\n");
 
@@ -66,14 +72,14 @@ sub get_client_data {
             }
         }
     }
-    print("FINITO GETTING DATA\n");
+    # print("FINITO GETTING DATA\n");
 }
 
 sub handle_client_data {
     my ($client_fd, $client_socket) = @_;
 
     my $buffer;
-    print("HANDLE CLIENT DATA\n");
+    # print("HANDLE CLIENT DATA\n");
 
     if ($epoll::clients{$client_fd}{"content_length"} && $epoll::clients{$client_fd}{"bytes_read"} < $epoll::clients{$client_fd}{"content_length"}) {
         recv($client_socket, $buffer, 1024, 0);
@@ -84,7 +90,7 @@ sub handle_client_data {
         # print("BYTES READ: $epoll::clients{$client_fd}{bytes_read}\n");
         # print("CONTENT LENGTH: $epoll::clients{$client_fd}{content_length}\n");
         if ($epoll::clients{$client_fd}{"bytes_read"} >= $epoll::clients{$client_fd}{"content_length"}) {
-            print("FINISHED READING REQUEST\n");
+            # print("FINISHED READING REQUEST\n");
             main::handle_normal_request($client_fd, $epoll::clients{$client_fd}{"request"});
             main::remove_client($client_fd);
             # epoll_ctl($epoll, EPOLL_CTL_DEL, $client_fd, 0) >= 0 || die "Can't remove client socket from epoll: $!";
@@ -93,7 +99,7 @@ sub handle_client_data {
         }
     } else {
         # print("REQUEST: $epoll::clients{$client_fd}{request}\n");
-        print("FINItO REQUEST\n");
+        # print("FINItO REQUEST\n");
         main::handle_normal_request($client_fd, $epoll::clients{$client_fd}{request});
         main::remove_client($client_fd);
         # epoll_ctl($epoll, EPOLL_CTL_DEL, $client_fd, 0) >= 0 || die "Can't remove client socket from epoll: $!";

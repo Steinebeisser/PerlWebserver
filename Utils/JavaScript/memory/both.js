@@ -38,12 +38,12 @@ function checkForSolvedCards() {
         console.log("solved cards: " + solvedCards.length);
         socket.send(JSON.stringify({ type: "solved_cards", solved_cards: firstCard + "," + secondCard, player: encodeURI(currentPlayer), game_id: game_id, game: "memory", wstype: "game" }));
         updateSolvedCardsGui();
-        if (solvedCards.length === 16) {
-            finish = true;
-            console.log("all cards are solved");
-            var url = "/gameroom/memory/end/" + game_id;
-            window.location.href = url;
-        }
+        // if (solvedCards.length === 16) {
+        //     finish = true;
+        //     console.log("all cards are solved");
+        //     var url = "/gameroom/memory/end/" + game_id;
+        //     window.location.href = url;
+        // }
         return true;
     }
 }
@@ -140,6 +140,7 @@ function sendMoves(card_id) {
 
 socket.onmessage = function(event) {
     console.log("WebSocket message received:", event.data);
+    clearTimeout(timeout);
 
     var data = JSON.parse(event.data);
 
@@ -164,6 +165,25 @@ socket.onmessage = function(event) {
         moveUtils(card_id);
     }
 
+    if (data.type === "both_connected") {
+        console.log("Both players are connected.");
+        connectionLayer = document.getElementById("wait_connection_layer");
+        connectionLayer.style.display = "none";
+    }
+
+    if (data.type === "opponent_disconnected") {
+        var disconnectedPlayer = data.player;
+        disconnectedPlayer = decodeURI(disconnectedPlayer);
+        alert(disconnectedPlayer + " disconnected. Redirecting to main page.");
+        window.location.href = "/gameroom/memory";
+    }
+
+    if (data.type === "game_end") {
+        finish = true;
+        console.log("all cards are solved");
+        var url = "/gameroom/memory/end/" + game_id;
+        window.location.href = url;
+    }
 };
 
 socket.onclose = function(event) {

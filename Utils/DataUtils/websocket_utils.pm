@@ -10,17 +10,19 @@ my %websocket_types = (
     "game" => \&game_utils::handle_game_index,
 );
 
-
-
+my %disconnect_types = (
+    "Memory Queue" => \&memory_game_utils::remove_from_queue,
+    "Memory Game" => \&memory_game_utils::remove_from_game,
+);
 
 sub receive_msg {
     my ($client_socket) = @_;
     my $client_fd = fileno $client_socket;
-    print("RECEIVING FOR CLIENT $client_fd\n");
+    # print("RECEIVING FOR CLIENT $client_fd\n");
 
     my $message = $epoll::clients{$client_fd}{"request"};
     if ($epoll::clients{$client_fd}{"more"} != 0) {
-        print("RECEIVING MESSAGE\n");
+        # print("RECEIVING MESSAGE\n");
         recv($client_socket, my $buffer, 1024, 0);
         $message .= $buffer;
         $epoll::clients{$client_fd}{"request"} .= $buffer;
@@ -30,14 +32,14 @@ sub receive_msg {
     }
 
     if (!$message) {
-        print("REMOVING DISCONNECTED CLIENT ".($client_fd)."\n");
+        # print("REMOVING DISCONNECTED CLIENT ".($client_fd)."\n");
+        on_disconnect($client_socket);
         close($client_socket);
         delete $epoll::clients{$client_fd};
-        game_utils::remove_from_games($client_fd);
         return;
     }
 
-    print("RAW MESSAGE: " . unpack("H*", $message) . ".\n");
+    # print("RAW MESSAGE: " . unpack("H*", $message) . ".\n");
 
     # my $message;
     # while (1) {
@@ -51,9 +53,9 @@ sub receive_msg {
         return;
     }
 
-    print("MESSAGE: $message\n");
+    # print("MESSAGE: $message\n");
     my $decoded_message = decode_frame($message, $client_socket);
-    print("DECODED MESSAGE: $decoded_message\n");
+    # print("DECODED MESSAGE: $decoded_message\n");
 
     # my $answer_frame = encode_frame("Hello from server");
     # send($client_socket, $answer_frame, 0);
@@ -68,19 +70,19 @@ sub encode_frame {
     my $frame = "";
 
     if ($message_length < 125) {
-        print("ENCODING MSG UNDER 125\n");
+        # print("ENCODING MSG UNDER 125\n");
         my $byte1 = pack("C", 0b10000001);
         $frame = pack("C", 0b10000001) . pack("C", $message_length) . $message;
     } elsif ($message_length < 65536) {
-        print("ENCODING MSG UNDER 65536\n");
+        # print("ENCODING MSG UNDER 65536\n");
         $frame = pack("C", 0b10000001) . pack("C", 126) . pack("n", $message_length) . $message;
     } else {
-        print("ENCODING MSG OVER 65536\n");
+        # print("ENCODING MSG OVER 65536\n");
         $frame = pack("C", 0b10000001) . pack("C", 127) . pack("Q>", $message_length) . $message;
     }
 
-    print("FRAME: $frame\n");
-    print("DECODED FRAME: " . unpack("H*", $frame) . "\n");
+    # print("FRAME: $frame\n");
+    # print("DECODED FRAME: " . unpack("H*", $frame) . "\n");
 
     return $frame;
 }
@@ -104,13 +106,14 @@ sub decode_frame {
     my $opcode = $byte1 & 0b00001111;
 
     # print("FIN: $fin\n");
-    print("RSV1: $rsv1\n");
+    # print("RSV1: $rsv1\n");
     # print("RSV2: $rsv2\n");
     # print("RSV3: $rsv3\n");
-    print("OPCODE: $opcode\n");
+    # print("OPCODE: $opcode\n");
 
     if ($opcode == 0x8) {
-        print("CLOSING CONNECTION\n");
+        # print("CLOSING CONNECTION\n");
+        on_disconnect($client_socket);
         send($client_socket, pack("C", 0x88), 0);
         close($client_socket);
         return;
@@ -143,7 +146,7 @@ sub decode_frame {
 sub no_mask_error {
     my ($client_socket) = @_;
     my $error_frame = encode_frame("1002 Protocol Error");
-    print("NO MASK\n");
+    # print("NO MASK\n");
     send($client_socket, $error_frame, 0);
     close($client_socket);
     warn "Protocol error: No mask present in the frame";
@@ -240,7 +243,7 @@ sub handle_websocket_request {
 
         
     
-        print("WEBSOCKET UPGRADED\n");
+        # print("WEBSOCKET UPGRADED\n");
 
         main::epoll_loop();
     }
@@ -249,7 +252,7 @@ sub handle_websocket_request {
 sub handle_websocket_communication {
     my ($client_fd) = @_;
 
-    print("HANDLING WEBSOCKET COMMUNICATION\n");
+    # print("HANDLING WEBSOCKET COMMUNICATION\n");
     my $client_socket = $epoll::clients{$client_fd}{"socket"};
 
     # send($client_socket, "Hello from server", 0) or die "send: $!";
@@ -258,7 +261,7 @@ sub handle_websocket_communication {
     if (!$message) {
         return;
     }
-    print("MESSAGE: $message\n");
+    # print("MESSAGE: $message\n");
 
     my $message_hash;
     eval {
@@ -273,7 +276,7 @@ sub handle_websocket_communication {
     if (!$message_hash) {
         $response = "msg: BONJOUR";
     } else {
-        print("GETTING RESPONSE\n");
+        # print("GETTING RESPONSE\n");
         $response = get_response($message_hash, $client_socket);
     }
 
@@ -288,9 +291,9 @@ sub handle_websocket_communication {
 
     $response = encode_json($response);
 
-    print("ENCODED RESPONSE: $response\n");
+    # print("ENCODED RESPONSE: $response\n");
     $response = websocket_utils::encode_frame($response);
-    print("SENDING RESPONSE: $response to CLIENT SOCKET $client_socket\n");
+    # print("SENDING RESPONSE: $response to CLIENT SOCKET $client_socket\n");
     send($client_socket, $response, 0) or warn "Failed to send response: $!";
     # my $client_socket = $epoll::clients{$client_fd};
     # my $response = HTTP_RESPONSE::OK("HELLO");
@@ -317,8 +320,49 @@ sub get_response {
 
 
 
+sub on_disconnect {
+    my ($client_socket) = @_;
+
+    my $active_connections_ref = get_active_connections($client_socket);
+    my @active_connections = @$active_connections_ref;
+
+    foreach my $active_connection (@active_connections) {
+        handle_disconnect($active_connection, $client_socket);
+    }
+}
+
+sub get_active_connections {
+    my ($client_socket) = @_;
+
+    my @active_connections;
+
+    foreach my $connection (@{$epoll::clients{fileno $client_socket}{connections}}) {
+        push @active_connections, $connection;
+    }
+
+    return \@active_connections;
+}
 
 
+sub handle_disconnect {
+    my ($active_connection, $client_socket) = @_;
 
+    # print("ACTIVE CONNECTION: $active_connection\n");
+    foreach my $type (keys %disconnect_types) {
+        # print("TYPE: $type\n");
+        if ($active_connection =~ /$type/) {
+            return $disconnect_types{$type}->($client_socket, $active_connection);
+        }
+    }
 
+    return 0;
+}
+
+sub add_to_active_connections {
+    my ($client_socket, $connection) = @_;
+
+    my $client_fd = fileno $client_socket;
+
+    push @{$epoll::clients{$client_fd}{connections}}, $connection;
+}
 1;

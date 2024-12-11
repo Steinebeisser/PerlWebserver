@@ -10,7 +10,7 @@ use List::Util qw(shuffle);
 sub new {
     my ($file_name, $is_multiplayer, $just_create) = @_;
 
-    print("IS1 MULTIPLAYER: $is_multiplayer\n");
+    # print("IS1 MULTIPLAYER: $is_multiplayer\n");
 
     my $base_dir = getcwd();
     my $card_dir = "$base_dir/HTML_PAGES/Gameroom/Memory/activeGames";
@@ -117,7 +117,7 @@ sub create_field {
 
     my $translations = language_utils::load_language("gameroom");
 
-    print("IS MULTIPLAYER: $is_multiplayer\n");
+    # print("IS MULTIPLAYER: $is_multiplayer\n");
 
     my $base_path = getcwd();
     my $script_path;

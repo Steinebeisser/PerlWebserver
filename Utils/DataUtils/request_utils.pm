@@ -45,10 +45,10 @@ sub get_cookie {
     if (!$request) {
         return;
     }
-    print("REQUEST FOR COOKIE: $request\n");
+    # print("REQUEST FOR COOKIE: $request\n");
     if ($request =~ /Cookie: (.*)/) {
         $cookie = $1;
-        print "Cookie: $cookie\n";
+        # print "Cookie: $cookie\n";
         if ($cookie =~ /username=([^\s;]+)/) {
             $main::isLoggedIn = 1;
             user_utils::populate_user($cookie);
@@ -76,7 +76,7 @@ sub skip_to_body {
             next;
         }
         if ($is_body) {
-            print "BODY: $line\n";
+            # print "BODY: $line\n";
             $request_body .= $line . "\n";
         }
     }

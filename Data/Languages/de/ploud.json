@@ -16,5 +16,8 @@
     "back": "Zur&uuml;ck",
     "buy": "Kaufen",
     "alreadyRank": "Du hast diesen Rang bereits",
-    "ploud": "Perl-Cloud"
+    "ploud": "Perl-Cloud",
+    "serverStorageUsed": "Server-Speicherplatz verwendet",
+    "serverStorageFree": "Server-Speicherplatz frei",
+    "serverStorageTotal": "Server-Speicherplatz gesamt"
 }
