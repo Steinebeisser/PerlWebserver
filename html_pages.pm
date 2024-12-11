@@ -32,6 +32,7 @@ use HTML_PAGES::Gameroom::Memory::get_memory_alone;
 use HTML_PAGES::Gameroom::Memory::get_memory_2player;
 use HTML_PAGES::Gameroom::Memory::get_memory_2player_waiting;
 use HTML_PAGES::Gameroom::Memory::get_memory_end;
+use HTML_PAGES::Gameroom::Memory::get_memory_spectate;
 
 use HTML_PAGES::Admin::admin_html;
 use HTML_PAGES::Admin::Users::admin_user_html;
@@ -66,6 +67,9 @@ use Utils::DataUtils::http_utils;
 use Utils::DataUtils::User::register_user;
 use Utils::DataUtils::User::login_user;
 use Utils::DataUtils::User::logout_user;
+
+use Utils::DataUtils::Important::Devs::dev_utils;
+use Utils::DataUtils::Important::Devs::hardware_devs;
 
 use Utils::DataUtils::Game::game_utils;
 use Utils::DataUtils::Game::Memory::memory_game_utils;
@@ -105,4 +109,8 @@ use Utils::HtmlPagesUtils::Shutdown::get_shutdown_page;
 
 use Utils::HtmlPagesUtils::Favicon::get_favicon;
 
+use Utils::HtmlPagesUtils::Important::Devs::post_contact_devs;
+
+
+use Utils::SMTP_SERVER::smtp_utils;
 1;

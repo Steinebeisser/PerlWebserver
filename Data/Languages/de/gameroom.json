@@ -30,6 +30,8 @@
     "backToMemory": "Zur&uuml;ck zu Memory",
     "backToGameRoom": "Zur&uuml;ck zum Spielzimmer",
     "backToIndex": "Zur&uuml;ck zum Index",
-    "moves": "Z&uuml;ge"
+    "moves": "Z&uuml;ge",
+    "waitingForConnection": "Warte auf Verbindung",
+    "spectate": "Zuschauen"
 
 }

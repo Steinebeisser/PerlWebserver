@@ -13,3 +13,7 @@ Data/Blog/upload_date.txt
 Data/Blog/views.txt
 HTML_PAGES/Gameroom/Memory/activeGames/*
 !HTML_PAGES/Gameroom/Memory/activeGames/.gitkeep
+Emails/*
+!Emails/.gitkeep
+Data/DevLists/*
+!Data/DevLists/.gitkeep

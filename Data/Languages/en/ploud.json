@@ -16,5 +16,8 @@
     "back": "Back",
     "buy": "Buy",
     "alreadyRank": "You already have this rank",
-    "ploud": "Perl-Cloud"
+    "ploud": "Perl-Cloud",
+    "serverStorageUsed": "Server Storage Used",
+    "serverStorageFree": "Server Storage Free",
+    "serverStorageTotal": "Server Storage Total"
 }

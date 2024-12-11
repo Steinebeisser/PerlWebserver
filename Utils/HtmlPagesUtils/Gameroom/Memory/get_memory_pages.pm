@@ -184,7 +184,7 @@ sub get_memory_2player {
 
     if (!$player1 || !$player2) {
         print("NO PLAYERS\n");
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page"));
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Error loading players"));
         return;
     }
     # if (!$memory::game_controllers{"game_id"}{$game_id}{"player1"}) {
@@ -264,4 +264,11 @@ sub get_memory_end {
     return $html;
 }
 
+sub get_memory_spectate {
+    my ($client_socket, $request) = @_;
+
+    my $html = get_memory_spectate::get_memory_spectate();  
+
+    return $html;
+}
 1;

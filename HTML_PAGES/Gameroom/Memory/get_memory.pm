@@ -36,6 +36,10 @@ HTML
     $html .= <<HTML;
             <a href="/gameroom/memory/2player/waiting">$translations->{twoPlayers}</a>
         </div>
+        <br>
+        <div class="spectate_game">
+            <a href="/gameroom/memory/spectate">$translations->{spectate}</a>
+        </div>
     </div>
 
 HTML

@@ -6,7 +6,7 @@ use warnings;
 sub get_profile_ploud_upgrade_rank {
     my ($rank_to_purchase, $username) = @_;
 
-    my $human_username = utils::get_username();
+    my $human_username = user_utils::get_username();
 
     my $translations = language_utils::load_language("profile, ploud");
 
@@ -20,9 +20,9 @@ HTML
 
     $html_body .= html_utils::create_breadcrumbs("profile, ploud, upgrade, $rank_to_purchase");
 
-    my $userdata = utils::get_json_data($username);
+    my $userdata = user_utils::get_json_data($username);
     my $rank_id = $userdata->{rank}{id};
-    my $rank_to_purchase_id = utils::get_rank_id($rank_to_purchase);
+    my $rank_to_purchase_id = user_utils::get_rank_id($rank_to_purchase);
 
     if ($rank_id >= $rank_to_purchase_id) {
         $html_body .= <<HTML;

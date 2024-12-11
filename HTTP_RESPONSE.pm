@@ -15,8 +15,8 @@ sub SWITCHING_PROTOCOLS_101 {
     $sec_websocket_accept = encode_base64($sec_websocket_accept);
     $sec_websocket_accept =~ s/\n//g;
     
-    print("Computed Sec-WebSocket-Accept: $sec_websocket_accept\n");
-    print("SEC WEBSOCKET ACCEPT: $sec_websocket_accept\n");
+    # print("Computed Sec-WebSocket-Accept: $sec_websocket_accept\n");
+    # print("SEC WEBSOCKET ACCEPT: $sec_websocket_accept\n");
     my $response = "HTTP/1.1 101 Switching Protocols\r\n"
                 . "Upgrade: websocket\r\n"
                 . "Connection: Upgrade\r\n"

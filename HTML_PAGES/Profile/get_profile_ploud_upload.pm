@@ -37,27 +37,57 @@ HTML
 
     my $max_storage_formated = user_utils::format_bytes($max_storage);
 
+    
+
+    my $server_storage = user_utils::get_server_storage();
+    my $server_storage_used = $server_storage->{used};
+    my $server_storage_free = $server_storage->{free};
+    my $server_storage_total = $server_storage->{total};
     my $script = <<SCRIPT;
     <script>
         var max_storage = $max_storage;
         var storage_used = $storage_used;
+        var server_storage_free = $server_storage_free;
+        var server_storage_total = $server_storage_total;
+        var server_storage_used = $server_storage_used;
+        var server_storage_bottleneck = $server::storage_bottleneck;
 
-        var available_storage = max_storage - storage_used;
+        var available_storage = max_storage - storage_used - (max_storage * 0.02); 
+        var available_server_storage = server_storage_free * server_storage_bottleneck;
+        console.log("AVAILABLE SERVER STORAGE: " + available_server_storage);
 
         document.getElementById('fileInput').addEventListener('change', function(event) {
-            const file = event.target.files[0]; // Get the first selected file
+            const file = event.target.files[0]; 
 
             if (file) {
-                const fileSize = file.size; // Get the file size in bytes
+                const fileSize = file.size; 
 
-                // Check if the file exceeds the available storage
+                if (fileSize > available_server_storage) {
+                    event.preventDefault(); 
+                    alert('Server storage is full. Were working on it. Please try again later.');
+                    document.getElementById('fileInput').value = '';
+                    contact_devs("Storage full");
+                    return;
+                }
                 if (fileSize > available_storage) {
                     event.preventDefault(); // Prevent form submission
                     alert('File is too large. You have ' + (available_storage / (1024 * 1024)).toFixed(2) + ' MB available for upload.');
-                    document.getElementById('fileInput').value = ''; // Clear the file input
+                    document.getElementById('fileInput').value = '';
                 }
             }
         });
+
+        function contact_devs(reason) {
+            fetch('/important/contact_devs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    reason: reason
+                })
+            });
+        }
     </script>
 SCRIPT
 
@@ -80,6 +110,15 @@ SCRIPT
 HTML
 
     $html_body .= html_utils::get_ploud_items();
+
+    $html_body .= <<HTML;
+    <div class="server_storage">
+        <p>$translations->{serverStorageInfo}</p>
+        <p>$translations->{serverStorageUsed}: $server_storage_used</p>
+        <p>$translations->{serverStorageFree}: $server_storage_free</p>
+        <p>$translations->{serverStorageTotal}: $server_storage_total</p>
+    </div>
+HTML
 
     $html_body .= $script;
     

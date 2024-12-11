@@ -109,7 +109,7 @@ HTML
 }
 
 sub show_ranks {
-    my $rank_file = "user_Utils/ranks.json";
+    my $rank_file = "Utils/ranks.json";
 
     my $user_data = user_utils::get_json_data($main::user->{username});
     if (!$user_data) {
@@ -258,6 +258,19 @@ sub get_memory_restart_button {
     my $html = <<HTML;
     <div class="memory_restart_button">
         <a href="restart">$translations->{restart}</a>
+    </div>
+HTML
+    return $html;
+}
+
+sub get_wait_connection_layer {
+    my ($translations) = @_;
+
+    my $html = <<HTML;
+    <div class="wait_connection_layer" id="wait_connection_layer">
+        <div class="wait_connection">
+            <p>$translations->{waitingForConnection}</p>
+        </div>
     </div>
 HTML
     return $html;

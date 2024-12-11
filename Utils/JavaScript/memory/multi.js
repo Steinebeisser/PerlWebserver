@@ -1,4 +1,6 @@
 var socket = new WebSocket("http://10.31.0.18/gameroom/memory/multi");
+var timeout;
+var timeoutInSec = 15;
 
 socket.onopen = function(event) {
     console.log("WebSocket is open now.");
@@ -6,6 +8,17 @@ socket.onopen = function(event) {
     msg = JSON.stringify({ game_id: game_id_value, type: "multi_start_game", game: "memory", wstype: "game" });
     socket.send(msg);
     console.log("Sent message: " + msg);
+
+    timeout = setTimeout(function() {
+        console.log("No message received in " + timeoutInSec + " seconds. Sending message and disconnecting.");
+        msg = JSON.stringify({ game_id: game_id_value, type: "opponent_not_connected", game: "memory", wstype: "game" });
+        socket.send(msg);
+        socket.close();
+        socket.onclose = function(event) {
+            alert("Opponent not connected. Redirecting to main page.");
+            window.location.href = "/gameroom/memory";
+        };
+    }, 15000);
 
     const player1Name = document.getElementsByClassName("player1_name")[0].innerHTML;
 
