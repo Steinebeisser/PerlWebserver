@@ -36,6 +36,7 @@ HTML
     <a href="/gameroom">$translations->{gameroom}</a><br>
     <a href="/calender/year">$translations->{calender}</a><br>
     <a href="/about">$translations->{about}</a><br>
+    <a href="/updateLog">$translations->{updateLog}</a><br>
 
     <br>
 HTML

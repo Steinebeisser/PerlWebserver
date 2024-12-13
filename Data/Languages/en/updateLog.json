@@ -1,0 +1,11 @@
+{
+    "add": "Add",
+    "delete": "Delete",
+    "disable": "Disable",
+    "enable": "Enable",
+    "edit": "Edit",
+    "title": "Title",
+    "description": "Description",
+    "additionalInfo": "Additional Information",
+    "updateLog": "Update Log"
+}

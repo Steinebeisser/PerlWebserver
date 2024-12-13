@@ -896,6 +896,99 @@ CSS
 CSS
     }
 
+    if ($html_body =~ /class="about"/ || $footer =~ /class="about"/) {
+        $css .= <<CSS;
+    .about {
+        width: 90%;
+        margin: 20px auto;
+        background-color: #1e1e1e;
+        border-radius: 15px;
+        padding: 20px;
+    }
+    .overview {
+        margin-bottom: 30px;
+        padding: 15px;
+        border: 1px solid #333;
+        border-radius: 8px;
+        background-color: #2e2e2e;
+        transition: all 0.3s;
+    }
+    .overview:hover {
+        box-shadow: 0 0 10px rgba(255, 204, 0, 0.6);
+    }
+    h2 {
+        color: #ffcc00;
+        margin-bottom: 10px;
+    }
+    p {
+        margin-bottom: 15px;
+        color: #ccc;
+    }
+    ul {
+        list-style: none;
+        padding-left: 0;
+    }
+    li {
+        padding-left: 25px;
+        margin-bottom: 8px;
+        color: #f0f0f0;
+    }
+    .features, .to-do, .known-errors, .additional-notes {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #444;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #1f1f1f;
+    }
+CSS
+    }
+
+    if ($html_body =~ /class="update"/ || $footer =~ /class="update"/) {
+        $css .= <<CSS;
+    .update {
+        display: flex;
+        width: 60%;
+        margin: 15px auto;
+        justify-content: center;
+        flex-wrap: wrap;
+        padding: 20px;
+        background-color: #1e1e1e;
+        border-radius: 15px;
+    }
+    .update:hover {
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+    }
+    .title {
+        width: 100%;
+        padding: 10px;
+        background-color: #131111;
+        border-radius: 9px;
+    }
+    .updateBody {
+        width: 100%;
+        padding-top: 15px;
+        display: flex;
+    }
+    .description {
+        width: 70%;
+        text-align: left;
+        display: flex;
+        flex-wrap: wrap;
+        
+    }
+    .additionalInfo {
+        width: 70%;
+        text-align: left;
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .date {
+        width: 30%;
+        text-align: right;
+    }
+CSS
+    }
 
     $css .= "</style>";
     return $css;

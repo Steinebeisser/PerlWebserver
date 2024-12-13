@@ -17,3 +17,4 @@ Emails/*
 !Emails/.gitkeep
 Data/DevLists/*
 !Data/DevLists/.gitkeep
+Utils/DataUtils/Important/no_upload.pm
