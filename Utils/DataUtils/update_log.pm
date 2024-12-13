@@ -50,7 +50,17 @@ sub add_update_log {
 
     my $base_dir = getcwd();
     my $update_log_file = "$base_dir/Data/UpdateLog/update_log.json";
-    open(my $fh, '<', $update_log_file) or die "Can't open file $update_log_file: $!";
+    if (!-e $update_log_file) {
+        open(my $fh, '>', $update_log_file) or do {
+            warn "Can't open file $update_log_file: $!";
+            return;
+        };  
+        close $fh;
+    }
+    open(my $fh, '<', $update_log_file) or do {
+        warn "Can't open file $update_log_file: $!";
+        return;
+    };
     my $json = do { local $/; <$fh> };
     close $fh;
     my $decoded_json = $json ? decode_json($json) : {};
@@ -97,6 +107,18 @@ sub get_log_data {
     } else {
         print("Failed to get log data\n");
     }
+
+    if (!$title || !$description) {
+        print("Failed to get log data\n");
+        return 0;
+    }
+
+    $description = user_utils::decode_uri($description);
+    $title = user_utils::decode_uri($title);
+
+    $description =~ s/\+/ /g;
+    $title =~ s/\+/ /g;
+   
 
     return ($date, $title, $description, $additionalInfo, $enabled);
 }
