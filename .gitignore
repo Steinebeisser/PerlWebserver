@@ -18,3 +18,4 @@ Emails/*
 Data/DevLists/*
 !Data/DevLists/.gitkeep
 Utils/DataUtils/Important/no_upload.pm
+Data/UpdateLog/update_log.json
