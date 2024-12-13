@@ -1,7 +1,4 @@
 cpan JSON
 cpan IO::Epoll
-sudo apt install mailutils postfix
-setup email server
--sudo nano /etc/postfix/main.cf
--sudo nano /etc/aliases
--sudo systemctl restart postfix
+cpan Net::SMTP::SSL
+cpan Authen::SASL

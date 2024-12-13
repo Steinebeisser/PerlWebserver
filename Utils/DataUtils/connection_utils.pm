@@ -54,12 +54,12 @@ sub get_client_data {
             if ($username) {
                 my $max_storage = user_utils::get_user_max_storage($username);
                 my $max_file_size = $max_storage - user_utils::get_current_used_storage($username);
-                my $max_server_size = user_utils::get_max_server_size();
-                if ($max_file_size > $max_server_size * $server::storage_bottleneck) {
-                    print("SERVER STORAGE EXCEEDED\n");
-                    http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_413("Server storage exceeded"));
-                    return;
-                }
+                # my $max_server_size = user_utils::get_max_server_size();
+                # if ($max_file_size > $max_server_size * $server::storage_bottleneck) {
+                #     print("SERVER STORAGE EXCEEDED\n");
+                #     http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_413("Server storage exceeded"));
+                #     return;
+                # }
                 if ($content_length > $max_file_size) {
                     print("File too large\n");
 

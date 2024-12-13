@@ -18,6 +18,7 @@ sub get_admin {
     <h1>Admin</h1>
     <br>
     <a href="/admin/users">Users</a>
+    <a href="/admin/updateLog">Update Log</a>
     <span class="inline_buttons">
         <a href="/logout">Logout</a>
         <a href="/ ">Return to index</a>

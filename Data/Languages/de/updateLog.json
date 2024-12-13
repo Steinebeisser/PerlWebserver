@@ -1,0 +1,11 @@
+{
+    "add": "Hinzufügen",
+    "delete": "Löschen",
+    "disable": "Deaktivieren",
+    "enable": "Aktivieren",
+    "edit": "Bearbeiten",
+    "title": "Titel",
+    "description": "Beschreibung",
+    "additionalInfo": "Zus&auml;tzliche Informationen",
+    "updateLog": "Update-Log"
+}

@@ -11,6 +11,8 @@ sub get_admin {
     }
     if (admin_utils::check_if_admin_and_logged_in($client_socket)) {
         return $html;
+    } else {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are no admin<h1>peasant</h1><br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
     }
     
     return $html;

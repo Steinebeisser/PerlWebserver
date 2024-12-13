@@ -30,6 +30,10 @@ my %index_router = (
     "/ " => \&get_index_page::get_index,
 
     "/favicon.ico" => \&get_favicon::get_favicon,
+
+    "/about" => \&get_about_page::get_about,
+
+    "/updateLog" => \&get_update_log_page::get_update_log,
     
     "/login" => \&get_login_page::get_login,
     "/register" => \&get_register_page::get_register,
@@ -75,6 +79,8 @@ my %index_router = (
     "/admin/users/ban" => \&get_admin_users_pages::get_admin_ban_user,
     "/admin/users/delete" => \&get_admin_users_pages::get_admin_delete_user,
 
+    "/admin/updateLog" => \&get_admin_update_log_manage::get_admin_update_log_manage,
+    "/admin/updateLog/add" => \&get_admin_update_log_manage::get_admin_update_log_add,
 
     
 );
@@ -103,6 +109,8 @@ my %post_router = (
     "/admin/users/ban" => \&post_admin_users_pages::post_admin_ban_user,
     "/admin/users/delete" => \&post_admin_users_pages::post_admin_delete_user,
 
+    "/admin/updateLog/add" => \&post_admin_update_log_manage::post_admin_update_log_add,
+
     "/important/contact_devs" => \&post_contact_devs::post_contact_devs,
 );
 
@@ -123,7 +131,7 @@ print("Binding to port $port\n");
 bind($server, sockaddr_in($port, INADDR_ANY)) || die "Can't bind: $!";
 
 print("Starting SMTP Server\n");
-smtp_utils::start_smtp_server();
+smtp_utils2::start_smtp_server();
 
 print("Listening on port $port\n");
 listen($server, 5) || die "Can't listen: $!";
@@ -132,7 +140,10 @@ print("Accepting connections\n");
 
 epoll_ctl($main::epoll, EPOLL_CTL_ADD, fileno $server, EPOLLIN) >= 0 || die "Can't add server socket to main::epoll: $!";
 
+# sleep(2);
+# smtp_send::send_email("Noah.Bach\@sinc.de", "Noah.Bach\@sinc.de", "Hallo Ich", "Bin ich du, oder bist du ich?\n:)");
 epoll_loop();
+
 
 # my %epoll::clients;
 my %user_in_queue;

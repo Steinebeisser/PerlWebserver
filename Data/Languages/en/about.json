@@ -1,0 +1,75 @@
+{
+    "aboutMyWebserver": "About My Webserver",
+
+
+    "features": "Key Features",
+    "featuresText": "Core features of the platform",
+
+    "featuresHttpWs": "Custom HTTP and WebSocket Communication for handling requests and real-time data",
+    "featuresEpoll": "Highly efficient epoll system for handling multiple connections",
+    "featuresUserSystem": "Fully functional user system with role management (User, Admin)",
+    "featuresAuthentication": "\"Secure\" authentication system with Login, Logout, Register functionality",
+    "featuresAdminUtils": "Admin utilities such as Ban, Delete, View Users, and manage announcements",
+    "featuresCloud": "Working perl-cloud (ploud) storage system with Upload, Download, and Delete options",
+    "featuresSeverStorageViewer": "Server storage monitoring with email alerts when capacity reaches 80%",
+    "featuresEmailServer": "Custom SMTP email server for notifications and alerts",
+    "featuresEmailNotification": "Email notifications with fallback to Gmail if gets Blocked because no Domain :(",
+    "featuresForumBlog": "forum/blog with announcement features and sorting options (new, old, views, alphabetical)",
+    "featuresGameroom": "Gameroom with multiplayer and singleplayer memory game using WebSocket connections",
+    "featuresCalender": "Calendar showing German holidays with navigation and descriptions",
+    "featuresLanguageSupport": "Bilingual support: German and English",
+    "featuresDarkLightMode": "Dark/Light mode",
+    "featuresDynamicUserDisplay": "User count display",
+    "featuresBreadCrumbs": "Breadcrumb navigation for improved usability",
+    "featuresWCAG": "UI is WCAG compliant (atleast dark mode(in most parts))",
+
+
+    "toDo": "Planned Features",
+    "toDoText": "Features/Improvements that Im working on",
+
+    "todoMUA": "Implement a Mail User Agent (MUA) for email management",
+    "todoEmailImprovement": "Improve email sending and use it for more features",
+    "todoRegisterImproveWithMail": "Improve registration process with email verification",
+    "todoSupportPage": "Create a support page with Ticket System(also over email)",
+    "todoStreaming": "Add streaming functionality for prerecorded and uploaded videos",
+    "todoFastSerialisation": "Optimize communication with serialization using Protobuf and/or FlatBuffers",
+    "todoSpectatorMode": "Add spectator mode for games to watch live gameplay",
+    "todoUserProfile": "Add customizable user profiles with avatars and bio sections",
+    "todoUUID": "Add UUID to current Users and in general",
+    "todoMatchHistory": "Create a match history for games with statistics and results(profile)",
+    "todoReplayMode": "Implement a replay system for games to review past matches(profile)",
+    "todoLiveChat": "Add live chat for communication between users(in and out of games)",
+    "todoFriendSystem": "Create a friend system for adding and messaging other users",
+    "todoLeaderboard": "Add a leaderboard for games with rankings and statistics",
+    "todoAchievements": "Implement achievements for games with rewards(currency, skins) and progress tracking",
+    "todoLevelSystem": "Create a level system for users with experience and progression",
+    "todoCurrencySystem": "Add a currency system for users to earn and spend in the platform",
+    "todoImproveRanks": "Upgrade rank system for more Perks and make a real buying process(curreny)",
+    "todoCustomDomainDMARC": "Get custom domain and setup DMARC",
+    "todoGames": "Expand the gameroom with additional games and multiplayer features (CHESS at least)",
+    "todoImproveGuiWCAG": "Upgrade GUI to improve accessibility and WCAG compliance",
+    "todoImproveGui": "Improve GUI to make look better",
+    "todoImpressum": "Add an Impressum",
+    "todoPrivacyPolicy": "Include a privacy policy outlining data usage and user rights",
+    "todoTermsOfService": "Provide terms of service for platform usage",
+    "todoBreadCrumbsImprovement": "Improve breadcrumb navigation for a smoother user experience",
+    "todoAPI": "Create an API for external applications to interact with the platform",
+    "todoToDoApp": "Add ToDo App with groups, checkmarks, shared todo, tags, etc",
+    "todoCookiesImprove": "Improve cookie handling and add cookie msg for EU",
+    "todoMobileAuthLogin": "Add mobile authentication for login and registration",
+
+
+    "knownErrors": "Known Issues",
+    "knownErrorsText": "These are the current bugs or issues I am aware of and (hopefully) working to resolve",
+
+    "knwonErrorCalenderBreadcrumbs": "Breadcrumbs not clickable in Month view",
+    "knwonErrorEmail": "SMTP emails are being blocked due to missing domain support",
+    "knwonErrorMemoryWS": "Memory game not able to inform opponents about disconnect if disconnects right after connection",
+    "knwonErrorLightModeLanguageChange": "Switching language in dark mode turns it to light mode",
+
+    "additionalNotes": "Additional Notes",
+    "additionalNotesText": "Extra information and visual features enhancing the webserver",
+
+    "additionalNotesVantaBG": "Vantajs background with birds",
+    "additionalNotesFont": "\"Inter\" font from Google Fonts"
+}

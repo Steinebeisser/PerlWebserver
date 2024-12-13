@@ -5,6 +5,10 @@ use warnings;
 
 use HTML_PAGES::index_html;
 
+use HTML_PAGES::About::about_html;
+
+use HTML_PAGES::UpdateLog::update_log_html;
+
 use HTML_PAGES::Login::login_html;
 use HTML_PAGES::Login::logined_html;
 
@@ -41,6 +45,10 @@ use HTML_PAGES::Admin::Users::get_admin_ban_user;
 use HTML_PAGES::Admin::Users::get_admin_view_user;
 use HTML_PAGES::Admin::Users::get_admin_delete_user;
 
+use HTML_PAGES::Admin::UpdateLog::get_update_log_manage;
+use HTML_PAGES::Admin::UpdateLog::get_admin_update_log_add;
+
+
 use HTML_PAGES::Admin::Announcements::get_blog_announcements_manage;
 use HTML_PAGES::Admin::Announcements::get_announcement_edit;
 use HTML_PAGES::Admin::Announcements::get_announcement_create;
@@ -71,6 +79,10 @@ use Utils::DataUtils::User::logout_user;
 use Utils::DataUtils::Important::Devs::dev_utils;
 use Utils::DataUtils::Important::Devs::hardware_devs;
 
+use Utils::DataUtils::Important::no_upload;
+
+use Utils::DataUtils::update_log;
+
 use Utils::DataUtils::Game::game_utils;
 use Utils::DataUtils::Game::Memory::memory_game_utils;
 
@@ -95,6 +107,8 @@ use Utils::HtmlPagesUtils::Preferences::post_preferences;
 use Utils::HtmlPagesUtils::Admin::get_admin_page;
 use Utils::HtmlPagesUtils::Admin::Users::post_admin_users_pages;
 use Utils::HtmlPagesUtils::Admin::Users::get_admin_users_pages;
+use Utils::HtmlPagesUtils::Admin::UpdateLog::get_admin_update_log_manage;
+use Utils::HtmlPagesUtils::Admin::UpdateLog::post_admin_update_log_manage;
 
 use Utils::HtmlPagesUtils::Calender::get_calender_pages;
 
@@ -111,6 +125,13 @@ use Utils::HtmlPagesUtils::Favicon::get_favicon;
 
 use Utils::HtmlPagesUtils::Important::Devs::post_contact_devs;
 
+use Utils::HtmlPagesUtils::About::get_about_page;
 
-use Utils::SMTP_SERVER::smtp_utils;
+use Utils::HtmlPagesUtils::UpdateLog::get_update_log_page;
+
+
+# use Utils::SMTP_SERVER::smtp_utils;
+use Utils::SMTP_SERVER::smtp_utils2;
+use Utils::SMTP_SERVER::smtp_send;
+
 1;
