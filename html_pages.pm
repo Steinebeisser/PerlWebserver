@@ -3,42 +3,14 @@ package html_pages;
 use strict;
 use warnings;
 
-use HTML_PAGES::index_html;
-
 use HTML_PAGES::About::about_html;
 
-use HTML_PAGES::UpdateLog::update_log_html;
-
-use HTML_PAGES::Login::login_html;
-use HTML_PAGES::Login::logined_html;
-
-use HTML_PAGES::Register::register_html;
-use HTML_PAGES::Register::registered_html;
-
-use HTML_PAGES::Logout::logout_html;
-
-use HTML_PAGES::Profile::profile_html;
-use HTML_PAGES::Profile::get_profile_ploud;
-use HTML_PAGES::Profile::get_profile_ploud_upload;
-use HTML_PAGES::Profile::get_profile_ploud_upgrade;
-use HTML_PAGES::Profile::get_profile_ploud_upgrade_rank;
-
-use HTML_PAGES::Blog::get_blog;
-use HTML_PAGES::Blog::get_blog_view;
-use HTML_PAGES::Blog::get_blog_create;
-
-use HTML_PAGES::Calender::get_calender_year;
-use HTML_PAGES::Calender::get_calender_month;
-
-use HTML_PAGES::Gameroom::get_gameroom;
-use HTML_PAGES::Gameroom::Memory::get_memory;
-use HTML_PAGES::Gameroom::Memory::get_memory_alone;
-use HTML_PAGES::Gameroom::Memory::get_memory_2player;
-use HTML_PAGES::Gameroom::Memory::get_memory_2player_waiting;
-use HTML_PAGES::Gameroom::Memory::get_memory_end;
-use HTML_PAGES::Gameroom::Memory::get_memory_spectate;
-
 use HTML_PAGES::Admin::admin_html;
+
+use HTML_PAGES::Admin::Announcements::get_blog_announcements_manage;
+use HTML_PAGES::Admin::Announcements::get_announcement_edit;
+use HTML_PAGES::Admin::Announcements::get_announcement_create;
+
 use HTML_PAGES::Admin::Users::admin_user_html;
 use HTML_PAGES::Admin::Users::get_admin_edit_user;
 use HTML_PAGES::Admin::Users::get_admin_ban_user;
@@ -47,16 +19,66 @@ use HTML_PAGES::Admin::Users::get_admin_delete_user;
 
 use HTML_PAGES::Admin::UpdateLog::get_update_log_manage;
 use HTML_PAGES::Admin::UpdateLog::get_admin_update_log_add;
+use HTML_PAGES::Admin::UpdateLog::get_admin_update_log_edit;
+use HTML_PAGES::Admin::UpdateLog::get_admin_update_log_delete;
 
 
-use HTML_PAGES::Admin::Announcements::get_blog_announcements_manage;
-use HTML_PAGES::Admin::Announcements::get_announcement_edit;
-use HTML_PAGES::Admin::Announcements::get_announcement_create;
+use HTML_PAGES::Blog::get_blog;
+use HTML_PAGES::Blog::get_blog_view;
+use HTML_PAGES::Blog::get_blog_create;
+
+
+use HTML_PAGES::Calender::get_calender_year;
+use HTML_PAGES::Calender::get_calender_month;
+
+
+use HTML_PAGES::Email::get_email_not_verified;
+use HTML_PAGES::Email::get_require_email;
+use HTML_PAGES::Email::unlinked_email_html;
+use HTML_PAGES::Email::get_change_email;
+
+
+
+use HTML_PAGES::Gameroom::get_gameroom;
+
+use HTML_PAGES::Gameroom::Memory::get_memory;
+use HTML_PAGES::Gameroom::Memory::get_memory_alone;
+use HTML_PAGES::Gameroom::Memory::get_memory_2player;
+use HTML_PAGES::Gameroom::Memory::get_memory_2player_waiting;
+use HTML_PAGES::Gameroom::Memory::get_memory_end;
+use HTML_PAGES::Gameroom::Memory::get_memory_spectate;
+
+
+use HTML_PAGES::html_structure;
+
+
+use HTML_PAGES::index_html;
+
+
+use HTML_PAGES::Login::login_html;
+use HTML_PAGES::Login::logined_html;
+
+
+use HTML_PAGES::Logout::logout_html;
+
+
+use HTML_PAGES::Profile::profile_html;
+
+use HTML_PAGES::Profile::get_profile_ploud;
+use HTML_PAGES::Profile::get_profile_ploud_upload;
+use HTML_PAGES::Profile::get_profile_ploud_upgrade;
+use HTML_PAGES::Profile::get_profile_ploud_upgrade_rank;
+
+
+use HTML_PAGES::Register::register_html;
+use HTML_PAGES::Register::registered_html;
 
 
 use HTML_PAGES::shutdown_html;
 
-use HTML_PAGES::html_structure;
+
+use HTML_PAGES::UpdateLog::update_log_html;
+
 
 # use User::Utils::utils;
 
@@ -75,6 +97,9 @@ use Utils::DataUtils::http_utils;
 use Utils::DataUtils::User::register_user;
 use Utils::DataUtils::User::login_user;
 use Utils::DataUtils::User::logout_user;
+use Utils::DataUtils::User::ip_utils;
+use Utils::DataUtils::User::cookie_utils;
+use Utils::DataUtils::User::email_utils;
 
 use Utils::DataUtils::Important::Devs::dev_utils;
 use Utils::DataUtils::Important::Devs::hardware_devs;
@@ -82,6 +107,8 @@ use Utils::DataUtils::Important::Devs::hardware_devs;
 use Utils::DataUtils::Important::no_upload;
 
 use Utils::DataUtils::update_log;
+
+use Utils::DataUtils::encryption_utils;
 
 use Utils::DataUtils::Game::game_utils;
 use Utils::DataUtils::Game::Memory::memory_game_utils;

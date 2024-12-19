@@ -4,35 +4,49 @@ use strict;
 use warnings;
 use User::User;
 use JSON;
+use Cwd;
 use URI::Escape;
 
 my $empty_cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+my $base_dir = getcwd();
+my $userdata_folder = "$base_dir/Data/UserData";
+sub exist_not_banned {
+    my ($client_socket, $uuid) = @_;
 
-
-sub get_username {
-    if ($main::user) {
-        # print("User logged in\n");
-        # print("USERNAME: $main::user->{username}\n");
-        if (is_encoded($main::user->{username})) {
-            # print("FOUND USERNAME: $main::user->{username}\n");
-            return decode_uri($main::user->{username});
-        }
-        # print("FOUND USERNAME: $main::user->{username}\n");
-        return $main::user->{username};
-    } else {
-        # print("User not logged in\n");
+    print("CHECKING USER EXISTS\n");
+    if (!user_exists($client_socket, $uuid)) {
+        print("User does not exist\n");
+        return 0;
     }
-    return undef;  
+    print("EXISTS\n");
+
+    if (is_banned($client_socket, $uuid)) {
+        print("User is banned\n");
+        return 0;
+    }
+
+    print("USER EXISTS\n");
+
 }
 
-sub get_password {
-    if ($main::user) {
-        # print("User logged in\n");
-        return $main::user->{password};
-    } else {
-        # print("User not logged in\n");
+sub user_exists {
+    my ($client_socket, $uuid) = @_;
+
+    print("CHECKING USER EXISTS\n");
+    print("UUID: $uuid\n");
+    my $filename = "$userdata_folder/Users/$uuid/$uuid.json";
+    if (-e $filename) {
+        return 1;
     }
-    return undef;  
+    my $html_body = <<HTML;
+    <h1>User does not exist</h1>
+    <br>
+    <p>Please log in again</p>
+    <a href="/login">Login</a>
+HTML
+    my $html_content = html_structure::get_html($html_body, "User does not exist");
+    http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404_WITH_COOKIE($html_content, $cookie::empty_cookie));
+    return 0;
 }
 
 sub get_username_and_role {
@@ -60,30 +74,6 @@ sub get_role {
     return undef;  
 }
 
-sub get_all_users2 {
-    if ($main::user) {
-        my $role = user_utils::get_role();
-        if ($role ne "admin") {
-            return 0;
-        }
-    } else {
-        return 0;
-    }
-    my @users = ();
-    foreach my $folder (glob("UserData/*")) {
-        # print("FOLDER123: $folder\n");
-        my $username =~ /UserData\/(.*)/;
-        my $filename = $folder . "/" . $username . ".json";
-        my ($username2, $role) = get_username_and_role($filename);
-        if (!$username2 ne $username) {
-            # print("ERROR: $username2 ne $username\n");
-            die;
-        }
-        push @users, { username => $username, role => $role };
-    }
-    return @users;
-}
-
 sub get_all_users {
     my ($start_index, $user_per_page) = @_;
     
@@ -96,13 +86,15 @@ sub get_all_users {
         return 0;
     }
 
+    my $total_user_amount = get_user_count();
     my @users = ();
     my $count = 0;
     
-    foreach my $folder (glob("UserData/*")) {
-        $folder =~ /UserData\/(.*)/;
-        my $username = $1;
-        my $filename = $folder . "/" . $username . ".json";
+    my $base_dir = getcwd();
+    foreach my $folder (glob("$userdata_folder/Users/*")) {
+        $folder =~ /UserData\/Users\/(.*)/;
+        my $uuid = $1;
+        my $filename = $folder . "/" . $uuid . ".json";
 
         if ($count < $start_index) {
             $count++;
@@ -111,25 +103,19 @@ sub get_all_users {
 
         last if @users >= $user_per_page;
 
-        my ($role) = get_user_stat($username, "role");
-        push @users, { username => $username, role => $role };
-
-        # my ($username2, $role) = get_username_and_role($filename);
-        # if (!$username2 ne $username) {
-        #     print("ERROR: $username2 ne $username\n");
-        #     die;
-        # }
-
-        # if ($count >= $start_index && $count < $start_index + $user_per_page) {
-        #     push @users, { username => $username, role => $role };
-        # }
-        # $count++;
-        
+        my ($role) = get_user_stat($uuid, "role");
+        my $username = get_username_by_uuid($uuid);
+        print("PUSHING USER: $username\n");
+        my $user_hash = {
+            uuid => $uuid,
+            username => $username,
+            role => $role
+        };
+        push @users, $user_hash;
     }
 
-    return @users;
+    return (\@users, $total_user_amount);
 }
-
 
 sub check_if_admin_and_logged_in {
     my ($client_socket) = @_;
@@ -147,93 +133,12 @@ sub check_if_admin_and_logged_in {
     }
 }
 
-sub check_permissions {
-    my ($client_socket, $username) = @_;
-
-    if (is_banned($client_socket, $username)) {
-        return 0;
-    }
-
-    if (!is_account($username)) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401_WITH_COOKIE("Account does not exist<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>", $empty_cookie));
-        return 0;
-    }
-
-    return 1;
-}
-
-sub is_account {
-    my ($username) = @_;
-    
-    # print("USERNAME1: $username\n");
-    if (!$username) {
-        eval {
-            $username = get_username();
-        } or do {
-            return 0;
-        };
-        my $data = get_json_data($username);
-        if (!$data) {
-            return 0;
-        }
-    }
-    
-
-    $username = check_uri_and_decode_encode($username);
-    # print("USERNAME4: $username\n");
-
-    if (!-e "UserData/$username/$username.json") {
-        # print("UserData/$username/$username.json does not exist\n");
-        # print("Account does not exist\n");
-        return 0;
-    }
-    return $username;
-}
-
-sub check_uri_and_decode_encode {
-    my ($username) = @_;
-    my $username_encode;
-    my $username_decode;
-
-
-    if (!-e "UserData/$username/$username.json") {
-        $username_encode = encode_uri($username);
-        # print("USERNAME2: $username_encode\n");
-        if (-e "UserData/$username_encode/$username_encode.json") {
-            $username = $username_encode;
-        }
-    }
-
-    if (!-e "UserData/$username/$username.json" && !$username_encode) {
-        $username_decode = decode_uri($username);
-        # print("USERNAME3: $username_decode\n");
-        if (-e "UserData/$username_decode/$username_decode.json") {
-            $username = $username_decode;
-        }
-    }
-
-    return $username;
-}
 sub is_banned {
-    # print("BANE TEST\n");
-    my ($client_socket, $username) = @_;
+    my ($client_socket, $uuid) = @_;
 
-    if (!$username) {
-        # print("Trying to get username...\n");
-        eval {
-            $username = get_username();
-            # print("POGGERS: Got username - $username\n");
-        } or do {
-            # print("Catch block executed: $!\n");
-            http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Failed to check your permissions"));
-            return 1;
-        };
-        
-    }
+    my $data = get_json_data($uuid);
 
-    # my $username = get_username();
-    my $data = get_json_data($username);
-
+    
     if (!$data) {
         return 0;
     }
@@ -243,7 +148,7 @@ sub is_banned {
     }
 
     if ($data->{banned}->{banned_until} < time()) {
-        unban_user($username);
+        unban_user($uuid);
         return 0;
     }
 
@@ -267,10 +172,17 @@ sub get_all_roles {
 }
 
 sub update_user_values {
-    my ($username, $key, $value) = @_;
-    my $filename = "UserData/$username/$username.json";
-    my $data = get_json_data($username);
-    $data->{$key} = $value;
+    my ($uuid, $key, $value) = @_;
+
+    my $filename = "$userdata_folder/Users/$uuid/$uuid.json";
+    my $data = get_json_data($uuid);
+    print("UPDATING USER VALUES\n");
+    if ($data->{$key}) {
+        $data->{$key} = $value;
+    } else {
+        $data->{$key} = $value;
+    }
+    print("DATA: $data\n"); 
     my $json = encode_json($data);
     open(my $file, '>', $filename) or return 0;
     print $file $json;
@@ -279,31 +191,27 @@ sub update_user_values {
 }
 
 sub get_user_stat {
-    my ($username, $key) = @_;
-    # print("USERNAME: $username\n");
-    my $data = get_json_data($username);
+    my ($uuid, $key) = @_;
+    my $data = get_json_data($uuid);
     if (!$data) {
-        # print("CANT FETCH DATA FOR $username\n");
+        print("CANT FETCH DATA FOR $uuid\n");
         return 0;
     }
     if (!$data->{$key}) {
-        # print("CANT FETCH DATA FOR $username\n");
+        print("CANT FETCH DATA FOR $uuid\n");
         return 0;
     }
+    print("DATA: $data->{$key}\n");
     return $data->{$key};
 }
 
 sub get_json_data {
-    my ($username) = @_;
-
-    $username = is_account($username);
-    if (!$username) {
-        return 0;
-    }
-
-    my $filename = "UserData/$username/$username.json";
+    my ($uuid) = @_;
+    
+    # print("JASN DATA: $uuid\n");
+    my $filename = "$userdata_folder/Users/$uuid/$uuid.json";
     open(my $file, '<', $filename) or do {
-        # print("Error opening file $filename\n");
+        print("Error opening file $filename\n");
         return 0;
     };
     my $json_text = do {
@@ -313,15 +221,38 @@ sub get_json_data {
     close($file);
     my $data = eval { decode_json($json_text) };
     if ($@) {
-        # print("Error decoding JSON: $@\n");
+        print("Error decoding JSON: $@\n");
         return 0;
     }
     return $data;
 }
 
+sub get_uuid_by_username {
+    my ($username) = @_;
+    if (!$username) {
+        return 0;
+    }
+    my $filename = "$userdata_folder/usernames.json";
+    open(my $file, '<', $filename) or do {
+        # print("Error opening file $filename\n");
+        return 0;
+    };
+    my $json = do { local $/; <$file> };
+    close $file;
+    my $data = decode_json($json);
+    return $data->{user_to_uuid}->{$username};
+}
+
+sub get_uuid {
+    if ($main::user) {
+        return $main::user->{uuid};
+    }
+    return 0;
+}
+
 sub compare_values {
-    my ($username, $key, $value) = @_;
-    my $data = get_json_data($username);
+    my ($uuid, $key, $value) = @_;
+    my $data = get_json_data($uuid);
     if (!$data) {
         return 0;
     }
@@ -332,9 +263,9 @@ sub compare_values {
 }
 
 sub ban_user {
-    my ($username, $reason, $time_until) = @_;
+    my ($uuid, $reason, $time_until) = @_;
 
-    my $data = get_json_data($username);
+    my $data = get_json_data($uuid);
 
     if (!$data) {
         return 0;
@@ -345,13 +276,13 @@ sub ban_user {
     $data->{banned}->{reason} = $reason;
     $data->{banned}->{banned_until} = $time_until;
 
-    write_json_data($username, $data);
+    write_json_data($uuid, $data);
 }
 
 sub unban_user {
-    my ($username) = @_;
+    my ($uuid) = @_;
 
-    my $data = get_json_data($username);
+    my $data = get_json_data($uuid);
 
     if (!$data) {
         return 0;
@@ -361,12 +292,12 @@ sub unban_user {
     $data->{banned}->{reason} = "";
     $data->{banned}->{banned_until} = 0;
 
-    write_json_data($username, $data);
+    write_json_data($uuid, $data);
 }
 
 sub write_json_data {
-    my ($username, $data) = @_;
-    my $filename = "UserData/$username/$username.json";
+    my ($uuid, $data) = @_;
+    my $filename = "$userdata_folder/Users/$uuid/$uuid.json";
     open(my $file, '>', $filename) or return 0;
     print $file encode_json($data);
     close($file);
@@ -398,29 +329,31 @@ sub decode_uri {
 }
 
 sub delete_user {
-    my ($username) = @_;
-    # print("DELETING USER: $username\n");
-    $username = is_account($username);
-    if (!$username) {
+    my ($uuid) = @_;
+
+    if (!$uuid) {
         return 0;
     }
-    # print("DELETING USER: $username\n");
-    my $role = get_user_stat($username, "role");
+    if (!user_exists($uuid)) {
+        return 0;
+    }
+
+    my $role = get_user_stat($uuid, "role");
     if ($role eq "admin") {
         return 0;
     }
     
-    my $start_dir = "UserData/$username";
-    delete_files_recursive($username, $start_dir);
+    my $start_dir = "UserData/Users/$uuid";
+    delete_files_recursive($start_dir);
 
-    my $filename = "UserData/$username/$username.json";
+    my $filename = "$userdata_folder/Users/$uuid/$uuid.json";
     unlink($filename);
 
     return 1;
 }
 
 sub delete_files_recursive {
-    my ($username, $path) = @_;
+    my ($path) = @_;
 
     opendir(my $dir, $path) or return 0;
 
@@ -430,7 +363,7 @@ sub delete_files_recursive {
         }
         my $path = "$path/$file";
         if (-d $path) {
-            delete_files_recursive($username, $path);
+            delete_files_recursive($path);
         } else {
             unlink($path);
         }
@@ -439,9 +372,9 @@ sub delete_files_recursive {
 }
 
 sub check_if_user_exists {
-    my ($client_socket, $username) = @_;
-    $username = is_account($username);
-    if (!$username) {
+    my ($client_socket, $uuid) = @_;
+    if (!user_exists($uuid)) {
+        my $username = get_username_by_uuid($uuid);
     my $html_body = <<HTML;
     <h1>User $username does not exist</h1>
     <br>
@@ -456,15 +389,16 @@ HTML
 
 sub encode_uri {
     my ($uri) = @_;
-    $uri = uri_escape($uri);
+    $uri = uri_escape_utf8($uri);
     return $uri;
 }
+
 
 sub get_user_count {
     my $count = 0;
     # print("COUNTING USERS\n");
 
-    foreach my $folder (glob("UserData/*")) {
+    foreach my $folder (glob("$userdata_folder/Users/*")) {
         $count++;
     }
     return $count;
@@ -475,7 +409,7 @@ sub get_uploads {
     if (!$main::user) {
         return 0;
     }
-    my $data_path = "UserData/$main::user->{username}/ploud";
+    my $data_path = "$userdata_folder/Users/$main::user->{uuid}/ploud";
 
     foreach my $file (glob("$data_path/*")) {
         
@@ -495,7 +429,7 @@ sub get_uploads {
 sub get_metadata {
     my ($filename) = @_;
     # print("METADATACHECK: $filename\n");
-    my $data_path = "UserData/$main::user->{username}/ploud/$filename/metadata.json";
+    my $data_path = "$userdata_folder/Users/$main::user->{uuid}/ploud/$filename/metadata.json";
     open(my $file, '<', $data_path) or return 0;
     # print("OPENED FILE: $file\n");
     my $json = <$file>;
@@ -526,14 +460,15 @@ sub format_bytes {
 }
 
 sub get_current_used_storage {
-    my ($username) = @_;
-    if (!$username) {
-        $username = get_username();
+    my ($uuid) = @_;
+
+    print("GETTING USED STORAGE\n");
+    if (!user_exists($uuid)) {
+        return 0;
     }
-    $username = is_account($username);
     my $used_storage = 0;
     # print("GETTING USED STORAGE\n");
-    my $data_path = "UserData/$username/ploud/usermetadata.json";
+    my $data_path = "$userdata_folder/Users/$uuid/ploud/usermetadata.json";
     if (!-e $data_path) {
         # print("File does not exist: $data_path\n");
         return 0;
@@ -556,9 +491,9 @@ sub get_current_used_storage {
 }
 
 sub get_user_max_storage {
-    my ($username) = @_;
+    my ($uuid) = @_;
 
-    my $user_stats = user_utils::get_json_data($username);
+    my $user_stats = user_utils::get_json_data($uuid);
     if (!$user_stats) {
         return "User not found";
     }
@@ -569,8 +504,8 @@ sub get_user_max_storage {
     return $max_storage;
 }
 sub update_user_metadata {
-    my ($username, $data) = @_;
-    my $filename = "UserData/$username/ploud/usermetadata.json";
+    my ($uuid, $data) = @_;
+    my $filename = "$userdata_folder/Users/$uuid/ploud/usermetadata.json";
     my $current_storage = 0;
     my $metadata;
 
@@ -623,7 +558,7 @@ sub get_rank_stats {
 sub get_rank_id {
     my ($rank) = @_;
 
-    my $filename = "user_Utils/ranks.json";
+    my $filename = "Utils/ranks.json";
 
     open(my $file, '<', $filename) or do {
         # print("Error opening file $filename\n");
@@ -643,10 +578,13 @@ sub get_rank_id {
 }
 
 sub update_rank_stats {
-    my ($username, $key, $value) = @_;
+    my ($uuid, $key, $value) = @_;
 
-    my $userdata = get_json_data($username);
+    my $userdata = get_json_data($uuid);
 
+    if (!$userdata) {
+        return 0;
+    }
 
     my $rank_data = $userdata->{rank};
     if (!$rank_data) {
@@ -663,7 +601,7 @@ sub update_rank_stats {
         $userdata->{rank}{$key} = $value;
     }
 
-    open (my $file, '>', "UserData/$username/$username.json") or return 0;
+    open (my $file, '>', "$userdata_folder/Users/$uuid/$uuid.json") or return 0;
     print $file encode_json($userdata);
     close($file);
     return 1;
@@ -675,7 +613,7 @@ sub read_file {
     $filename =~ s/\r\n$//; 
     $filename =~ s/\n$//;
     $filename =~ s/\r$//;
-    # print("FILENAME: $filename HELLO");
+    print("FILENAME: $filename HELLO");
     open(my $file, '<', $filename) or do {
         print("Error opening file $filename: $!\n");
         return 0;
@@ -707,32 +645,56 @@ sub create_random_string {
 sub populate_user {
     my ($cookie) = @_;
 
+    print("POPULATING USER\n");
+    print("COOKIE: $cookie\n");
+    # my $cookie_data = cookie_utils::read_cookie($cookie);
+    my ($uuid, $session_id) = cookie_utils::validate_session($cookie);
+    if (!$uuid || !$session_id) {
+        print("Invalid cookie\n");
+        return 0;
+    }
 
-    if ($cookie =~ /username=([^\s;]+)/) {
-        my $username = $1;
-        # print "Username: $username\n";
-        my $user_stats = get_user_stats($username);
-        if (!$user_stats) {
-            return;
-        }
-        $main::user = User->new($user_stats);
-        
-        # $main::user = $user;
-        # print("ROLI $user->{role}\n");
-        # print("ROLI $main::user->{role}\n");
+    my $user_stats = get_user_stats($uuid);
+    if (!$user_stats) {
+        print("No user stats found\n");
+        return;
+    }
+    # print("USER STATS: $user_stats\n");
+    # foreach my $key (keys %$user_stats) {
+    #     print("KEY: $key\n");
+    #     print("VALUE: $user_stats->{$key}\n");
+    # }
+    print("creating User\n");
+    $main::user = User->new($user_stats);
+}
+
+sub get_username_by_uuid {
+    my ($uuid) = @_;
+    my $filename = "$userdata_folder/usernames.json";
+    open(my $file, '<', $filename) or do {
+        print("Error opening file $filename\n");
+        return 0;
     };
+    my $json = do { local $/; <$file> };
+    close $file;
+    my $data = decode_json($json);
+    return $data->{uuid_to_user}->{$uuid};
 }
 
 sub get_user_stats {
-    my ($username) = @_;
-    my $filename = "UserData/$username/$username.json";
+    my ($uuid) = @_;
+    my $filename = "$userdata_folder/Users/$uuid/$uuid.json";
 
     if (-e $filename) {
         open(my $file, '<', $filename) or return 0;
         my $json = do { local $/; <$file>};
         close $file;
         my $user_stats = decode_json($json);
-
+        print("USER STATS: $user_stats\n");
+        # foreach my $key (keys %$user_stats) {
+        #     print("KEY: $key\n");
+        #     print("VALUE: $user_stats->{$key}\n");
+        # }
         return $user_stats;
     }
 }
@@ -755,9 +717,9 @@ sub get_server_storage {
     my %storage = ();
     if ($total =~/^.+?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+%)\s+\S+$/) {
         $storage{mount} = $1;
-        $storage{total} = $2;
-        $storage{used} = $3;
-        $storage{free} = $4;
+        $storage{total} = $2 * 1024;
+        $storage{used} = $3 * 1024;
+        $storage{free} = $4 * 1024;
         $storage{used_percentage} = $5;
     } else {
         return 0;
@@ -766,4 +728,81 @@ sub get_server_storage {
 
 }
 
+sub get_server_storage_json {
+    my $storage = get_server_storage();
+    return encode_json($storage);
+}
+
+sub hash_password {
+    my ($password) = @_;
+    print("PASSWORD: $password\n");
+    my $salt = create_random_string(16);          
+    my $hash = crypt($password, "\$6\$$salt");    
+    return $hash;                                 
+}
+
+sub verify_password {
+    my ($entered_password, $stored_hash) = @_;
+    print("STORED HASH:  $stored_hash\n");
+    my $entered_hash = crypt($entered_password, $stored_hash);
+    print("ENTERED HASH: $entered_hash\n");
+    return $entered_hash eq $stored_hash;                     
+}
+
+
+sub is_wide {
+    my ($string) = @_;
+    
+    print("STRING: $string\n");
+    foreach my $char (split //, $string) {
+        print("CHAR: $char\n");
+        if ($char =~ /[^\x00-\x7F]/) {
+            print("WIDE CHARACTER DETECTED: $char\n");
+            return 1;
+        }
+    }
+}
+
+sub is_email_verified {
+    if (!$main::user) {
+        return 0;
+    }
+    my $email_status = get_user_stat($main::user->{uuid}, "email_status");
+    if ($email_status eq "verified") {
+        return 1;
+    }
+    return 0;
+}
+
+sub get_used_emails {
+    my $filename = "$userdata_folder/used_emails.json";
+    if (!-e $filename) {
+        open my $file, '>', $filename or do {
+            # print("Error opening file $filename\n");
+            return 0;
+        };
+    }
+    open(my $file, '<', $filename) or do {
+        print("Error opening file $filename\n");
+        return 0;
+    };
+    my $json = do { local $/; <$file> };
+    close $file;
+    if (!$json) {
+        return {};
+    }
+    my $data = decode_json($json);
+    return $data;
+}
+
+sub save_used_emails {
+    my ($data) = @_;
+    my $filename = "$userdata_folder/used_emails.json";
+    open(my $file, '>', $filename) or do {
+        # print("Error opening file $filename\n");
+        return 0;
+    };
+    print $file encode_json($data);
+    close($file);
+}
 1;

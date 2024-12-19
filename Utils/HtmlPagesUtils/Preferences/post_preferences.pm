@@ -5,15 +5,6 @@ sub post_change_language {
     my $language;
     my $referer;
     my $username;
-    my $language_test1;
-    my $language_test2;
-    my $username_test1;
-    my $username_test2;
-    my $test_request = $request;
-
-    my $cookie_data = request_utils::get_cookie_data($request);
-    $username = $cookie_data->{username};
-    $language = $cookie_data->{language};
 
     $referer = request_utils::get_referer($request);
 
@@ -24,21 +15,24 @@ sub post_change_language {
     } 
 
     if (!$language) {
-        # print("NO LANGUAGE\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500());
     }
 
     if (!$referer) {
-        # print("NO REFERER\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500());
     }
 
 
-    # print("GOT LANGUAGE: $language\n");
-
     if ($language) {
-        if ($username) {
-            if (user_utils::update_user_values($username, "preferences", {language => $language})) {
+        if ($main::user) {
+            my $uuid = $main::user->{uuid};
+            my $preferences = user_utils::get_user_stat($uuid, "preferences");
+            if ($preferences) {
+                $preferences->{language} = $language;
+            } else {
+                $preferences = {language => $language};
+            }
+            if (user_utils::update_user_values($uuid, "preferences", $preferences)) {
                 my $response = HTTP_RESPONSE::REDIRECT_303($referer);
                 http_utils::send_http_response($client_socket, $response);
             } else {
@@ -60,51 +54,42 @@ sub post_dark_mode {
         $referer = "/";
     }
 
-    my $cookie_data = request_utils::get_cookie_data($request);
-    
-
-    my $scheme;
-    my $username;
-
-    if ($cookie_data) {
-        $username = $cookie_data->{username};
-        $scheme = $cookie_data->{scheme};
-    }
-
+    my $scheme = $main::scheme;
+    # my $scheme = request_utils::get_scheme_by_cookie();
     # print("COOKIE SCHEME: $scheme\n");
-    my $cookie_scheme;
-
-    if ($username) {
-        $scheme = user_utils::get_user_stat($username, "preferences")->{scheme};
-    }
-
-    # print("USERNAME SCHEME: $scheme\n");
+    
+    # print("COOKIE SCHEME: $scheme\n");
+    # my $cookie_scheme;
 
     if (!$scheme) {
         $scheme = "dark";
-        $cookie_scheme = "scheme=dark";
         $main::scheme = "dark";
     } else {
         if ($scheme eq "light") {
             # print("SCHEME IS LIGHT $scheme\n");
             $scheme = "dark";
             $main::scheme = "dark";
-            $cookie_scheme = "scheme=dark";
         } else {
             # print("SCHEME IS DARK $scheme\n");
             $scheme = "light";
             $main::scheme = "light";
-            $cookie_scheme = "scheme=light";
 
         }
     }
-    # print("SWAPPED SCHEME: $scheme\n");
+    print("SWAPPED SCHEME: $scheme\n");
 
 
 
-    if ($username) {
-        if (user_utils::update_user_values($username, "preferences", {scheme => $scheme})) {
-            my $response = HTTP_RESPONSE::REDIRECT_303($referer);
+    if ($main::user) {
+        my $uuid = $main::user->{uuid};
+        my $preferences = user_utils::get_user_stat($uuid, "preferences");
+        if ($preferences) {
+            $preferences->{scheme} = $scheme;
+        } else {
+            $preferences = {scheme => $scheme};
+        }
+        if (user_utils::update_user_values($uuid, "preferences", $preferences)) {
+            my $response = HTTP_RESPONSE::REDIRECT_303($referer, "scheme=$scheme");
             http_utils::send_http_response($client_socket, $response);
         } else {
             # print("ERROR UPDATING USER\n");
@@ -112,7 +97,7 @@ sub post_dark_mode {
         }
     } else {
         # print("NO USERNAME\n");
-        http_utils::send_http_response($client_socket, HTTP_RESPONSE::REDIRECT_303_WITH_COOKIE($referer, $cookie_scheme));
+        http_utils::send_http_response($client_socket, HTTP_RESPONSE::REDIRECT_303_WITH_COOKIE($referer, "scheme=$scheme"));
     }
 
 }

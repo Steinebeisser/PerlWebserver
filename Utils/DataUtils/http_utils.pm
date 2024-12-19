@@ -34,4 +34,12 @@ sub encode_characters {
     return $string;
 }
 
+sub parse_input {
+    my ($string) = @_;
+
+    $string = user_utils::decode_uri($string);
+    $string =~ s/\+/ /g;
+
+    return $string;
+}
 1;

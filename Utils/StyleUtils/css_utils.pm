@@ -23,7 +23,7 @@ CSS
         $css .= <<CSS;    
         :root {  
             --font-family: 'Inter', Arial, sans-serif;
-            --body-bg: white;
+            --body-bg: #c4d8ed;
             --body-text: black;
             --body-text: #ffd178;
             --inline-link-bg: red;
@@ -57,7 +57,7 @@ CSS
         $css .= <<CSS;
         :root {
             --font-family: 'Inter', sans-serif;
-            --body-bg: #2e2e2e;
+            --body-bg: #07192f;
             --body-text: #39ff14;
             --body-text: #ffd178;
             --inline-link-bg: red;
@@ -94,7 +94,7 @@ CSS
     body {
         font-family: var(--font-family);
         color: var(--body-text);
-        background-color: #07192f;
+        background-color: var(--body-bg);
         margin: 0;
         padding: 0;
         display: flex;
@@ -944,6 +944,129 @@ CSS
 CSS
     }
 
+    if ($html_body =~ /class="editUpdateTitle"/ || $html_body =~ /class="copyUpdatePoint"/) {
+        $css .= <<CSS;
+    .editUpdateTitle {
+        width: 60%;
+        margin: 15px auto;
+        position: relative;
+    }
+    .copyUpdatePoint {
+        display: none;
+    }
+    .notSaved {
+        text-align: center;
+        color:rgb(235, 9, 9);
+    }
+    .saved {
+        text-align: center;
+        color:rgb(9, 235, 9);
+    }
+    .saveAddedUpdatePoint {
+        text-align: center;
+    }
+CSS
+    }
+
+    if ($html_body =~ /class="tooltiptext"/) {
+    $css .= <<'CSS';
+    .tooltiptext {
+        visibility: hidden;
+        width: 250px;
+        background-color: black;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        top: 125%; /* Tooltip above */
+        left: 50%;
+        margin-left: -125px; /* Centering horizontally */
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+    }
+    .hoverI {
+        position: relative; /* For tooltip positioning */
+        display: inline-block;
+        cursor: pointer;
+    }
+    .hoverI:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+    }
+CSS
+}
+
+
+    if ($html_body =~ /class="mainUpdateGroup"/ || $html_body =~ /class="updatePoint"/) {
+        $css .= <<CSS;
+    .updatePoint {
+        width: 80%;
+        margin: 15px auto;
+        background-color: black;
+        border-radius: 15px;
+        text-align: left;
+        padding: 20px;
+        position: relative;
+    }
+    .updatePoint:hover {
+        box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+        transform: scale(1.05);
+    }
+    .updatePointTitle {
+        margin-bottom: 25px;
+        text-align: center;
+        word-wrap: anywhere;
+    }
+    .updatePointDescription {
+        word-wrap: anywhere;
+        white-space: pre-line;
+    }
+    .grouped {
+        display: flex;
+        padding: 20px;
+    }
+    .input_update_log_add {
+        flex: 1;
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+    .text_update_log_add {
+        width: 20%;
+        text-align: left;
+    }
+    .mainUpdateGroup {
+        width: 60%;
+        margin: auto;
+        background: gray;
+        border-radius: 15px;
+    }
+    .enabled {
+        color: green;
+        position: absolute;
+        top: 5px;
+        right: 5px;
+    }
+    .disabled {
+        color: red;
+        position: absolute;
+        top: 5px;
+        right: 5px;
+    }
+CSS
+    }
+
+    if ($html_body =~ /class="close"/ || $html_body =~ /className = "close"/) {
+        $css .= <<CSS;
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+CSS
+    }
+
     if ($html_body =~ /class="update"/ || $footer =~ /class="update"/) {
         $css .= <<CSS;
     .update {
@@ -960,15 +1083,19 @@ CSS
         box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
     }
     .title {
-        width: 100%;
         padding: 10px;
         background-color: #131111;
         border-radius: 9px;
     }
     .updateBody {
-        width: 100%;
         padding-top: 15px;
-        display: flex;
+        padding-bottom: 15px;
+        display: none;
+        flex-wrap: wrap;
+        background-color: #575757;
+        margin-top: 35px;
+        width: 100%;
+        border-radius: 15px;
     }
     .description {
         width: 70%;
@@ -986,6 +1113,34 @@ CSS
     .date {
         width: 30%;
         text-align: right;
+    }
+    .preview {
+        width: 80%;
+    }
+CSS
+    }
+
+    if ($html_body =~ /class="newUpdateTitle"/ || $html_body =~ /class="newUpdatePointTitle"/ || $html_body =~ /class="newUpdatePointDescription"/) {
+        $css .= <<CSS;
+    .newUpdateTitle {
+        display: none;
+    }
+    .newUpdatePointTitle {
+        display: none;
+    }
+    .newUpdatePointDescription {
+        display: none;
+    }
+CSS
+    }
+
+    if ($html_body =~ /class="ping_display"/) {
+        $css .= <<CSS;
+    .ping_display {
+        position: fixed;
+        top: 0;
+        right: 0;
+        padding: 10px;
     }
 CSS
     }

@@ -21,12 +21,11 @@ HTML
         my $date = $update->{date};
         my $title = $update->{title};
         my $id = $update->{id};
-        my $description = $update->{description};
+        # my $description = $update->{description};
 
         $html_body .= <<HTML;
         <div class="manageUpdate">
-            <h2>$date</h2>
-            <p>$description</p>
+            <h2>$title - $date</h2>
 HTML
     if ($update->{additionalInfo}) {
         my $additionalInfo = $update->{additionalInfo};
@@ -35,28 +34,10 @@ HTML
 HTML
     }
         $html_body .= <<HTML;
-            <form action="/admin/updateLog/delete/$id" method="post">
-                <input type="hidden" name="date" value="$date">
-                <button type="submit">$translations->{delete}</button>
-            </form>
             <a href="/admin/updateLog/edit/$id">$translations->{edit}</a>
             <a href="/admin/updateLog/delete/$id">$translations->{delete}</a>
 HTML
-        if ($update->{enabled}) {
-            $html_body .= <<HTML;
-            <form action="/admin/updateLog/disable/$id" method="post">
-                <input type="hidden" name="date" value="$date">
-                <button type="submit">$translations->{disable}</button>
-            </form>
-HTML
-        } else {
-            $html_body .= <<HTML;
-            <form action="/admin/updateLog/enable/$id" method="post">
-                <input type="hidden" name="date" value="$date">
-                <button type="submit">$translations->{enable}</button>
-            </form>
-HTML
-        }
+
         $html_body .= <<HTML;
         </div>
 HTML

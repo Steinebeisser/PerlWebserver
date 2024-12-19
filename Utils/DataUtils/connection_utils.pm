@@ -33,27 +33,23 @@ sub get_client_data {
         $epoll::clients{$client_fd}{"bytes_read"} = $bytes_read;
         $epoll::clients{$client_fd}{"content_length"} = $content_length;
     
-        my $cookie_data = request_utils::get_cookie_data($header);
-        my $username;
-        if ($cookie_data) {
-            $username = $cookie_data->{username};
-            # http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not logged in<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
-            # return;
+        my $session_cookie = request_utils::get_session_cookie($header);
+        my $uuid;
+        my $session_id;
+        if ($session_cookie) {
+            ($uuid, $session_id) = cookie_utils::validate_session($session_cookie);
+            print("UUID1: $uuid\n");
         }
-
-        # if (!$username) {
-        #     http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not logged in<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
-        # } elsif ($username ne $username) {
-        #     http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page<br><a href=\"/ \">Return to index</a>"));
-        # }
 
         if ($content_length) {
             print("CONTENT LENGTH: $content_length\n");
             print("MAX STORAGE: $main::max_storage\n");
 
-            if ($username) {
-                my $max_storage = user_utils::get_user_max_storage($username);
-                my $max_file_size = $max_storage - user_utils::get_current_used_storage($username);
+            if ($uuid) {
+                my $max_storage = user_utils::get_user_max_storage($uuid);
+                my $max_file_size = $max_storage - user_utils::get_current_used_storage($uuid);
+                print("MAX FILE SIZE: $max_file_size\n");
+                print("MAX STORAGE: $max_storage\n");
                 # my $max_server_size = user_utils::get_max_server_size();
                 # if ($max_file_size > $max_server_size * $server::storage_bottleneck) {
                 #     print("SERVER STORAGE EXCEEDED\n");
@@ -63,7 +59,7 @@ sub get_client_data {
                 if ($content_length > $max_file_size) {
                     print("File too large\n");
 
-                    print("CURRENT USED STORAGE: ".user_utils::get_current_used_storage($username)."\n");
+                    print("CURRENT USED STORAGE: ".user_utils::get_current_used_storage($uuid)."\n");
                     print("MAX FILE SIZE: $max_file_size\n");
                     print("CONTENT LENGTH: $content_length\n");
                     http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_413("File too large"));

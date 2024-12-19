@@ -9,24 +9,7 @@ sub get_cookie_data {
     if ($request =~ /Cookie: (.*)/) {
         my $cookie = $1;
         # print("COOOOKIE: $cookie\n");
-        my %cookie_data;
-        if ($cookie =~ /username=([^\s;]+)/) {
-            # print("USERNAME $1\n");
-            $cookie_data{username} = $1;
-        }
-        if ($cookie =~ /scheme=([^\s;]+)/) {
-            # print("SCHEME $1\n");
-            $cookie_data{scheme} = $1;
-        }
-        if ($cookie =~ /language=([^\s;]+)]/) {
-            # print("LANGUAGE $1\n");
-            $cookie_data{language} = $1;
-        }
-        if ($cookie =~ /memory=([^\s;]+)/) {
-            # print("MEMORY $1\n");
-            $cookie_data{memory} = $1;
-        }
-        return \%cookie_data;
+        return $cookie;
     }
 }
 
@@ -39,6 +22,40 @@ sub get_referer {
     return $referer;
 }
 
+sub get_session_cookie {
+    my ($header) = @_;
+
+    my $cookie;
+    if ($header =~ /Cookie: (.*)/) {
+        $cookie = $1;
+    }
+    if (!$cookie) {
+        return;
+    }
+    if ($cookie =~ /session(=[^\s;]+)/) {
+        return $1;
+    }
+}
+
+sub get_scheme_by_cookie {
+    my ($cookie) = $main::header =~ /Cookie: (.*)/;
+    if ($cookie) {
+        print("COOKIE GOT: $cookie\n");
+        if ($cookie =~ /scheme=([^\s;]+)/) {
+            print("SCHEME: $1\n");
+            return $1;
+        }
+    }
+}
+
+sub get_accept_language_by_cookie {
+    my ($cookie) = $main::header =~ /Cookie: (.*)/;
+    if ($cookie) {
+        if ($cookie =~ /language=([^\s;]+)/) {
+            return $1;
+        }
+    }
+}
 sub get_cookie {
     my ($request) = @_;
     my $cookie;

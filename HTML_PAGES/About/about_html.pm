@@ -32,6 +32,8 @@ sub get_about {
                     <li>$translations->{featuresDynamicUserDisplay}</li>
                     <li>$translations->{featuresBreadCrumbs}</li>
                     <li>$translations->{featuresWCAG}</li>
+                    <li>$translations->{todoRegisterImproveWithMail}</li>
+                    <li>$translations->{todoUUID}</li>
                 <ul>
             </div>
         </div>
@@ -43,13 +45,11 @@ sub get_about {
                 <ul>
                     <li>$translations->{todoMUA}</li>
                     <li>$translations->{todoEmailImprovement}</li>
-                    <li>$translations->{todoRegisterImproveWithMail}</li>
                     <li>$translations->{todoSupportPage}</li>
                     <li>$translations->{todoStreaming}</li>
                     <li>$translations->{todoFastSerialisation}</li>
                     <li>$translations->{todoSpectatorMode}</li>
                     <li>$translations->{todoUserProfile}</li>
-                    <li>$translations->{todoUUID}</li>
                     <li>$translations->{todoMatchHistory}</li>
                     <li>$translations->{todoReplayMode}</li>
                     <li>$translations->{todoLiveChat}</li>

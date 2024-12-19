@@ -71,7 +71,6 @@ sub epoll_loop {
 }
 
 sub accept_client {
-    my ($smtp_client_socket) = @_;
     accept(my $smtp_client_socket, $smtp_server);
     my $client_fd = fileno $smtp_client_socket;
     epoll_ctl($smtp::epoll, EPOLL_CTL_ADD, $client_fd, EPOLLIN) >= 0 || die "Can't add client socket to smtp::epoll: $!";
@@ -166,6 +165,9 @@ sub forward_email {
 
     my $to = $smtp::clients{$client_fd}{"to"};
     my $mx_addr = get_mx_exchange($to);
+    if (!$mx_addr) {
+        return;
+    }
     my $from = $smtp::clients{$client_fd}{"from"};
     my $srs_from = generate_srs_from($from);
     my $username = (split /@/, $from)[0];
@@ -180,7 +182,6 @@ sub forward_email {
         return;
     };
 
-    my $content;
     print("BODY: $smtp::clients{$client_fd}{'body'}\n");
     my ($header, $content) = split(/\r\n\r\n/, $smtp::clients{$client_fd}{"body"}, 2);
 
@@ -188,7 +189,8 @@ sub forward_email {
     if (!$content) {
         return;
     }
-    smtp_send::send_email($from, $to, $smtp::clients{$client_fd}{"subject"}, $content, $mx_addr, 25, $client_fd, $srs_from, $username, $to_username);
+    my $content_type = "Content-Type: text/html; charset=UTF-8";
+    smtp_send::send_email($from, $to, $smtp::clients{$client_fd}{"subject"}, $content, $content_type, $mx_addr, 25, $client_fd, $srs_from, $username, $to_username);
 }
 
 sub parse_username {
@@ -416,7 +418,7 @@ sub return_to_sender {
 Unaible to deliver mail to <$failed_to>: \r\n\r\n$error
 Bounce
 
-    smtp_send::send_email($mail::mail_daemon, $to, "Delivery Failed: $failed_to", $bounce_message, $mx_exchange, 25, $client_fd);
+    smtp_send::send_email($mail::mail_daemon, $to, "Delivery Failed: $failed_to", $bounce_message, undef, $mx_exchange, 25, $client_fd);
 }
 
 sub get_client_fd {

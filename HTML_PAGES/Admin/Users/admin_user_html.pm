@@ -85,14 +85,14 @@ if ($end_index + $start_index > 2147483647) {
     $start_index = 0;
 }
 
-my @users = user_utils::get_all_users($start_index, $user_per_page);
-my $total_user_amount = @users;
+my ($users_ref, $total_user_amount) = user_utils::get_all_users($start_index, $user_per_page);
+print("TOTAL USER AMOUNT: $total_user_amount\n");
 my $current_user_amount = 0;
 
 
-for my $i ($start_index .. $end_index) {
-    last if $i >= @users;
-    my $user = $users[$i];
+foreach my $user (@$users_ref) {
+    print("USer: $user\n");
+
     my $human_username = $user->{username};
     if (user_utils::is_encoded($user->{username})) {
         $human_username = user_utils::decode_uri($user->{username});

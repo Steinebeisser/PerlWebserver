@@ -111,7 +111,7 @@ HTML
 sub show_ranks {
     my $rank_file = "Utils/ranks.json";
 
-    my $user_data = user_utils::get_json_data($main::user->{username});
+    my $user_data = user_utils::get_json_data($main::user->{uuid});
     if (!$user_data) {
         return 0;
     }
@@ -271,6 +271,19 @@ sub get_wait_connection_layer {
         <div class="wait_connection">
             <p>$translations->{waitingForConnection}</p>
         </div>
+    </div>
+HTML
+    return $html;
+}
+
+sub get_ping_display {
+    my ($translations) = @_;
+
+    my $html = <<HTML;
+    <div class="ping_display">
+        <p>$translations->{ping}: 
+            <span id="ping">0</span>ms
+        </p>
     </div>
 HTML
     return $html;

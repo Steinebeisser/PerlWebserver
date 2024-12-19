@@ -10,6 +10,8 @@ sub new {
     my $translations = language_utils::load_language("index");
 
     my $usercount = user_utils::get_user_count();
+
+    print("MAIN USER: $main::user\n");
     print("USERCOUNT: $usercount\n");
     my $html_body = <<HTML;
     <h1>Index</h1>
@@ -19,12 +21,12 @@ sub new {
     </div>
 HTML
 
-    if (!$main::isLoggedIn) {
+    if (!$main::user) {
         $html_body .= <<HTML;
         <a href="/login">$translations->{login}</a><br>
         <a href="/register">$translations->{register}</a><br>
 HTML
-    } elsif ($main::isLoggedIn) {
+    } elsif ($main::user) {
         $html_body .= <<HTML;
         <a href="/logout">$translations->{logout}</a><br>
         <a href="/profile">$translations->{profile}</a><br>
@@ -41,7 +43,7 @@ HTML
     <br>
 HTML
 
-    if ($main::isLoggedIn && $isAdminAccount) {
+    if ($main::user && $isAdminAccount) {
         $html_body .= <<HTML;
         <a href="/admin">$translations->{adminMenu}</a><br>
         <form action="/shutdown" method="post">

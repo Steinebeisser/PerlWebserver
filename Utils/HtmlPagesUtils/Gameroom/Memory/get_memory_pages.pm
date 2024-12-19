@@ -28,14 +28,15 @@ sub get_memory_alone {
     my $filename_string;
     my $cookie_data = request_utils::get_cookie_data($request);
 
-    if ($cookie_data) {
-        $filename_string = $cookie_data->{memory};
+    my ($memory_cookie) = $request =~ /Cookie: memory=([^\s;]+)/;
+
+    
         # print("FOUND EXISTING MEMORY: $filename_string\n");
-        if (!$filename_string) {
-            $filename_string = user_utils::create_random_string(5);
-        }
-        $filename = $filename_string . ".json";
+    if (!$memory_cookie) {
+        $filename_string = user_utils::create_random_string(5);
     }
+    $filename = $filename_string . ".json";
+
 
     my $cookie = "memory=$filename_string";
 

@@ -14,6 +14,16 @@ my %no_events_mapping = (
     en => "No events"
 );
 
+my @days_of_week = (
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+);
+
 my %holiday_name_mapping = (
     neuj => { de => "Neujahr", en => "New Year's day" },
     hl3k => { de => "Heilige 3 K&ouml;nige", en => "Epiphany" },
@@ -444,7 +454,6 @@ sub get_weekday {
     print("WEEKDAY: $weekday\n");
 
     return $weekday;
-    
 }
 
 sub calculate_yearcode {
@@ -489,7 +498,18 @@ sub calculate_centurycode {
     my $centurycode = $centurycodes[$century % 4];
 
     return $centurycode;
+}
 
+sub get_parsed_weekday {
+    my ($day, $month, $year) = @_;
+    my $weekday = get_weekday($day, $month, $year);
+    if ($weekday == 0) {
+        $weekday = 6;
+    } else {
+        $weekday--;
+    }
+    my $parsed_weekday = $days_of_week[$weekday];
+    return $parsed_weekday;
 }
 
 sub get_calender_layout {

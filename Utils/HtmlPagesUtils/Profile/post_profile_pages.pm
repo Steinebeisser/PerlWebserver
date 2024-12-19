@@ -3,6 +3,7 @@ package post_profile_pages;
 use strict;
 use warnings;
 
+use Cwd;
 use JSON;
 
 sub post_profile_ploud_upload {
@@ -51,7 +52,15 @@ sub get_meta_data {
                     $filename = 'untitled';
                 }
 
-                my $ploud_path = "UserData/$main::user->{username}/ploud";
+                my $base_dir = getcwd;
+                my $user_path = "$base_dir/Data/UserData/Users/$main::user->{uuid}";
+                print("USER PATH: $user_path\n");
+                if (!-d $user_path) {
+                    print("WADAFUCK\n");
+                    mkdir $user_path or die "Cannot create directory: $!";
+                }
+                my $ploud_path = "$user_path/ploud";
+                print("PLOUD PATH: $ploud_path\n");
                 if (!-d $ploud_path) {
                     mkdir $ploud_path or die "Cannot create directory: $!";
                 }
@@ -91,7 +100,7 @@ sub create_meta_data {
         }
     );
 
-    user_utils::update_user_metadata($main::user->{username}, $meta_data{$name});
+    user_utils::update_user_metadata($main::user->{uuid}, $meta_data{$name});
 
     open my $fh, '>', "$dir_path/metadata.json" or die "Cannot open file: $!";
     binmode $fh; 
@@ -101,11 +110,9 @@ sub create_meta_data {
 
 sub post_profile_ploud_download {
     my ($client_socket, $request) = @_;
-    my $username;
     my $filename;
 
-    my $cookie_data = request_utils::get_cookie_data($request);
-    $username = $cookie_data->{username};
+    my $uuid = $main::user->{uuid};
 
     if ($request =~ /profile\/ploud\/download\/(.*) HTTP\/1.1/) {
         $filename = $1;
@@ -114,7 +121,8 @@ sub post_profile_ploud_download {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404());
     }
 
-    my $filepath = "UserData/$username/ploud/$filename/$filename";
+    my $base_dir = getcwd;
+    my $filepath = "$base_dir/Data/UserData/Users/$uuid/ploud/$filename/$filename";
     # print("FILEPATH: $filepath\n");
     if (!-e $filepath) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404());
@@ -123,8 +131,6 @@ sub post_profile_ploud_download {
 
     if (!$main::user) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not logged in<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
-    } elsif ($main::user->{username} ne $username) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page<br><a href=\"/ \">Return to index</a>"));
     }
 
     my $meta_data = get_meta_data($request, $client_socket);
@@ -146,11 +152,9 @@ sub post_profile_ploud_download {
 
 sub post_profile_ploud_delete {
     my ($client_socket, $request) = @_;
-    my $username;
     my $filename;
 
-    my $cookie_data = request_utils::get_cookie_data($request);
-    $username = $cookie_data->{username};
+    my $uuid = $main::user->{uuid};
 
     if ($request =~ /profile\/ploud\/delete\/(.*) HTTP\/1.1/) {
         $filename = $1;
@@ -159,9 +163,10 @@ sub post_profile_ploud_delete {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("File not found"));
     }
 
-    my $dir_path = "UserData/$username/ploud/$filename";
+    my $base_dir = getcwd();
+    my $dir_path = "$base_dir/Data/UserData/Users/$uuid/ploud/$filename";
 
-    my $filepath = "UserData/$username/ploud/$filename/$filename";
+    my $filepath = "$base_dir/Data/UserData/Users/$uuid/ploud/$filename/$filename";
     # print("FILEPATH: $filepath\n");
     if (!-e $filepath) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404());
@@ -169,10 +174,7 @@ sub post_profile_ploud_delete {
 
     if (!$main::user) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not logged in<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
-    } elsif ($main::user->{username} ne $username) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page<br><a href=\"/ \">Return to index</a>"));
     }
-
     
 
     foreach my $file (glob "$dir_path/*") {
@@ -185,7 +187,7 @@ sub post_profile_ploud_delete {
                 size => $filesize,
                 subtract => 1
             );
-            user_utils::update_user_metadata($username, \%data);
+            user_utils::update_user_metadata($uuid, \%data);
         }
         unlink $file or do { 
             # warn "Cannot delete file: $!";
@@ -221,18 +223,18 @@ sub post_profile_ploud_upgrade {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Rank not found"));
     }
 
-    my $username = $main::user->{username};
+    my $uuid = $main::user->{uuid};
     my $rank_id = user_utils::get_rank_id($rank);
     if (!$rank_id) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Rank not found"));
     }
 
-    my $current_rank_id = user_utils::get_user_stat($username, "rank_id");
+    my $current_rank_id = user_utils::get_user_stat($uuid, "rank_id");
     if ($current_rank_id >= $rank_id) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_409("You already have this rank or a better one"));
     }
 
-    upgrade_rank($username, $rank, $rank_id);
+    upgrade_rank($uuid, $rank, $rank_id);
 
     my $referer = request_utils::get_referer($request);
     if (!$referer) {
@@ -244,12 +246,12 @@ sub post_profile_ploud_upgrade {
 }
 
 sub upgrade_rank {
-    my ($username, $rank, $rank_id) = @_;
+    my ($uuid, $rank, $rank_id) = @_;
 
     my $rank_stats = user_utils::get_rank_stats($rank_id, "benefits");
-    user_utils::update_rank_stats($username, "name", $rank);
-    user_utils::update_rank_stats($username, "id", $rank_id);
-    user_utils::update_rank_stats($username, "max_storage", $rank_stats->{max_storage});
+    user_utils::update_rank_stats($uuid, "name", $rank);
+    user_utils::update_rank_stats($uuid, "id", $rank_id);
+    user_utils::update_rank_stats($uuid, "max_storage", $rank_stats->{max_storage});
 
 }
 

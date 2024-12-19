@@ -19,5 +19,10 @@
     "ploud": "Perl-Cloud",
     "serverStorageUsed": "Server Storage Used",
     "serverStorageFree": "Server Storage Free",
-    "serverStorageTotal": "Server Storage Total"
+    "serverStorageTotal": "Server Storage Total",
+    "serverStorageBottleneck": "Server Storage Bottleneck",
+    "usableStorageLeft": "Usable Storage Left",
+    "usableStorageTotal": "Usable Storage Total",
+    "percentageTotal": "Total Storage Percentage",
+    "percentageFree": "Free Storage Percentage"
 }
