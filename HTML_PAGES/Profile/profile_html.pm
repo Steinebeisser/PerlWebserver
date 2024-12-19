@@ -5,10 +5,8 @@ use warnings;
 
 
 sub get_profile {
-    my $username = user_utils::decode_uri(user_utils::get_username());
-    my $password = user_utils::decode_uri(user_utils::get_password());
+    my $username = user_utils::decode_uri(user_utils::get_username_by_uuid(user_utils::get_uuid()));
 
-    my $human_username = 
 
     my $translations = language_utils::load_language("profile");
 
@@ -20,7 +18,6 @@ sub get_profile {
     <h1>Profile</h1>
     <br>
     <p>$translations->{username}: $username</p>
-    <p>$translations->{password}: $password</p>
     <p>$translations->{email}: </p>
     <p>$translations->{phone}: </p>
     <p>$translations->{address}: </p>

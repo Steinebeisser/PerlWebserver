@@ -16,38 +16,20 @@ sub get_profile_ploud {
     my ($client_socket, $request) = @_;
     my $username;
 
-    my $cookie_data = request_utils::get_cookie_data($request);
-    if (!$cookie_data) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not logged in<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
-        return;
-    }
-    $username = $cookie_data->{username};
-
-
     if (!$main::user) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not logged in<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
-    } elsif ($main::user->{username} ne $username) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page<br><a href=\"/ \">Return to index</a>"));
     }
-    my $html = get_profile_ploud::get_profile_ploud($username);
+    my $html = get_profile_ploud::get_profile_ploud($main::user->{username});
     return $html;
 }
 
 sub get_profile_ploud_upload {
     my ($client_socket, $request) = @_;
-    my $username;
-
-    my $cookie_data = request_utils::get_cookie_data($request);
-    if (ref($cookie_data) eq 'HASH' && exists $cookie_data->{username}) {
-        $username = $cookie_data->{username};
-    }
 
     if (!$main::user) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not logged in<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
-    } elsif ($main::user->{username} ne $username) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page<br><a href=\"/ \">Return to index</a>"));
     }
-    my $html = get_profile_ploud_upload::get_profile_ploud_upload($username);
+    my $html = get_profile_ploud_upload::get_profile_ploud_upload($main::user->{username});
     return $html;
 }
 
@@ -57,7 +39,6 @@ sub get_profile_ploud_upgrade {
     if (!$main::user) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not logged in<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
     }
-
 
     if ($request =~ /profile\/ploud\/upgrade\/(.*) HTTP\/1.1/) {
         $rank = $1;

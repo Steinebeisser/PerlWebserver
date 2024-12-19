@@ -17,4 +17,9 @@ sub get_registered_html {
     my ($username) = @_;
     return registered_html::get_registered($username);
 }
+
+sub get_email_unlinked {
+    my ($email) = @_;
+    return unlinked_email_html::get_unlinked_email($email);
+}
 1;

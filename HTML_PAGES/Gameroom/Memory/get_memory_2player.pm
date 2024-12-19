@@ -55,6 +55,8 @@ HTML
 
     $html .= html_utils::get_wait_connection_layer($translations);
 
+    $html .= html_utils::get_ping_display($translations);
+
     my $html_content = html_structure::get_html($html, "Memory");
 
     return $html_content;

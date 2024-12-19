@@ -263,6 +263,13 @@ sub handle_websocket_communication {
     }
     # print("MESSAGE: $message\n");
 
+    if ($message eq "ping") {
+        my $response = encode_frame("pong");
+        send($client_socket, $response, 0) or warn "Failed to send response: $!";
+        return;
+    }
+
+
     my $message_hash;
     eval {
         $message_hash = decode_json($message);

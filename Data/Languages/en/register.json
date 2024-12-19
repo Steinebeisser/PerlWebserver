@@ -3,5 +3,6 @@
     "username": "Username",
     "password": "Password",
     "submit": "Submit",
-    "returnToIndex": "Return to index"
+    "returnToIndex": "Return to index",
+    "email": "Email"
 }

@@ -17,7 +17,7 @@ my $cookie_language;
 $main::max_storage = 1*1024*1024*1024; # 1GB
 my $cookie_dark_mode;
 my $accept_language;
-$cookie::empty_cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+$cookie::empty_cookie = "session=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 my $is_post;
 my $user;
 my $is_shutdown = 0;
@@ -25,6 +25,16 @@ my $port = 80;
 $server::storage_bottleneck = 0.8;
 # my %memory::spectate_games;
 
+my @skip_routes = (
+    "/logout",
+    "/verify/email",
+    "/change_language",
+    "/dark_mode",
+    "/add/email",
+    "/unlink_email",
+    "/change_email",
+    "/resend_verification_email"
+);
 
 my %index_router = (
     "/ " => \&get_index_page::get_index,
@@ -45,6 +55,8 @@ my %index_router = (
     "/profile/ploud/download" => \&post_profile_pages::post_profile_ploud_download,
     "/profile/ploud/delete" => \&post_profile_pages::post_profile_ploud_delete,
     "/profile/ploud/upgrade" => \&get_profile_pages::get_profile_ploud_upgrade,
+
+    "/data/get_server_storage" => \&user_utils::get_server_storage_json,
     
     "/blog" => \&get_blog_pages::get_blog_index,
     "/blog/view" => \&get_blog_pages::get_blog_view,
@@ -71,6 +83,11 @@ my %index_router = (
     "/ExternalJS" => \&load_js::get_external_js,
 
     "/calender" => "just chilling",
+
+    "/verify" => "just chillingV2",
+
+    "/change_email" => \&get_change_email::get_change_email,
+
     
     "/admin" => \&get_admin_page::get_admin,
     "/admin/users" => \&get_admin_users_pages::get_admin_users,
@@ -81,14 +98,17 @@ my %index_router = (
 
     "/admin/updateLog" => \&get_admin_update_log_manage::get_admin_update_log_manage,
     "/admin/updateLog/add" => \&get_admin_update_log_manage::get_admin_update_log_add,
-
+    "/admin/updateLog/edit" => \&get_admin_update_log_manage::get_admin_update_log_edit, 
+    "/admin/updateLog/delete" => \&get_admin_update_log_manage::get_admin_update_log_delete, 
     
 );
 
 my %post_router = (
+    "/add/email" => \&email_utils::post_add_email,
+
     "/login" => \&login_user::post_login,
     "/register" => \&register_user::post_register,
-    # "/logout" => \&logout_user::post_logout,
+    "/logout" => \&logout_user::get_logout,
 
     "/profile/ploud/upload" => \&post_profile_pages::post_profile_ploud_upload,
     "/profile/ploud/delete" => \&post_profile_pages::post_profile_ploud_delete,
@@ -110,8 +130,14 @@ my %post_router = (
     "/admin/users/delete" => \&post_admin_users_pages::post_admin_delete_user,
 
     "/admin/updateLog/add" => \&post_admin_update_log_manage::post_admin_update_log_add,
+    "/admin/updateLog/edit" => \&post_admin_update_log_manage::post_admin_update_log_edit, 
+    "/admin/updateLog/delete" => \&post_admin_update_log_manage::post_admin_update_log_delete,
 
     "/important/contact_devs" => \&post_contact_devs::post_contact_devs,
+
+    "/unlink_email" => \&email_utils::post_unlink_email,
+
+    "/resend_verification_email" => \&email_utils::post_resend_verification_email,
 );
 
 print("Creating main::Epoll\n");
@@ -155,12 +181,19 @@ sub epoll_loop {
 
         for my $event (@$events) {
             if ($event->[0] == fileno $server) {
-                accept(my $client_socket, $server);
+                my $client_addr = accept(my $client_socket, $server);
+                my ($client_port, $client_ip) = sockaddr_in($client_addr);
+                my $client_ip_str = inet_ntoa($client_ip);
+                print("ACCEPTED NEW CONNECTION FROM $client_ip_str:$client_port\n");
+                # my $geo_location = ip_utils::get_geolocation($client_ip_str);
                 # print("ACCEPTED NEW CONNECTION\n");
                 # print("CLIENT SOCKET:" .$client_socket . "\n");
                 # print("CLIEND FD: " . fileno($client_socket) . "\n");
                 $epoll::clients{fileno($client_socket)} = {};
                 $epoll::clients{fileno($client_socket)}{"socket"} = $client_socket;
+                $epoll::clients{fileno($client_socket)}{"ip"} = $client_ip_str;
+                # $epoll::clients{fileno($client_socket)}{geo_location} = $geo_location;
+
                 # print("ADDING CLIENT '" . fileno($client_socket) . "'\n$client_socket\n");
                 epoll_ctl($main::epoll, EPOLL_CTL_ADD, fileno $client_socket, EPOLLIN) >= 0 || die "Can't add client socket to main::epoll: $!";
 
@@ -225,24 +258,63 @@ sub handle_normal_request {
     my $client_socket = $epoll::clients{$client_fd}{"socket"};
 
     $main::header = $epoll::clients{$client_fd}{"header"};
-    
+    print("HEADER: $main::header\n");
+    ($main::uri) = $main::header =~ /(?:GET|POST) (.*?) HTTP/;
+    print("URI: $main::uri\n");
     # print("1");
     my ($new_request, $method) = handle_method($client_socket, $request);
     # print("2");
 
-    my $cookie = request_utils::get_cookie($main::header);
+    # my $cookie = request_utils::get_cookie($main::header);
     # print("3");
     
-    language_utils::set_language($new_request);
     # print("4");
 
-    scheme_utils::set_scheme();
     # print("5");
 
-    if ($main::isLoggedIn) {
-        user_utils::check_permissions($client_socket);
+    my $session_cookie = request_utils::get_session_cookie($main::header);
+    print("SESSION COOKIE: $session_cookie\n");
+    my ($uuid, $session_id) = cookie_utils::validate_session($session_cookie);
+    print("UUID: $uuid\n");
+    print("SESSION ID: $session_id\n");
+
+    if ($uuid) {
+        if(!user_utils::exist_not_banned($client_socket, $uuid)) {
+            return;
+        }
+        user_utils::populate_user($session_cookie);
     }
     # print("6");
+    scheme_utils::set_scheme();
+    language_utils::set_language();
+
+    my $skipidy = 0;
+
+    print("URI: $main::uri\n");
+    foreach my $route (@skip_routes) {
+        print("ROUTE: $route\n");
+        if ($main::uri =~ /$route/) {
+            print("SKIPIDY\n");
+            $skipidy = 1;
+            last;
+        }
+    }
+    print("USER: " . (defined $main::user ? $main::user : "undef") . "\n");
+    print("IMAIL: " . (defined $main::user && defined $main::user->{email} ? $main::user->{email} : "undef") . "\n");
+    if (defined $main::user && !$main::user->{email} && !$skipidy) {
+        print("HELLO\n");
+        my $html = get_require_email::get_require_email($client_socket, $new_request, $method);
+        http_utils::send_response($client_socket, HTTP_RESPONSE::OK($html));
+        close($client_socket);
+        return;
+    }
+    if ($main::user && !user_utils::is_email_verified && !$skipidy) {
+        my $html = get_email_not_verified::get_email_not_verified();
+        print("HELLO\n");
+        http_utils::send_response($client_socket, HTTP_RESPONSE::OK($html));
+        close($client_socket);
+        return;
+    }
     
 
     my $response = handle_index($client_socket, $new_request, $method);
@@ -317,8 +389,10 @@ sub handle_get_index {
     foreach my $route (@sorted_routes) {
         # print "Checking route $route\n";
         if ($request =~ /^$route/) {
-            # print "Received a get request for $route\n";
-            if ($route eq "/calender") {
+            print "Received a get request for $route\n";
+            if ($route eq "/verify") {
+                $response = email_utils::handle_email_verification($client_socket, $request, $route);
+            } elsif ($route eq "/calender") {
                 $response = calender_utils::handle_calender($client_socket, $request, $route);
             } else {
                 $response = $index_router{$route}->($client_socket, $request, $route);

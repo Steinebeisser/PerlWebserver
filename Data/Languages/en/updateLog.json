@@ -1,11 +1,28 @@
 {
     "add": "Add",
+    "addUpdate": "Add Update",
     "delete": "Delete",
     "disable": "Disable",
     "enable": "Enable",
     "edit": "Edit",
-    "title": "Title",
-    "description": "Description",
-    "additionalInfo": "Additional Information",
-    "updateLog": "Update Log"
+    "editTitle": "Edit Title",
+    "save": "Save",
+    "title_update": "Title for the update",
+    "additionalInfo_update": "Additional Information for the update !!!NOT USED ATM!!!",
+    "updatePoints": "Update Points",
+    "title_updatePoint": "Title for the update point",
+    "description_updatePoint": "Description for the update point",
+    "additionalInfo_updatePoint": "Additional Information for the update point !!!NOT USED ATM!!!",
+    "add_updatePoint": "Add Update Point",
+    "updateLog": "Update Log",
+    "return": "Return",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "confirmDelete": "Are you sure you want to delete this update point, you can just disable it if u dont want it seen?",
+    "notSaved": "Not saved",
+    "saved": "Saved",
+    "missingFields": "Missing Fields",
+    "useNewTime": "Use new time for update point",
+    "savedReload": "saved, reaload page to edit this update point(too lazy to change it)"
 }
+

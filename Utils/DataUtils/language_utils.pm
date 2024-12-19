@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use Cwd;
 
+use utf8;
+
 use JSON;
 
 sub load_language {
@@ -24,10 +26,12 @@ sub load_language {
     foreach my $single_route (@routes) {
         $single_route =~ s/\s+//g;
         my $file_path = "$language_path/$language/$single_route.json";
-        # print("LOADING $file_path\n");
+        print("LOADING $file_path\n");
         my $language_data = read_json_file($file_path);
         %combined_language_data = (%combined_language_data, %$language_data) if $language_data;
     }
+
+    filter_language_data(\%combined_language_data);
 
     return \%combined_language_data;
 
@@ -43,6 +47,31 @@ sub load_language {
 
     # %$language_data = (%$change_language_data, %$language_data);
     return $language_data;
+}
+
+
+sub filter_language_data {
+    my ($language_data) = @_;
+
+    my %german_special_chars = (
+        "ä" => "&auml;",
+        "ö" => "&ouml;",
+        "ü" => "&uuml;",
+        "ß" => "&szlig;",
+        "Ä" => "&Auml;",
+        "Ö" => "&Ouml;",
+        "Ü" => "&Uuml;",
+    );
+
+    foreach my $key (keys %$language_data) {
+        my $value = $language_data->{$key};
+
+        foreach my $special_char (keys %german_special_chars) {
+            $value =~ s/\Q$special_char\E/$german_special_chars{$special_char}/g;
+        }
+
+        $language_data->{$key} = $value;
+    }
 }
 
 sub get_user_language {
@@ -100,9 +129,9 @@ sub get_language {
 
     my $language_data;
 
-    my $username = user_utils::get_username();
-    if ($username) {
-        my $preferences = user_utils::get_user_stat($username, "preferences");
+    my $uuid = user_utils::get_uuid();
+    if ($uuid) {
+        my $preferences = user_utils::get_user_stat($uuid, "preferences");
         if ($preferences) {
             # print("PREFERENCES: $preferences\n");
             
@@ -147,9 +176,7 @@ sub set_language {
     if (!$request) {
         return;
     }
-    if ($main::cookie_language) {
-        $main::accept_language = $main::cookie_language;
-    } elsif ($main::user) {
+    if ($main::user) {
         my $username = $main::user->{username};
         my $preferences = user_utils::get_user_stat($username, "preferences");
         if ($preferences) {
@@ -157,13 +184,19 @@ sub set_language {
             if ($language) {
                 $main::accept_language = $language;
             }
+        } else {
+            $main::accept_language = request_utils::get_accept_language_by_cookie($main::header);
         }
     }
-    elsif ($request =~ /Accept-Language: (.*)/) {
-        my $accept_language = $1;
-        if ($accept_language) {
-            $main::accept_language = $accept_language;
+    else {
+        $main::accept_language = request_utils::get_accept_language_by_cookie($main::header);
+        if (!$main::accept_language) {
+            my ($accept_language) = $main::header =~ /Accept-Language: (.*)/;
+            if ($accept_language) {
+                $main::accept_language = $accept_language;
+            }
         }
     }
+
 }
 1;

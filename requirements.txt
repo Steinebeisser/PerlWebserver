@@ -2,3 +2,4 @@ cpan JSON
 cpan IO::Epoll
 cpan Net::SMTP::SSL
 cpan Authen::SASL
+cpan Crypt::CBC

@@ -32,5 +32,6 @@
     "backToIndex": "Back to Index",
     "moves": "Moves",
     "waitingForConnection": "Waiting for connection",
-    "spectate": "Spectate"
+    "spectate": "Spectate",
+    "ping": "Ping"
 }

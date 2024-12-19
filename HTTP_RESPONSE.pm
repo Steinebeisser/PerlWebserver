@@ -73,13 +73,17 @@ sub OK_FAVICON {
 }
 
 sub OK_WITH_COOKIE {
-    my ($html_content, $cookie) = @_;
+    my ($html_content, $cookie, $cookie2) = @_;
     my $content_length = length($html_content);
     my $response = "HTTP/1.1 200 OK\r\n"
                 . "Content-Type: text/html; charset=utf-8\r\n"
                 . "Content-Length: $content_length\r\n"
-                . "Set-Cookie: $cookie; SameSite=Strict\r\n"
-                . "Connection: close\r\n"
+                . "Set-Cookie: $cookie; SameSite=Strict\r\n";
+                if ($cookie2) {
+                    $response .= "Set-Cookie: $cookie2; SameSite=Strict\r\n";
+                }
+                
+                $response .= "Connection: close\r\n"
                 . "\r\n"
                 . $html_content;
 
@@ -126,11 +130,15 @@ sub REDIRECT_303 {
 }
 
 sub REDIRECT_303_WITH_COOKIE { 
-    my ($location, $cookie) = @_;
+    my ($location, $cookie, $cookie2) = @_;
     my $response = "HTTP/1.1 303 See Other\r\n"
                 . "Location: $location\r\n"
-                . "Set-Cookie: $cookie; SameSite=Strict\r\n"
-                . "Connection: close\r\n"
+                . "Set-Cookie: $cookie; SameSite=Strict\r\n";
+                if ($cookie2) {
+                    $response .= "Set-Cookie: $cookie2; SameSite=Strict\r\n";
+                }
+
+                $response .= "Connection: close\r\n"
                 . "\r\n";
 
     return $response;
@@ -225,6 +233,21 @@ sub ERROR_404 {
     my $content_length = length($html_content);
     my $response = "HTTP/1.1 404 Not Found\r\n"
                 . "Content-Type: text/html; charset=utf-8\r\n"
+                . "Content-Length: $content_length\r\n"
+                . "Connection: close\r\n"
+                . "\r\n"
+                . $html_content;
+
+    return $response;
+}
+
+sub ERROR_404_WITH_COOKIE {
+    my ($html_content, $cookie) = @_;
+    print("SENDING 404 WITH COOKIE\n");
+    my $content_length = length($html_content);
+    my $response = "HTTP/1.1 404 Not Found\r\n"
+                . "Content-Type: text/html; charset=utf-8\r\n"
+                . "Set-Cookie: $cookie; SameSite=Strict\r\n"
                 . "Content-Length: $content_length\r\n"
                 . "Connection: close\r\n"
                 . "\r\n"

@@ -9,7 +9,9 @@ var player1 = "placeholder";
 var player2 = "placeholder";
 var myUsername = "placeholder";
 var currentPlayer = player1;
+var timeout;
 var game_id = document.cookie.split('; ').find(row => row.startsWith('memory=')).split('=')[1];
+
 
 
 function flipCard(card_id) {
@@ -142,6 +144,15 @@ socket.onmessage = function(event) {
     console.log("WebSocket message received:", event.data);
     clearTimeout(timeout);
 
+    if (event.data === "pong") {
+        console.log("Received pong.");
+        var currentTime = Date.now();
+        var ping = currentTime - lastPingTime;
+        console.log("Ping: " + ping + "ms");
+        document.getElementById('ping').textContent = ping;
+        return;
+    }
+
     var data = JSON.parse(event.data);
 
     if (!data) {
@@ -149,6 +160,7 @@ socket.onmessage = function(event) {
     }
 
     console.log(data.type);
+
     
     if (data.type === "flipped_card") {
         var card_id = data.card_flipped;
@@ -169,6 +181,10 @@ socket.onmessage = function(event) {
         console.log("Both players are connected.");
         connectionLayer = document.getElementById("wait_connection_layer");
         connectionLayer.style.display = "none";
+        pingInterval = setInterval(() => {
+            lastPingTime = Date.now();
+            socket.send("ping");
+        }, 1000);
     }
 
     if (data.type === "opponent_disconnected") {

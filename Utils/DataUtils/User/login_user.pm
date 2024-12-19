@@ -3,17 +3,32 @@ package login_user;
 use strict;
 use warnings;
 
+use JSON;
+use Cwd;
+
 sub post_login {
     my ($client_socket, $request) = @_;
     my $response;
     my $username;
     my $password; 
     my $accept_language;
-    
-    if ($request =~ /username=(.*)&password=(.*)?/) {
-        $username = $1;
-        $password = $2;
+    my $fingerprint;
+    my $ip;
+
+    my $body = request_utils::skip_to_body($request);
+
+    print("BODY: $body\n");
+    my $json = decode_json($body);
+    $username = $json->{username};
+    $password = $json->{password};
+    if (user_utils::is_wide($username)) {
+        $username = user_utils::encode_uri($username);
     }
+    if (user_utils::is_wide($password)) {
+       $password = user_utils::encode_uri($password);
+    }
+    $fingerprint = $json->{fingerprint};
+    $ip = $epoll::clients{fileno($client_socket)}{ip};
 
     if (!$username || !$password) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400());
@@ -28,11 +43,14 @@ sub post_login {
     }
 
     if (login_user($username, $password, $client_socket)) {
-        my $cookie = "username=$username";
+        # my $cookie = cookie_utils::generate_session_cookie($username);
+        # my $remember_me_cookie = cookie_utils::generate_remember_me_cookie($username, $fingerprint, $ip);
+        # my @cookies = ($cookie, $remember_me_cookie);
+        my $cookie = cookie_utils::get_session_cookie($username);
+        cookie_utils::validate_session($cookie);
         my $html = get_operation_finished_pages::get_logined($username);
         $response = HTTP_RESPONSE::OK_WITH_COOKIE($html, $cookie);
         user_utils::populate_user($cookie, $accept_language);
-
     } else {
         $response = HTTP_RESPONSE::OK("Invalid username or password <a href=\"/login \">Try again</a>");
     }
@@ -41,15 +59,52 @@ sub post_login {
 
 sub login_user {
     my ($username, $password, $client_socket) = @_;
-    my $filename = "UserData/$username/$username.json";
-    # print("LOGGING IN\n");
-    
-    if (!user_utils::compare_values($username, "password", $password)) {
-        # print("WROMG PASSWORD\n");
+    my $base_dir = getcwd();
+    my $UsernameFile = "$base_dir/Data/UserData/usernames.json";
+    my %user_to_uuid; 
+    my %uuid_to_user; 
+
+    if (-e $UsernameFile) {
+        open(my $file, '<', $UsernameFile) or die "Cannot open file: $!";
+        my $json = do { local $/; <$file> };
+        close $file;
+
+        my $data = decode_json($json);
+        %user_to_uuid = %{$data->{user_to_uuid}};
+        %uuid_to_user = %{$data->{uuid_to_user}};
+    }
+
+    if (!exists($user_to_uuid{$username})) {
         return 0;
     }
 
-    if (!user_utils::check_permissions($client_socket, $username)) {
+    my $uuid = $user_to_uuid{$username};
+    print("UUID: $uuid\n");
+
+
+    my $filename = "$base_dir/Data/UserData/Users/$uuid/$uuid.json";
+
+    if (!-e $filename) {
+        print("FILE DOES NOT EXIST\n");
+        return 0;
+    }
+
+    open my $fh, '<', $filename or do {
+        warn ("Cannot open file: $!");
+        return 0;
+    };
+    my $json = do { local $/; <$fh> };
+    close $fh;
+
+    my $data = decode_json($json);
+    my $password_hash = $data->{password_hash};
+
+    print("PASSWORD HASH: $password_hash\n");
+    if (!user_utils::verify_password($password, $password_hash)) {
+        return 0;
+    }
+
+    if (!user_utils::exist_not_banned($client_socket, $uuid)) {
         return 0;
     }
 

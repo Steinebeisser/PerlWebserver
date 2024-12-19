@@ -1,5 +1,8 @@
-UserData/*
-!UserData/.gitkeep
+Data/UserData/usernames.json
+Data/UserData/Users/*
+!Data/UserData/Users/.gitkeep
+Data/UserData/EmailVerification/*
+!Data/UserData/EmailVerification/.gitkeep
 Data/Calender/*
 !Data/Calender/.gitkeep
 Data/Blog/Announcements/*
@@ -18,4 +21,8 @@ Emails/*
 Data/DevLists/*
 !Data/DevLists/.gitkeep
 Utils/DataUtils/Important/no_upload.pm
-Data/UpdateLog/update_log.json
+Data/UserData/used_emails.json
+RememberMeCookies/*
+!RememberMeCookies/.gitkeep
+Sessions/*
+!Sessions/.gitkeep

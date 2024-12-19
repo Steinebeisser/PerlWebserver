@@ -19,5 +19,10 @@
     "ploud": "Perl-Cloud",
     "serverStorageUsed": "Server-Speicherplatz verwendet",
     "serverStorageFree": "Server-Speicherplatz frei",
-    "serverStorageTotal": "Server-Speicherplatz gesamt"
+    "serverStorageTotal": "Server-Speicherplatz gesamt",
+    "serverStorageBottleneck": "Server-Speicher-Limit",
+    "usableStorageLeft": "Verfügbarer Speicherplatz",
+    "usableStorageTotal": "Gesamter verfügbarer Speicherplatz",
+    "percentageTotal": "Gesamtspeicher-Prozentsatz",
+    "percentageFree": "Freier Speicherplatz-Prozentsatz"
 }

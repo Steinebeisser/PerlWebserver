@@ -50,6 +50,8 @@ sub alone_start {
 
     $memory::game_info{$game_id} = {};
     $memory::game_info{$game_id}{"alone"} = 1;
+    my $alone = 1;
+    send_both_connected_message($game_id, $alone, $client_socket);
 }
 
 sub join_queue {
@@ -157,18 +159,20 @@ sub multi_start_game {
 }
 
 sub send_both_connected_message {
-    my ($game_id) = @_;
+    my ($game_id, $alone, $client_socket) = @_;
 
     my %response = (
         type => "both_connected",
         game_id => $game_id
     );
 
-    my $player1 = $memory::game_controllers{"game_id"}{$game_id}{"player1"};
-    my $player2 = $memory::game_controllers{"game_id"}{$game_id}{"player2"};
-    websocket_utils::add_to_active_connections($player1, "Memory Game: $game_id");
-    websocket_utils::add_to_active_connections($player2, "Memory Game: $game_id");
-    send_to_game_players(\%response, $game_id);
+    if (!$alone) {
+        my $player1 = $memory::game_controllers{"game_id"}{$game_id}{"player1"};
+        my $player2 = $memory::game_controllers{"game_id"}{$game_id}{"player2"};
+        websocket_utils::add_to_active_connections($player1, "Memory Game: $game_id");
+        websocket_utils::add_to_active_connections($player2, "Memory Game: $game_id");
+    }
+    send_to_game_players(\%response, $game_id, undef, undef, $client_socket);
 }
 
 sub send_to_game_players {
@@ -229,18 +233,16 @@ sub create_game {
 
     memory_utils::new($filename, 1, 1);
 
-    my $cookie_data = request_utils::get_cookie_data($main::header);
-    if (!$cookie_data) {
         # print("COOKIE DATA EROR\n");
         # http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("No cookie data"));
-        return;
-    }
-    my $username = $cookie_data->{"username"};
+
     # foreach my $key (keys %$cookie_data) {
         # print("KEY: $key\n");
     # }
     # print("COOKIE DATA: $cookie_data\n");
     # print("USERNAME: $username\n");
+    my $uuid = $main::user->{uuid};
+    my $username = user_utils::get_username_by_uuid($uuid);
     if (!$username) {
         # print("USERNAME EROR\n");
         # http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("No username"));
@@ -334,9 +336,9 @@ sub update_solved_cards {
     my $player = $message->{"player"};
     my $game_id = $message->{"game_id"};
 
-    # print("SOLVI CARDI $solved_cards\n");
-    # print("PLAYER: $player\n");
-    # print("GAME ID: $game_id\n");
+    print("SOLVI CARDI $solved_cards\n");
+    print("PLAYER: $player\n");
+    print("GAME ID: $game_id\n");
 
     my $filename = "$game_id.json";
     my $base_dir = getcwd();
@@ -358,6 +360,9 @@ sub update_solved_cards {
     $data->{$player}{solved_cards_amount} += 1;
 
     $memory::game_info{$game_id}{solved_cards} += 1;
+    if ($memory::game_info{$game_id}{alone}) {
+        $memory::game_info{$game_id}{solved_cards} += 1;
+    }
     if ($memory::game_info{$game_id}{solved_cards} == 16) {
         $memory::game_info{$game_id}{finished} = 1;
         my %response = (
@@ -365,7 +370,7 @@ sub update_solved_cards {
             game_id => $game_id,
             player => $player
         );
-        send_to_game_players(\%response, $game_id);
+        send_to_game_players(\%response, $game_id, undef, undef, $client_socket);
     }
 
     my $encoded_data = encode_json($data);
