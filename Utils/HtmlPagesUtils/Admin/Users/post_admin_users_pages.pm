@@ -28,11 +28,16 @@ sub post_admin_edit_user {
     }
 
     $request = request_utils::skip_to_body($request);
+    my $uuid = user_utils::get_uuid_by_username($username);
+    
+    if (!$uuid) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("User does not exist"));
+    }
 
     if ($request =~ /role=(.*)/) {
         my $role = $1;
         
-        if (!user_utils::update_user_values($username, "role", $role)) {
+        if (!user_utils::update_user_values($uuid, "role", $role)) {
             return 0;
         }
 
@@ -61,6 +66,11 @@ sub post_admin_ban_user {
     }
 
     $request = request_utils::skip_to_body($request);
+    my $uuid = user_utils::get_uuid_by_username($username);
+
+    if (!$uuid) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("User does not exist"));
+    }
 
     if ($request =~ /reason=(.*)&time=(.*)/) {
         my $reason = $1;
@@ -68,7 +78,7 @@ sub post_admin_ban_user {
 
         my $time_until = time() + $time;
         
-        if (!user_utils::ban_user($username, $reason, $time_until)) {
+        if (!user_utils::ban_user($uuid, $reason, $time_until)) {
             return 0;
         }
     } else {
@@ -94,8 +104,12 @@ sub post_admin_delete_user {
     }
 
     # $request = request_utils::skip_to_body($request);
+    my $uuid = user_utils::get_uuid_by_username($username);
+    if (!$uuid) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("User does not exist"));
+    }
 
-    if (!user_utils::delete_user($username)) {
+    if (!user_utils::delete_user($uuid)) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Could not delete user"));
     }
     # if ($request =~ /reason=(.*)/) {
@@ -108,7 +122,8 @@ sub post_admin_delete_user {
     # if (user_utils::is_encoded($username)) {
     #     $username = user_utils::decode_uri($username);
     # }
-    my $html = get_admin_delete_user::get_admin_delete_user($client_socket, $request, $username);
+    my $html = get_admin_delete_user::get_admin_deleted_user($client_socket, $username);
+    # my $html = get_admin_delete_user::get_admin_delete_user($client_socket, $request, $username);
     my $response = HTTP_RESPONSE::OK($html);
     http_utils::send_http_response($client_socket, $response);
 }

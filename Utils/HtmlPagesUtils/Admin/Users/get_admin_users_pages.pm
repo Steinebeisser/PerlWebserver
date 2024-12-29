@@ -71,9 +71,6 @@ sub get_admin_delete_user {
     my ($client_socket, $request) = @_;
     if ($request =~ /\/admin\/users\/delete\/(.*) HTTP/) {
         my $username = $1;
-        if (user_utils::is_encoded($username)) {
-            $username = user_utils::decode_uri($username);
-        }
         my $html = get_admin_delete_user::get_admin_delete_user($client_socket, $request, $username);
         return $html;
     }

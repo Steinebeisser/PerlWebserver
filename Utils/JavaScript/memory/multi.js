@@ -30,7 +30,8 @@ socket.onopen = function(event) {
     player1 = decodeURIComponent(player1);
     player2 = decodeURIComponent(player2);
 
-    myUsername = document.cookie.split('; ').find(row => row.startsWith('username=')).split('=')[1];
+    myUsername = document.getElementsByClassName("my_username")[0].innerHTML;
+    // myUsername = document.cookie.split('; ').find(row => row.startsWith('username=')).split('=')[1];
     console.log("Username from cookie: " + myUsername);
     console.log(player1);
     console.log(player2);

@@ -100,7 +100,9 @@ my %index_router = (
     "/admin/updateLog/add" => \&get_admin_update_log_manage::get_admin_update_log_add,
     "/admin/updateLog/edit" => \&get_admin_update_log_manage::get_admin_update_log_edit, 
     "/admin/updateLog/delete" => \&get_admin_update_log_manage::get_admin_update_log_delete, 
-    
+
+    "/support" => \&get_support_pages::get_starting_page,
+    "/support/request/new" => \&support_utils::handle_new_request,
 );
 
 my %post_router = (

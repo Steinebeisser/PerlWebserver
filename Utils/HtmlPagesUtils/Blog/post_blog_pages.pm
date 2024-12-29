@@ -28,12 +28,8 @@ sub post_blog_create {
     my $blog_name;
     my $blog_content;
 
-    my $cookie_data = request_utils::get_cookie_data($request);
-    if (!$cookie_data) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not logged in<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
-        return;
-    }
-    my $author = $cookie_data->{username};
+    my $author = $main::user->{username};
+    
     if (!$author) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not logged in<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
         return;

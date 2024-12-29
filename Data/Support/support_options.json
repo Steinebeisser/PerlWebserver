@@ -1,0 +1,26 @@
+{
+    "0": {
+        "titleHuman": "User Support",
+        "title": "userSupport",
+        "options": {
+            "0": {
+                "link": "support/request/new/user/penalty",
+                "text": "penaltyTicketDescription"
+            },
+            "1": {
+                "link": "support/request/new/user/error",
+                "text": "errorTicketDescription"
+            }            
+        }
+    },
+    "1": {
+        "titleHuman": "Server Support",
+        "title": "serverSupport",
+        "options": {
+            "0": {
+                "link": "support/request/new/server/bug",
+                "text": "bugTicketDescription"
+            }
+        }
+    }
+}

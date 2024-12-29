@@ -39,7 +39,7 @@ HTML
     <a href="/calender/year">$translations->{calender}</a><br>
     <a href="/about">$translations->{about}</a><br>
     <a href="/updateLog">$translations->{updateLog}</a><br>
-
+    <a href="/support">$translations->{support}</a>
     <br>
 HTML
 

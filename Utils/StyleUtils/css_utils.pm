@@ -265,7 +265,7 @@ CSS
     }
 CSS
     }
-
+    
     if ($html_body =~ /<a href/ || $footer =~ /<a href>/) {
         $css .= <<CSS;
     a {
@@ -1141,6 +1141,72 @@ CSS
         top: 0;
         right: 0;
         padding: 10px;
+    }
+CSS
+    }
+
+    if ($html_body =~ /class="chooseRequest"/) {
+        $css .= <<CSS;
+    .chooseRequest {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .dropdown_button {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100%;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+
+    .dropdown_content {
+        border-radius: 5px;
+        background-color: #f1f1f1;
+        display: none; 
+        max-width: 480px;
+        margin: 0 auto;
+    }
+
+    .userSupport {
+        padding: 15px;
+    }
+
+    .option {
+        display: flex;
+        flex-direction: column;
+        justify-content: left;
+        padding: 0 10px 10px 10px;
+    }
+
+    .option a {
+        margin: unset;
+        width: auto;
+        text-align: left;    
+    }
+
+    .title h2 {
+        margin: unset;
+    }
+
+    .supportOption {
+        padding-bottom: 10px
+    }
+
+    .optionTitle {
+        margin-bottom: 5px;
+    }
+CSS
+    }
+
+    if ($html_body =~ /class="hidden"/) {
+        $css .= <<CSS;
+    .hidden {
+        display: none;
     }
 CSS
     }

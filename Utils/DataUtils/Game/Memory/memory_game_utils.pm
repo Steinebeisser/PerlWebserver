@@ -110,12 +110,8 @@ sub start_game {
         return;
     }
 
-    my $cookie_data = request_utils::get_cookie_data($main::header);
-    if (!$cookie_data) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("No cookie data"));
-        return;
-    }
-    my $username = $cookie_data->{"username"};
+    my $username = $main::user->{username};
+    
     if ($username eq $memory::game_info{$game_id}{"player1"}) {
         # print("SAME PLAYER\n");
         # http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("You are already in the queue"));

@@ -7,7 +7,7 @@ use JSON;
 use Cwd;
 use URI::Escape;
 
-my $empty_cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+my $empty_cookie = "session=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 my $base_dir = getcwd();
 my $userdata_folder = "$base_dir/Data/UserData";
 sub exist_not_banned {
@@ -36,7 +36,12 @@ sub user_exists {
     print("UUID: $uuid\n");
     my $filename = "$userdata_folder/Users/$uuid/$uuid.json";
     if (-e $filename) {
+        print("USER EXISTS\n");
         return 1;
+    }
+    if (!$client_socket) {
+        print("RETURNING 0\n");
+        return 0;
     }
     my $html_body = <<HTML;
     <h1>User does not exist</h1>
@@ -334,7 +339,7 @@ sub delete_user {
     if (!$uuid) {
         return 0;
     }
-    if (!user_exists($uuid)) {
+    if (!user_exists(undef, $uuid)) {
         return 0;
     }
 
@@ -343,19 +348,46 @@ sub delete_user {
         return 0;
     }
     
-    my $start_dir = "UserData/Users/$uuid";
-    delete_files_recursive($start_dir);
+    my $start_dir = "$base_dir/Data/UserData/Users/$uuid";
+    print("DELETING USER\nStart dir: $start_dir\n");
+    if (!delete_files_recursive($start_dir))  {
+        print("Error deleting files\n");
+        return 0;
+    }
 
     my $filename = "$userdata_folder/Users/$uuid/$uuid.json";
     unlink($filename);
 
+    remove_from_user_json($uuid);
     return 1;
 }
 
+sub remove_from_user_json {
+    my ($uuid) = @_;
+    my $username = get_username_by_uuid($uuid);
+    my $filename = "$userdata_folder/usernames.json";
+    open(my $file, '<', $filename) or return 0;
+    my $json = do { local $/; <$file> };
+    close $file;
+    my $data = decode_json($json);
+    print("JSON: $json\n");
+    print("DATA: $data\n");
+    my $uuid_to_user = $data->{uuid_to_user};
+    my $user_to_uuid = $data->{user_to_uuid};
+    delete $uuid_to_user->{$uuid} or die "Could not delete $uuid from uuid_to_user $!";
+    delete $user_to_uuid->{$username} or die "Could not delete $username from user_to_uuid $!";
+    open(my $file, '>', $filename) or return 0;
+    print $file encode_json($data);
+    close($file);
+}
 sub delete_files_recursive {
     my ($path) = @_;
 
-    opendir(my $dir, $path) or return 0;
+    opendir(my $dir, $path) or do 
+    { 
+        print("Could not open $path $!"); 
+        return 0;
+    };
 
     while (my $file = readdir($dir)) {
         if ($file eq "." || $file eq "..") {
@@ -368,12 +400,14 @@ sub delete_files_recursive {
             unlink($path);
         }
     }
-    rmdir($path);
+    print("Removing $path\n");
+    rmdir($path) or die "Could not remove $path $!";
+    return 1;
 }
 
 sub check_if_user_exists {
     my ($client_socket, $uuid) = @_;
-    if (!user_exists($uuid)) {
+    if (!user_exists($client_socket, $uuid)) {
         my $username = get_username_by_uuid($uuid);
     my $html_body = <<HTML;
     <h1>User $username does not exist</h1>
@@ -463,7 +497,7 @@ sub get_current_used_storage {
     my ($uuid) = @_;
 
     print("GETTING USED STORAGE\n");
-    if (!user_exists($uuid)) {
+    if (!user_exists(undef, $uuid)) {
         return 0;
     }
     my $used_storage = 0;

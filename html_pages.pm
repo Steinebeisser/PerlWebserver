@@ -38,7 +38,6 @@ use HTML_PAGES::Email::unlinked_email_html;
 use HTML_PAGES::Email::get_change_email;
 
 
-
 use HTML_PAGES::Gameroom::get_gameroom;
 
 use HTML_PAGES::Gameroom::Memory::get_memory;
@@ -72,6 +71,10 @@ use HTML_PAGES::Profile::get_profile_ploud_upgrade_rank;
 
 use HTML_PAGES::Register::register_html;
 use HTML_PAGES::Register::registered_html;
+
+
+use HTML_PAGES::Support::User::get_user_main_support_page;
+use HTML_PAGES::Support::get_choose_request_support_page;
 
 
 use HTML_PAGES::shutdown_html;
@@ -112,6 +115,8 @@ use Utils::DataUtils::encryption_utils;
 
 use Utils::DataUtils::Game::game_utils;
 use Utils::DataUtils::Game::Memory::memory_game_utils;
+
+use Utils::DataUtils::support_utils;
 
 use Utils::StyleUtils::html_utils;
 use Utils::StyleUtils::css_utils;
@@ -156,6 +161,7 @@ use Utils::HtmlPagesUtils::About::get_about_page;
 
 use Utils::HtmlPagesUtils::UpdateLog::get_update_log_page;
 
+use Utils::HtmlPagesUtils::Support::get_support_pages;
 
 # use Utils::SMTP_SERVER::smtp_utils;
 use Utils::SMTP_SERVER::smtp_utils2;
