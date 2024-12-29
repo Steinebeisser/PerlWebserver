@@ -8,6 +8,7 @@ sub get_memory_2player {
 
     $player1 = user_utils::decode_uri($player1);
     $player2 = user_utils::decode_uri($player2);
+    my $myUsername = user_utils::decode_uri($main::user->{username});
     my $translations = language_utils::load_language("gameroom");
 
     my $html = <<HTML;
@@ -48,6 +49,10 @@ HTML
             <div class="player2_name">$player2</div>
             <div class="player2_score">0</div>
         </div>
+    </div>
+    <div class="hidden">
+        <div class="my_username">$myUsername</div>
+        <div class="game_id">$game_id</div>
     </div>
 HTML
 

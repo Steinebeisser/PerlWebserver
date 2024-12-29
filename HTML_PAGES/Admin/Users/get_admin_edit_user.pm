@@ -12,19 +12,21 @@ sub get_admin_edit_user {
         return 0;
     }
     
-    if (!user_utils::check_if_user_exists($username)) {
-        return user_utils::return_404();
+    print("USERNAME: $username\n");
+    my $uuid = user_utils::get_uuid_by_username($username);
+    print("UUID: $uuid\n");
+    if (!user_utils::check_if_user_exists($client_socket, $uuid)) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("User not found"));
     }
 
-    if (user_utils::is_encoded($username)) {
-        $username_human = user_utils::decode_uri($username);
-    }
+    $username_human = user_utils::decode_uri($username);
 
-    my $username_role = user_utils::get_user_stat($username, "role");
+
+    my $username_role = user_utils::get_user_stat($uuid, "role");
 
     my $html_body = <<HTML;
     
-    <h1>Edit user $username</h1>
+    <h1>Edit user $username_human</h1>
     <br>
     <form action="/admin/users/edit/$username" method="post">
     Role: 

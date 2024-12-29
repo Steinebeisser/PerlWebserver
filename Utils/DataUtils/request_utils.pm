@@ -56,6 +56,15 @@ sub get_accept_language_by_cookie {
         }
     }
 }
+
+sub get_memory_game_id_by_cookie {
+    my ($cookie) = $main::header =~ /Cookie: (.*)/;
+    if ($cookie) {
+        if ($cookie =~ /memory=([^\s;]+)/) {
+            return $1;
+        }
+    }
+}
 sub get_cookie {
     my ($request) = @_;
     my $cookie;

@@ -128,7 +128,7 @@ sub announcement_switch_status {
         }
 
         my $response = HTTP_RESPONSE::REDIRECT_303($referer);
-        send_http_response($client_socket, $response);
+        http_utils::send_http_response($client_socket, $response);
     } else {
         serve_error($client_socket, HTTP_RESPONSE::ERROR_500());
     }
@@ -167,7 +167,7 @@ sub get_announcement_delete {
             $referer = "/blog/announcements/manage";
         }
         my $html = HTTP_RESPONSE::REDIRECT_303($referer);
-        send_http_response($client_socket, $html);
+        http_utils::send_http_response($client_socket, $html);
         return;
     }
 

@@ -1,0 +1,10 @@
+{
+    "penaltyTicketDescription": "Discuss a pentalty taken against your account",
+    "errorTicketDescription": "If you have any problems with your account",
+    "bugTicketDescription": "Report a bug in the server",
+    "ticket": "Ticket",
+    "supportPage": "Support",
+    "chooseRequest": "Choose a request",
+    "userSupport": "User Support",
+    "serverSupport": "Server Support"
+}

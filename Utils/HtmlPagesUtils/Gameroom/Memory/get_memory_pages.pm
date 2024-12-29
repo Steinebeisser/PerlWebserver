@@ -154,13 +154,8 @@ sub get_memory_2player {
     my ($client_socket, $request) = @_;
 
 
-    my $cookie_data = request_utils::get_cookie_data($request);
-    if (!$cookie_data) {
-        print("COOKIE DATA EROR\n");
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page"));
-        return;
-    }
-    my $game_id = $cookie_data->{memory};
+    my $game_id = request_utils::get_memory_game_id_by_cookie();
+
     if (!$game_id) {
         print("GAME ID EROR\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page"));

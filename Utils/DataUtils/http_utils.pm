@@ -15,11 +15,19 @@ sub send_response {
     if (!$response) {
         $response = HTTP_RESPONSE::ERROR_500("Internal Server Error");
     }
+    if (!$client_socket) {
+        return;
+    }
     send($client_socket, $response, 0) or return;
-
 }
 sub serve_error {
     my ($client_socket, $error) = @_;
+    if (!$client_socket) {
+        return;
+    }
+    if (!$error) {
+        $error = HTTP_RESPONSE::ERROR_500("Internal Server Error");
+    }
     send_response($client_socket, $error);
     close($client_socket);
 }
