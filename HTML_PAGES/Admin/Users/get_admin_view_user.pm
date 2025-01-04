@@ -5,7 +5,7 @@ use warnings;
 
 use HTML_PAGES::Admin::Utils::admin_utils;
 sub get_admin_view_user {
-    my ($client_socket, $request, $username) = @_;
+    my ($client_socket, $username) = @_;
 
     my $html_body = <<HTML;
     <h1>View user $username</h1>

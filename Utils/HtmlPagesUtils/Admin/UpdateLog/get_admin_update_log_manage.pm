@@ -7,7 +7,7 @@ use Cwd;
 use JSON;
 
 sub get_admin_update_log_manage {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
     if (!admin_utils::check_if_admin_and_logged_in($client_socket)) {
         return;
     } 
@@ -17,7 +17,7 @@ sub get_admin_update_log_manage {
 }
 
 sub get_admin_update_log_add {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
     if (!admin_utils::check_if_admin_and_logged_in($client_socket)) {
         return;
     } 
@@ -26,12 +26,12 @@ sub get_admin_update_log_add {
 }
 
 sub get_admin_update_log_edit {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
     if (!admin_utils::check_if_admin_and_logged_in($client_socket)) {
         return;
     } 
     my $update_id;
-    if ($request =~ /\/admin\/updateLog\/edit\/(\d+)/) {
+    if ($route =~ /\/admin\/updateLog\/edit\/(\d+)/) {
         $update_id = $1;
     }
     my $update = update_log::get_update_log_by_id($update_id);
@@ -40,12 +40,12 @@ sub get_admin_update_log_edit {
 }
 
 sub get_admin_update_log_delete {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
     if (!admin_utils::check_if_admin_and_logged_in($client_socket)) {
         return;
     } 
     my $update_id;
-    if ($request =~ /\/admin\/updateLog\/delete\/(\d+)/) {
+    if ($route =~ /\/admin\/updateLog\/delete\/(\d+)/) {
         $update_id = $1;
     }
     my $update = update_log::get_update_log_by_id($update_id);

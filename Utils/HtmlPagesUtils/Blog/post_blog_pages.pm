@@ -7,7 +7,7 @@ use Cwd;
 use JSON;
 
 sub post_announcement_create {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $request, $temp_file) = @_;
 
     my $user = $main::user;
     if (!$user) {
@@ -18,12 +18,13 @@ sub post_announcement_create {
     }
 
     my $is_announcement = 1;
-    post_blog_create($client_socket, $request, $is_announcement);
+    post_blog_create($client_socket, $request, $temp_file, $is_announcement);
 }
 
 sub post_blog_create {
-    my ($client_socket, $request, $is_announcement) = @_;
-    # print("BLOG CREATE\n");
+    my ($client_socket, $route, $temp_file, $is_announcement) = @_;
+    print("BLOG CREATE\n");
+    print("IS ANNOUNCEMENT: $is_announcement\n");
 
     my $blog_name;
     my $blog_content;
@@ -48,7 +49,7 @@ sub post_blog_create {
     }
 
 
-    $request = request_utils::skip_to_body($request);
+    my $request = body_utils::load_temp_file($temp_file);
     if ($request =~ /title=(.*)&content=(.*)/) {
         $blog_name = $1;
         $blog_content = $2;
@@ -136,14 +137,14 @@ sub post_blog_create {
 
     
 
-    my $referer = request_utils::get_referer($request);
-    if (!$referer) {
-        if ($is_announcement) {
-            $referer = "/blog/announcements/manage";
-        } else {
-            $referer = "/blog";
-        }
+    my $referer = request_utils::get_referer($main::header);
+    # if (!$referer) {
+    if ($is_announcement) {
+        $referer = "/blog/announcements/manage";
+    } else {
+        $referer = "/blog";
     }
+    # }
 
     my $response = HTTP_RESPONSE::REDIRECT_303($referer);
     http_utils::send_http_response($client_socket, $response);

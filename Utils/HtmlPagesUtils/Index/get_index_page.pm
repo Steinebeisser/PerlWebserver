@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 sub get_index {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
     # print("HI\n");
     if (admin_utils::check_if_admin($client_socket)) {
         return index_html::new(1);

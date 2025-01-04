@@ -87,13 +87,14 @@ sub is_verification_link_valid {
 
 
 sub handle_email_verification {
-    my ($client_socket, $request, $route) = @_;
+    my ($client_socket, $route) = @_;
 
     my $used_emails = user_utils::get_used_emails();
     my $base_dir = getcwd();
     my $EmailFolder = "$base_dir/Data/UserData/EmailVerification";
-    print("REQUEST: $request\n");
-    my ($verification_link) = $request =~ /verify\/email\/(.*) HTTP/; 
+    # print("REQUEST: $request\n");
+    my ($verification_link) = $route =~ /verify\/email\/(.*)/; 
+    print("VERIFICATION LINK: $verification_link\n");
     my $filename = "$EmailFolder/$verification_link";
     print("FILENAME: $filename\n");
     open my $fh, '<', $filename or do {
@@ -116,7 +117,7 @@ sub handle_email_verification {
     }
 
     if ($used_emails->{$data{email}}) {
-        return "Email already verified\nUnbinding email<br><a href=\"\/add/email\">Add email</a><br><a href=\"/ \">Return to index</a>";
+        return "Email already verified<br><a href=\"/ \">Return to index</a>";
     }
     my $expire_timestamp = $data{timestamp};
     my $current_timestamp = time();
@@ -134,9 +135,20 @@ sub handle_email_verification {
 }
 
 sub post_add_email {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
 
-    my $body = request_utils::skip_to_body($request);
+    my $temp_size = -s $temp_file;
+    if ($temp_size < 1) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("No data sent"));
+        return;
+    }
+    if ($temp_size > 1000) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Data too large"));
+        return;
+    }
+
+    my $body = body_utils::load_temp_file($temp_file);
+
     my $json = decode_json($body);
     my $email = $json->{email};
     print($body);
@@ -162,7 +174,7 @@ sub post_add_email {
 }
 
 sub post_unlink_email {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
 
     my $email = $main::user->{email};
     user_utils::update_user_values($main::user->{uuid}, "email", "");
@@ -173,7 +185,7 @@ sub post_unlink_email {
 }
 
 sub post_resend_verification_email {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
 
     my $email = $main::user->{email};
     my $username = $main::user->{human_username};

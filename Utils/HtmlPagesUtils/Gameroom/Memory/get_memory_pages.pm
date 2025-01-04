@@ -14,7 +14,7 @@ my $empty_memory_cookie = "memory=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 
 
 sub get_memory {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
 
     my $html = get_memory::get_memory();
 
@@ -22,13 +22,12 @@ sub get_memory {
 }
 
 sub get_memory_alone {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
 
     my $filename;
     my $filename_string;
-    my $cookie_data = request_utils::get_cookie_data($request);
 
-    my ($memory_cookie) = $request =~ /Cookie: memory=([^\s;]+)/;
+    my ($memory_cookie) = $main::header =~ /Cookie: memory=([^\s;]+)/;
 
     
         # print("FOUND EXISTING MEMORY: $filename_string\n");
@@ -48,7 +47,8 @@ sub get_memory_alone {
 
 sub get_memory_src {
     my ($client_socket, $request) = @_;
-
+    print("TEST IF IN USE\n");
+    die;
     my $response;
 
     $request =~ /\/memory\/src\/(.*) HTTP/ || $request =~ /\/memory\/src\/card\/2player\/(.*) HTTP/;
@@ -121,28 +121,22 @@ sub get_memory_src_card {
 }
 
 sub get_memory_restart {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
 
-    my $cookie_data = request_utils::get_cookie_data($request);
+    my $memory_id = request_utils::get_memory_game_id_by_cookie();
 
-    my $filename_string = $cookie_data->{memory};
-
-    if (!$filename_string) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page"));
-    }
-
-    my $filename = $filename_string . ".json";
+    my $filename = $memory_id . ".json";
 
     my $base_dir = getcwd();
     my $game_path = "$base_dir/HTML_PAGES/Gameroom/Memory/activeGames/$filename";
 
-    if (!-f $game_path) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Game not found"));
+    if (-f $game_path) {
+        unlink($game_path);
+        # http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Game not found"));
     }
 
-    unlink($game_path);
 
-    my $referer = request_utils::get_referer($request);
+    my $referer = request_utils::get_referer($main::header);
     if (!$referer) {
         $referer = "/memory/alone";
     }
@@ -151,7 +145,7 @@ sub get_memory_restart {
 }
 
 sub get_memory_2player {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
 
 
     my $game_id = request_utils::get_memory_game_id_by_cookie();
@@ -197,10 +191,10 @@ sub get_memory_2player {
 }
 
 sub get_memory_2player_waiting {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
 
     my $game_id;
-    if ($request =~ /\/memory\/2player\/waiting\/(.*) HTTP/) {
+    if ($route =~ /\/memory\/2player\/waiting\/(.*)/) {
         $game_id = $1;
     }
 
@@ -233,21 +227,16 @@ sub get_memory_2player_waiting {
 }
 
 sub get_memory_end {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
 
     my $game_id;
 
-    if ($request =~ /\/memory\/end\/(.*) HTTP/) {
+    if ($route =~ /\/memory\/end\/(.*)/) {
         $game_id = $1;
     }
-    my $cookie_data = request_utils::get_cookie_data($request);
-    if (!$cookie_data) {
-        print("COOKIE DATA EROR\n");
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page"));
-        return;
-    }
+
     if (!$game_id) {
-        $game_id = $cookie_data->{memory};
+        $game_id = request_utils::get_memory_game_id_by_cookie(); 
         if (!$game_id) {
             print("GAME ID EROR\n");
             http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page"));
@@ -261,7 +250,7 @@ sub get_memory_end {
 }
 
 sub get_memory_spectate {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
 
     my $html = get_memory_spectate::get_memory_spectate();  
 

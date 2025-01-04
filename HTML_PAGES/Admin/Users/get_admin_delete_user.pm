@@ -5,7 +5,7 @@ use warnings;
 
 use HTML_PAGES::Admin::Utils::admin_utils;
 sub get_admin_delete_user {
-    my ($client_socket, $request, $username) = @_;
+    my ($client_socket, $username) = @_;
     my $html_body;
     my $human_username = user_utils::decode_uri($username);
     my $uuid = user_utils::get_uuid_by_username($username);

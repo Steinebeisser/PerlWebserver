@@ -6,12 +6,12 @@ use warnings;
 use Cwd;
 
 sub get_fonts {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
 
     # print("FONTS\n");
     # print("REQUEST: $request\n");
 
-    if ($request =~ /\/fonts\/(.*) HTTP/) {
+    if ($route =~ /\/fonts\/(.*)/) {
         my $font = $1;
         # print("FONT: $font\n");
 

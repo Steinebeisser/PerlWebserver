@@ -55,14 +55,12 @@ sub get_support_options {
 }
 
 sub handle_new_request {
-    my ($request, $client_socket) = @_;
 
-    my $uri = $main::uri;
-    if ($uri =~ /\/support\/request\/new\/(.*)/) {
+    if ($main::uri =~ /\/support\/request\/new\/(.*)/) {
         my $request_type = $1;
         print("REQUEST TYPE: $request_type\n");
     } else {
-        print("URI: $uri\n");
+        print("URI: $main::uri\n");
     }
 }
 1;

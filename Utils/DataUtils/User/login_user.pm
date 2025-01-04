@@ -7,7 +7,7 @@ use JSON;
 use Cwd;
 
 sub post_login {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
     my $response;
     my $username;
     my $password; 
@@ -15,7 +15,7 @@ sub post_login {
     my $fingerprint;
     my $ip;
 
-    my $body = request_utils::skip_to_body($request);
+    my $body = body_utils::load_temp_file($temp_file);
 
     print("BODY: $body\n");
     my $json = decode_json($body);
@@ -38,7 +38,7 @@ sub post_login {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Username or password too long"));
     }
 
-    if ($request =~ /Accept-Language: (.*)\r/) {
+    if ($main::header =~ /Accept-Language: (.*)\r/) {
         $accept_language = $1;
     }
 
