@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 sub get_gameroom {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
 
     my $html = get_gameroom::get_gameroom();
 

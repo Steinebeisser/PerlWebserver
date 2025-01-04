@@ -1,15 +1,15 @@
 package post_preferences;
 
 sub post_change_language {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
     my $language;
     my $referer;
     my $username;
 
-    $referer = request_utils::get_referer($request);
+    $referer = request_utils::get_referer($main::header);
 
 
-    $request = request_utils::skip_to_body($request);
+    my $request = body_utils::load_temp_file($temp_file);
     if ($request =~ /language=(.*)/) {
         $language = $1;
     } 
@@ -47,9 +47,9 @@ sub post_change_language {
 }
 
 sub post_dark_mode {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
 
-    my $referer = request_utils::get_referer($request);
+    my $referer = request_utils::get_referer($main::header);
     if (!$referer) {
         $referer = "/";
     }

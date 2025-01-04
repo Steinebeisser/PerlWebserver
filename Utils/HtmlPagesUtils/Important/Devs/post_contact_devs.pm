@@ -12,12 +12,11 @@ my %reasons = (
 );
 
 sub post_contact_devs {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
 
     print("CONTACT DEVS\n");
-    print("REQUEST: $request\n");
 
-    my $body = request_utils::skip_to_body($request);
+    my $body = body_utils::load_temp_file($temp_file);
     my $json = decode_json($body);
 
     my $reason = $json->{reason};

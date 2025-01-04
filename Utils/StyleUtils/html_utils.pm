@@ -62,6 +62,7 @@ HTML
     }
     foreach my $upload_file (@uploads) {
         my $metadata = user_utils::get_metadata($upload_file);
+        my $human_file_name = user_utils::decode_uri($upload_file);
         my $parsed_date;
         my $size;
         if (!$metadata) {
@@ -85,7 +86,7 @@ HTML
             <tr>
                 <td>$parsed_date</td>
                 <td>$size</td>
-                <td>$upload_file</td>
+                <td>$human_file_name</td>
                 <td>
                     <a href="/profile/ploud/download/$upload_file">$translations->{download}</a>
                     <a href="/profile/ploud/delete/$upload_file">$translations->{delete}</a>
