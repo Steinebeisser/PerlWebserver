@@ -119,6 +119,18 @@ sub OK_WITH_DATA_AND_CACHE {
     return $response;
 }
 
+sub OK_WITH_DATA_HEADER {
+    my ($file_size, $filename) = @_;
+    my $response = "HTTP/1.1 200 OK\r\n"
+                . "Content-Type: application/octet-stream\r\n"
+                . "Content-Disposition: attachment; filename=\"$filename\"\r\n"
+                . "Content-Length: $file_size\r\n"
+                . "Connection: close\r\n"
+                . "\r\n";
+
+    return $response;
+}
+
 sub REDIRECT_303 { 
     my ($location) = @_;
     my $response = "HTTP/1.1 303 See Other\r\n"

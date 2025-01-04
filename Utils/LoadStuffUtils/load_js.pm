@@ -8,7 +8,7 @@ use Cwd;
 sub get_external_js {
     my ($client_socket, $request) = @_;
 
-    if ($request =~ /\/ExternalJS\/(.*) HTTP/) {
+    if ($request =~ /\/ExternalJS\/(.*)/) {
         my $filename = $1;
         my $base_dir = getcwd();
         my $file_path = "$base_dir/ExternalJS/$filename";

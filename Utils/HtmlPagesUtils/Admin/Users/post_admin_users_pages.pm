@@ -4,10 +4,10 @@ use strict;
 use warnings;
 
 sub post_admin_users {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
     admin_utils::check_if_admin_and_logged_in($client_socket);
     my $user_per_page = 3;
-    $request = request_utils::skip_to_body($request);
+    my $request = body_utils::load_temp_file($temp_file);
     if ($request =~ /userperpage=(\d+)/) {
         $user_per_page = $1;
     }
@@ -19,15 +19,15 @@ sub post_admin_users {
 }
 
 sub post_admin_edit_user {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
     my $username;
-    if ($request =~ /\/admin\/users\/edit\/(.*) HTTP/) {
+    if ($route =~ /\/admin\/users\/edit\/(.*)/) {
         $username = $1;
     } else {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500());
     }
-
-    $request = request_utils::skip_to_body($request);
+    
+    my $request = body_utils::load_temp_file($temp_file);
     my $uuid = user_utils::get_uuid_by_username($username);
     
     if (!$uuid) {
@@ -54,18 +54,18 @@ sub post_admin_edit_user {
 }
 
 sub post_admin_ban_user {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
     my $username;
     if (!admin_utils::check_if_admin_and_logged_in($client_socket)) {
         return;
     }
-    if ($request =~ /\/admin\/users\/ban\/(.*) HTTP/) {
+    if ($route =~ /\/admin\/users\/ban\/(.*)/) {
         $username = $1;
     } else {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500());
     }
 
-    $request = request_utils::skip_to_body($request);
+    my $request = body_utils::load_temp_file($temp_file);
     my $uuid = user_utils::get_uuid_by_username($username);
 
     if (!$uuid) {
@@ -92,12 +92,12 @@ sub post_admin_ban_user {
 
 
 sub post_admin_delete_user {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
     my $username;
     if (!admin_utils::check_if_admin_and_logged_in($client_socket)) {
         return;
     }
-    if ($request =~ /\/admin\/users\/delete\/(.*) HTTP/) {
+    if ($route =~ /\/admin\/users\/delete\/(.*)/) {
         $username = $1;
     } else {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500());

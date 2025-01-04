@@ -20,12 +20,12 @@ sub receive_msg {
     my $client_fd = fileno $client_socket;
     # print("RECEIVING FOR CLIENT $client_fd\n");
 
-    my $message = $epoll::clients{$client_fd}{"request"};
+    my $message = $epoll::clients{$client_fd}{"message"};
     if ($epoll::clients{$client_fd}{"more"} != 0) {
         # print("RECEIVING MESSAGE\n");
         recv($client_socket, my $buffer, 1024, 0);
         $message .= $buffer;
-        $epoll::clients{$client_fd}{"request"} .= $buffer;
+        $epoll::clients{$client_fd}{"ws_request"} .= $buffer;
         if (length($buffer) < 1024) {
             $epoll::clients{$client_fd}{"more"} = 0;
         }
@@ -254,10 +254,14 @@ sub handle_websocket_communication {
 
     # print("HANDLING WEBSOCKET COMMUNICATION\n");
     my $client_socket = $epoll::clients{$client_fd}{"socket"};
-
+    # print("CLIENT SOCKET: $client_socket\n");
+    if (!$client_socket) {
+        return;
+    }
     # send($client_socket, "Hello from server", 0) or die "send: $!";
 
     my $message = websocket_utils::receive_msg($client_socket);
+    # print("MESSAGE: $message\n");
     if (!$message) {
         return;
     }

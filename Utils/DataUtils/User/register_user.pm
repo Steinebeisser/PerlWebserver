@@ -7,7 +7,7 @@ use Cwd;
 use JSON;
 
 sub post_register {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
     my $response;
     my $username;
     my $password; 
@@ -15,7 +15,8 @@ sub post_register {
     my $accept_language = "en";
     
     
-    my $body = request_utils::skip_to_body($request);
+    my $body = body_utils::load_temp_file($temp_file);
+
     my $json = decode_json($body);
     $username = $json->{username};
     $password = $json->{password};
@@ -39,7 +40,7 @@ sub post_register {
         return $response;
     }
 
-    if ($request =~ /Accept-Language: (.*)/) {
+    if ($main::header =~ /Accept-Language: (.*)/) {
         $accept_language = $1;
     }
 

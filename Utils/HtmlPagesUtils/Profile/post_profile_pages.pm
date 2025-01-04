@@ -5,11 +5,12 @@ use warnings;
 
 use Cwd;
 use JSON;
+use IO::Epoll;
 
 sub post_profile_ploud_upload {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
 
-    my $referer = request_utils::get_referer($request);
+    my $referer = request_utils::get_referer($main::header);
     if (!$referer) {
         $referer = "/";
     }
@@ -18,7 +19,7 @@ sub post_profile_ploud_upload {
     my $response = HTTP_RESPONSE::REDIRECT_303($referer);
     # print("I GOT REDIRECT\n");
     http_utils::send_http_response($client_socket, $response);
-    my $meta_data = get_meta_data($request, $client_socket);
+    # my $meta_data = get_meta_data($request, $client_socket);
 }
 
 sub get_meta_data {
@@ -109,12 +110,12 @@ sub create_meta_data {
 }
 
 sub post_profile_ploud_download {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
     my $filename;
 
     my $uuid = $main::user->{uuid};
 
-    if ($request =~ /profile\/ploud\/download\/(.*) HTTP\/1.1/) {
+    if ($route =~ /profile\/ploud\/download\/(.*)/) {
         $filename = $1;
     }
     if (!$filename) {
@@ -125,38 +126,44 @@ sub post_profile_ploud_download {
     my $filepath = "$base_dir/Data/UserData/Users/$uuid/ploud/$filename/$filename";
     # print("FILEPATH: $filepath\n");
     if (!-e $filepath) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404());
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("File not found"));
         return;
     }
 
     if (!$main::user) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not logged in<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
     }
-
-    my $meta_data = get_meta_data($request, $client_socket);
-
-    my $referer = request_utils::get_referer($request);
     
     open my $fh, '<', $filepath or die "Cannot open file: $!";
     binmode $fh;
-    my $data;
-    {
-        local $/;
-        $data = <$fh>;
-    }
-    close $fh;
-    my $response = HTTP_RESPONSE::OK_WITH_DATA($data, $filename);
-    http_utils::send_http_response($client_socket, $response);
 
+    my $file_size = -s $filepath;
+    my $header = HTTP_RESPONSE::OK_WITH_DATA_HEADER($file_size, $filename);
+    send($client_socket, $header, 0);
+
+    $epoll::clients{fileno $client_socket}{filestream} = {
+        file => $fh,
+        file_size => $file_size,
+        file_pos => 0,
+        chunk_size => 4096,
+    };
+    epoll_ctl($main::epoll, EPOLL_CTL_MOD, fileno $client_socket, EPOLLIN | EPOLLOUT) >= 0 || die "Can't add client socket to main::epoll: $!";
+    $epoll::clients{fileno $client_socket}{"has_out"} = 1;
+    print("Added client socket to writeepoll\n");
+
+    main::handle_filestream(fileno $client_socket);
+    # main::epoll_loop();
+    # my $response = HTTP_RESPONSE::OK_WITH_DATA($data, $filename);
+    # http_utils::send_http_response($client_socket, $response);
 }
 
 sub post_profile_ploud_delete {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
     my $filename;
 
     my $uuid = $main::user->{uuid};
 
-    if ($request =~ /profile\/ploud\/delete\/(.*) HTTP\/1.1/) {
+    if ($route =~ /profile\/ploud\/delete\/(.*)/) {
         $filename = $1;
     }
     if (!$filename) {
@@ -201,7 +208,7 @@ sub post_profile_ploud_delete {
         return;
     };
 
-    my $referer = request_utils::get_referer($request);
+    my $referer = request_utils::get_referer($main::header);
     my $response = HTTP_RESPONSE::REDIRECT_303($referer);
     http_utils::send_http_response($client_socket, $response);
 
@@ -210,13 +217,13 @@ sub post_profile_ploud_delete {
 
 
 sub post_profile_ploud_upgrade {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
     my $rank;
     if (!$main::user) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not logged in<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
     }
 
-    if ($request =~ /profile\/ploud\/upgrade\/(.*) HTTP\/1.1/) {
+    if ($route =~ /profile\/ploud\/upgrade\/(.*)/) {
         $rank = $1;
     }
     if (!$rank) {
@@ -236,7 +243,7 @@ sub post_profile_ploud_upgrade {
 
     upgrade_rank($uuid, $rank, $rank_id);
 
-    my $referer = request_utils::get_referer($request);
+    my $referer = request_utils::get_referer($main::header);
     if (!$referer) {
         $referer = "/";
     }

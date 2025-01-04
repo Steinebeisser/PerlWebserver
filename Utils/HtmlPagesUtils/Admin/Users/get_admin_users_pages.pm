@@ -4,16 +4,16 @@ use strict;
 use warnings;
 
 sub get_admin_users {
-    my ($client_socket, $request, $route) = @_;
+    my ($client_socket, $route) = @_;
     my $current_page = 0;
     my $user_per_page = 3;
     # print ("ROUTE: $route\n");
     # print ("REQUEST: $request\n");
     # $request = request_utils::skip_to_body($request);
-    if ($request =~ /\/admin\/users\/.*\?page=(\d+)/) {
+    if ($route =~ /\/admin\/users\/.*\?page=(\d+)/) {
         $current_page = $1;
     }
-    if ($request =~ /\&userperpage=(\d+)/) {
+    if ($route =~ /\&userperpage=(\d+)/) {
         $user_per_page = $1;
     }
     if ($user_per_page > 2147483647) {
@@ -42,13 +42,13 @@ sub get_admin_users {
 
 
 sub get_admin_edit_user {
-    my ($client_socket, $request) = @_;
-    if ($request =~ /\/admin\/users\/edit\/(.*) HTTP/) {
+    my ($client_socket, $route) = @_;
+    if ($route =~ /\/admin\/users\/edit\/(.*)/) {
         my $username = $1;
         if (user_utils::is_encoded($username)) {
             $username = user_utils::decode_uri($username);
         }
-        my $html = get_admin_edit_user::get_admin_edit_user($client_socket, $request, $username);
+        my $html = get_admin_edit_user::get_admin_edit_user($client_socket, $username);
         return $html;
     }
 }
@@ -56,31 +56,31 @@ sub get_admin_edit_user {
 
 
 sub get_admin_view_user {
-    my ($client_socket, $request) = @_;
-    if ($request =~ /\/admin\/users\/view\/(.*) HTTP/) {
+    my ($client_socket, $route) = @_;
+    if ($route =~ /\/admin\/users\/view\/(.*)/) {
         my $username = $1;
         if (user_utils::is_encoded($username)) {
             $username = user_utils::decode_uri($username);
         }
-        my $html = get_admin_view_user::get_admin_view_user($client_socket, $request, $username);
+        my $html = get_admin_view_user::get_admin_view_user($client_socket, $username);
         return $html;
     }
 }
 
 sub get_admin_delete_user {
-    my ($client_socket, $request) = @_;
-    if ($request =~ /\/admin\/users\/delete\/(.*) HTTP/) {
+    my ($client_socket, $route) = @_;
+    if ($route =~ /\/admin\/users\/delete\/(.*)/) {
         my $username = $1;
-        my $html = get_admin_delete_user::get_admin_delete_user($client_socket, $request, $username);
+        my $html = get_admin_delete_user::get_admin_delete_user($client_socket, $username);
         return $html;
     }
 }
 
 sub get_admin_ban_user {
-    my ($client_socket, $request) = @_;
-    if ($request =~ /\/admin\/users\/ban\/(.*) HTTP/) {
+    my ($client_socket, $route) = @_;
+    if ($route =~ /\/admin\/users\/ban\/(.*)/) {
         my $username = $1;
-        my $html = get_admin_ban_user::get_admin_ban_user($client_socket, $request, $username);
+        my $html = get_admin_ban_user::get_admin_ban_user($client_socket, $username);
         return $html;
     }
 }

@@ -4,9 +4,9 @@ use strict;
 use warnings;
 
 sub get_calender_year {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
     my $year;
-    if ($request =~ /\/calender\/year\/(.*) HTTP/) {
+    if ($route =~ /\/calender\/year\/(.*)/) {
         $year = $1;
         # print "YEAR: $year\n";
     }
@@ -22,10 +22,10 @@ sub get_calender_year {
 }
 
 sub get_calender_month {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
     my $year;
     my $month;
-    if ($request =~ /\/calender\/year\/(.*)\/month\/(.*) HTTP/) {
+    if ($route =~ /\/calender\/year\/(.*)\/month\/(.*)/) {
         $year = $1;
         $month = $2;
         # print "YEAR: $year\n";
