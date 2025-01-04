@@ -4,15 +4,16 @@ use strict;
 use warnings;
 
 sub post_admin_update_log_add {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
 
     if (!admin_utils::check_if_admin_and_logged_in($client_socket)) {
         return;
     }
 
+    my $request = body_utils::load_temp_file($temp_file);
     update_log::add_update_log($request);
 
-    my $referer = request_utils::get_referer($request);
+    my $referer = request_utils::get_referer($main::header);
     if (!$referer) {
         $referer = "/admin/update_log";
     }
@@ -21,14 +22,14 @@ sub post_admin_update_log_add {
 }
 
 sub post_admin_update_log_edit {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
 
     if (!admin_utils::check_if_admin_and_logged_in($client_socket)) {
         return;
     }
 
-    print($request);
-    my ($update_log_id, $update_point_id, $content) = update_log::parse_edit_request($request);
+    my $request = body_utils::load_temp_file($temp_file);
+    my ($update_log_id, $update_point_id, $content) = update_log::parse_edit_request($main::uri, $request);
 
     print($update_point_id);
     print("update_log_id: $update_log_id\n");
@@ -50,13 +51,13 @@ sub post_admin_update_log_edit {
 }
 
 sub post_admin_update_log_delete {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route, $temp_file) = @_;
 
     if (!admin_utils::check_if_admin_and_logged_in($client_socket)) {
         return;
     }
 
-    my $update_log_id = update_log::parse_delete_request($request);
+    my $update_log_id = update_log::parse_delete_request($route);
 
     if (!$update_log_id) {
         return 0;

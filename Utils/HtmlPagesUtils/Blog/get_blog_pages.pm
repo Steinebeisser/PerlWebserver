@@ -4,16 +4,16 @@ use strict;
 use warnings;
 
 sub get_blog_index {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
 
     my $page = 1;
     my $sort_type;
     # print("REQUEST: $request\n");
-    if ($request =~ /\/blog\/\?page=(\d+) HTTP/) {
+    if ($route =~ /\/blog\/\?page=(\d+)/) {
         $page = $1;
         # print("PAGE: $page\n");
     }
-    if ($request =~ /\/blog\/\?sort=(.*) HTTP/) {
+    if ($route =~ /\/blog\/\?sort=(.*)/) {
         $sort_type = $1;
         # print("SORT1234: $sort_type\n");
     }
@@ -24,16 +24,16 @@ sub get_blog_index {
 }
 
 sub get_blog_view {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
 
     my $blog_name;
     my $is_announcement = 0;
 
-    if ($request =~ /\/blog\/view\/(.*) HTTP/) {
+    if ($route =~ /\/blog\/view\/(.*)/) {
         $blog_name = $1;
     }
 
-    if ($request =~ /\/blog\/view\/announcement\/(.*) HTTP\/1.1/) {
+    if ($route =~ /\/blog\/view\/announcement\/(.*)/) {
         $blog_name = $1;
         $is_announcement = 1;
     }
@@ -50,7 +50,7 @@ sub get_blog_view {
 }
 
 sub get_blog_create {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
 
     my $html = get_blog_create::get_blog_create();
 
@@ -58,7 +58,7 @@ sub get_blog_create {
 }
 
 sub get_blog_announcements_manage {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
 
     my $html = get_blog_announcements_manage::get_blog_announcements_manage();
 
@@ -66,7 +66,7 @@ sub get_blog_announcements_manage {
 }
 
 sub get_announcement_edit {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
 
     my $user = $main::user;
     if (!$user) {
@@ -76,7 +76,7 @@ sub get_announcement_edit {
         serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not an admin<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
     }
 
-    if ($request =~ /\/blog\/announcement\/edit\/(.*) HTTP/) {
+    if ($route =~ /\/blog\/announcement\/edit\/(.*)/) {
         my $announcement_name = $1;
         my $html = get_announcement_edit::get_announcement_edit($announcement_name);
         return $html;
@@ -86,7 +86,7 @@ sub get_announcement_edit {
 }
 
 sub announcement_switch_status {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
     my $activate;
     my $announcement_name;
 
@@ -98,7 +98,7 @@ sub announcement_switch_status {
         serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not an admin<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
     }
 
-    if ($request =~ /\/blog\/announcement\/(.*)\/(.*) HTTP/) {
+    if ($route =~ /\/blog\/announcement\/(.*)\/(.*)/) {
         $activate = $1;
         $announcement_name = $2;
     }
@@ -122,7 +122,7 @@ sub announcement_switch_status {
     }
 
     if (blog_utils::update_blog_data($announcement_name, $blog_data, $is_announcement)) {
-        my $referer = request_utils::get_referer($request);
+        my $referer = request_utils::get_referer($main::header);
         if (!$referer) {
             $referer = "/blog/announcements/manage";
         }
@@ -136,7 +136,7 @@ sub announcement_switch_status {
 }
 
 sub get_announcement_create {
-    my ($client_socket, $request) = @_;
+    my ($client_socket) = @_;
     print("HIHIHAHAHA\n");
 
     my $html = get_announcement_create::get_announcement_create();
@@ -147,7 +147,7 @@ sub get_announcement_create {
 
 
 sub get_announcement_delete {
-    my ($client_socket, $request) = @_;
+    my ($client_socket, $route) = @_;
 
     my $user = $main::user;
     if (!$user) {
@@ -157,12 +157,12 @@ sub get_announcement_delete {
         serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not an admin<br><a href=\"/ \">Return to index</a><br><a href=\"/login\">Login</a>"));
     }
 
-    if ($request =~ /\/blog\/announcement\/delete\/(.*) HTTP/) {
+    if ($route =~ /\/blog\/announcement\/delete\/(.*)/) {
         my $announcement_name = $1;
         if (!blog_utils::delete_blog($announcement_name, 1)) {
             serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Error deleting announcement"));
         }
-        my $referer = request_utils::get_referer($request);
+        my $referer = request_utils::get_referer($main::header);
         if (!$referer) {
             $referer = "/blog/announcements/manage";
         }

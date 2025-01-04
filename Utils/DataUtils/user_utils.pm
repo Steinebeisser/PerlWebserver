@@ -517,6 +517,9 @@ sub get_current_used_storage {
     };
     my $json = <$file>;
     close $file;
+    if (!$json) {
+        return 0;
+    }
     my $data = decode_json($json);
     # print("USERMETADATA: $data\n");
     # print("DATA: $data\n");

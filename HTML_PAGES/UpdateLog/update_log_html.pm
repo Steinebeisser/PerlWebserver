@@ -22,7 +22,7 @@ HTML
         <div class="update" onclick="toggleUpdate(this)">
             <div class="preview">
                 <div class="title">
-                    $title    
+                    $title<br>    
                     $date
                 </div>
 HTML

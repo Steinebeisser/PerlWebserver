@@ -6,7 +6,7 @@ use warnings;
 use HTML_PAGES::Admin::Utils::admin_utils;
 
 sub get_admin_edit_user {
-    my ($client_socket, $request, $username) = @_;
+    my ($client_socket, $username) = @_;
     my $username_human;
     if (!user_utils::check_if_admin_and_logged_in($client_socket)) {
         return 0;

@@ -105,7 +105,7 @@ sub add_update_log {
 }
 
 sub get_log_data {
-    my ($request) = @_;
+    my ($body) = @_;
 
     my $date = get_date();
     my $title;
@@ -114,7 +114,6 @@ sub get_log_data {
     my $enabled = 1;
     my $updatePoints = {};
 
-    my $body = request_utils::skip_to_body($request);
     # print("bODY: $body\n");
 
     if ($body =~ /updateTitle=(.*)&updateAdditionalInfo=(.*?)&(.*)$/) {
@@ -185,14 +184,14 @@ sub get_update_log_by_id {
 }
 
 sub parse_edit_request {
-    my ($request) = @_;
+    my ($uri, $body) = @_;
 
     my $update_log_id;
     my $update_point_id;
 
     # print("REQUEST: $request\n");
 
-    if ($request =~ /\/admin\/updateLog\/edit\/(\d+)(?:\/(\d+))?/) {
+    if ($uri =~ /\/admin\/updateLog\/edit\/(\d+)(?:\/(\d+))?/) {
         $update_log_id = $1;
         $update_point_id = $2;
     }
@@ -200,8 +199,6 @@ sub parse_edit_request {
     if (!$update_log_id) {
         return;
     }
-
-    my $body = request_utils::skip_to_body($request);
 
     if (!$body) {
         return;
@@ -401,11 +398,11 @@ sub delete_update_log {
 }#
 
 sub parse_delete_request {
-    my ($request) = @_;
+    my ($uri) = @_;
 
     my $update_log_id;
 
-    if ($request =~ /\/admin\/updateLog\/delete\/(\d+)/) {
+    if ($uri =~ /\/admin\/updateLog\/delete\/(\d+)/) {
         $update_log_id = $1;
     }
 

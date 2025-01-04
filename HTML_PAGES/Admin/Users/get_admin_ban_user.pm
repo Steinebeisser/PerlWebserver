@@ -10,7 +10,7 @@ use HTML_PAGES::Admin::Utils::admin_utils;
 
 
 sub get_admin_ban_user {
-    my ($client_socket, $request, $username) = @_;
+    my ($client_socket, $username) = @_;
     if (!user_utils::check_if_admin_and_logged_in($client_socket)) {
         return 0;
     }

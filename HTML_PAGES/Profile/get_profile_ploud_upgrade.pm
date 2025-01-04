@@ -6,7 +6,7 @@ use warnings;
 sub get_profile_ploud_upgrade {
     my ($username) = @_;
 
-    my $human_username = user_utils::get_username_by_uuid(user_utils::get_uuid());
+    my $human_username = $main::user->{human_username};
 
     my $translations = language_utils::load_language("profile, ploud");
 
