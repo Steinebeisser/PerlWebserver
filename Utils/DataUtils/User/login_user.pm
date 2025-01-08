@@ -101,10 +101,12 @@ sub login_user {
 
     print("PASSWORD HASH: $password_hash\n");
     if (!user_utils::verify_password($password, $password_hash)) {
+        print("PASSWORDS DO NOT MATCH\n");
         return 0;
     }
 
     if (!user_utils::exist_not_banned($client_socket, $uuid)) {
+        print("USER IS BANNED/DOESNT EXIST\n");
         return 0;
     }
 

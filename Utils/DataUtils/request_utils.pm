@@ -22,6 +22,26 @@ sub get_referer {
     return $referer;
 }
 
+sub get_range {
+    my ($request) = @_;
+    my $start_range;
+    my $end_range;
+    print("RANGE REQUEST: $request\n");
+    if ($request =~ /Range: bytes=(\d+)-(\d*)/) {
+        $start_range = $1;
+        $end_range = $2;
+    } else {
+        return ("none", "none");
+    }
+    $end_range = "" unless defined $end_range;
+    print("RANGEIII: $start_range - $end_range\n");
+    if (!$start_range) {
+        $start_range = "0";
+    }
+    
+    return ($start_range, $end_range);
+}
+
 sub get_session_cookie {
     my ($header) = @_;
 
@@ -40,9 +60,9 @@ sub get_session_cookie {
 sub get_scheme_by_cookie {
     my ($cookie) = $main::header =~ /Cookie: (.*)/;
     if ($cookie) {
-        print("COOKIE GOT: $cookie\n");
+        # print("COOKIE GOT: $cookie\n");
         if ($cookie =~ /scheme=([^\s;]+)/) {
-            print("SCHEME: $1\n");
+            # print("SCHEME: $1\n");
             return $1;
         }
     }

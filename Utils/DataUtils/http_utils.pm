@@ -3,6 +3,9 @@ package http_utils;
 use strict;
 use warnings;
 
+use Errno qw(EPIPE);
+
+
 sub send_http_response {
     my ($client_socket, $response) = @_;
     print $client_socket $response;
@@ -18,7 +21,15 @@ sub send_response {
     if (!$client_socket) {
         return;
     }
-    send($client_socket, $response, 0) or return;
+    my $bytes_written = send($client_socket, $response, 0);
+    if (!defined $bytes_written) {
+        if ($! == EPIPE) {
+            warn "Client disconnected (EPIPE)";
+            # Clean up the socket or connection here
+        } else {
+            warn "Error writing to client: $!";	
+        }
+    }
 }
 sub serve_error {
     my ($client_socket, $error) = @_;

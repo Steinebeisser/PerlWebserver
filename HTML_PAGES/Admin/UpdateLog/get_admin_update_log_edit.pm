@@ -8,7 +8,7 @@ sub get_admin_update_log_edit {
     my $translations = language_utils::load_language("updateLog");
     
     my $updateID = $update->{id};
-    print("updateID: $updateID\n");
+    # print("updateID: $updateID\n");
 
     my $html_body = <<HTML;
     <h1>$translations->{edit}</h1>
@@ -102,7 +102,7 @@ HTML
                 </div>
 HTML
         if (defined $updatePoint->{useNewTime}) {
-            print("newTime123: $updatePoint->{useNewTime}\n");
+            # print("newTime123: $updatePoint->{useNewTime}\n");
             my $useNewTime = $updatePoint->{useNewTime};
             if ($useNewTime) {
                 $html_body .= <<HTML;

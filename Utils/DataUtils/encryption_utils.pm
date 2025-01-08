@@ -52,8 +52,8 @@ sub setup_cipher {
     my $longIV = "4979967588533338";
 
 
-    print("long key_ $longKey\n");
-    print ("long iv_ $longIV\n");
+    # print("long key_ $longKey\n");
+    # print ("long iv_ $longIV\n");
     $cipher = Crypt::Rijndael->new($longKey, Crypt::Rijndael::MODE_CBC());
     $cipher->set_iv($longIV);
 }

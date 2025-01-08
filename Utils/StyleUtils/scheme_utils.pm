@@ -11,7 +11,7 @@ sub set_scheme {
         if ($preferences) {
             # print("SCHEME1: $scheme\n");
             my $scheme = $preferences->{scheme};
-            print("SCHEME1: $scheme\n");
+            # print("SCHEME1: $scheme\n");
             if ($scheme) {
                 $main::scheme = $scheme;
             }

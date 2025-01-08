@@ -86,12 +86,12 @@ if ($end_index + $start_index > 2147483647) {
 }
 
 my ($users_ref, $total_user_amount) = user_utils::get_all_users($start_index, $user_per_page);
-print("TOTAL USER AMOUNT: $total_user_amount\n");
+# print("TOTAL USER AMOUNT: $total_user_amount\n");
 my $current_user_amount = 0;
 
 
 foreach my $user (@$users_ref) {
-    print("USer: $user\n");
+    # print("USer: $user\n");
 
     my $human_username = $user->{username};
     if (user_utils::is_encoded($user->{username})) {
@@ -131,10 +131,10 @@ if ($current_page > 1) {
 HTML
 }
 if (($total_user_amount - ($current_page * $user_per_page)) >= 1) {
-    print("Total user amount: $total_user_amount\n");
-    print("Current page: $current_page\n");
-    print("User per page: $user_per_page\n");
-    print("MATHEMATIC: " . ($total_user_amount - ($current_page * $user_per_page)));
+    # print("Total user amount: $total_user_amount\n");
+    # print("Current page: $current_page\n");
+    # print("User per page: $user_per_page\n");
+    # print("MATHEMATIC: " . ($total_user_amount - ($current_page * $user_per_page)));
     my $next_page = $current_page + 1;
     $html_body .=<<HTML;
         <a href="/admin/users/?page=$next_page&userperpage=$user_per_page\">Next</a>

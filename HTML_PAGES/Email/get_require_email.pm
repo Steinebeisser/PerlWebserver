@@ -8,7 +8,7 @@ use JSON;
 
 sub get_require_email {
     my $translations = language_utils::load_language("email");
-    print("TRANSLATIONS: $translations\n");
+    # print("TRANSLATIONS: $translations\n");
     my $html_body = <<HTML;
     <h1>$translations->{youNoEmail}</h1>
 
@@ -56,7 +56,7 @@ Script
     $html_body .= $script;
 
     my $title = $translations->{addingEmail};
-    print("Title: $title\n");
+    # print("Title: $title\n");
     my $html_content = html_structure::get_html($html_body, $title);
 
     return ($html_content);

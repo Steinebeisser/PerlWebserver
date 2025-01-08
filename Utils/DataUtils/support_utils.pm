@@ -30,7 +30,7 @@ sub get_support_options {
     # Sort the main options by keys
     foreach my $mainOption (sort keys %$supportOptions) {
         my $title = $supportOptions->{$mainOption}->{title};
-        print("TITLE: $title\n");
+        # print("TITLE: $title\n");
 
         my @options;
         # Sort the sub-options by keys
@@ -58,9 +58,9 @@ sub handle_new_request {
 
     if ($main::uri =~ /\/support\/request\/new\/(.*)/) {
         my $request_type = $1;
-        print("REQUEST TYPE: $request_type\n");
+        # print("REQUEST TYPE: $request_type\n");
     } else {
-        print("URI: $main::uri\n");
+        # print("URI: $main::uri\n");
     }
 }
 1;

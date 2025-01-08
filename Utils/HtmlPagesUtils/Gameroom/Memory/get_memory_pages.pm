@@ -48,7 +48,7 @@ sub get_memory_alone {
 sub get_memory_src {
     my ($client_socket, $request) = @_;
     print("TEST IF IN USE\n");
-    die;
+    die "TEST IF IN USE";
     my $response;
 
     $request =~ /\/memory\/src\/(.*) HTTP/ || $request =~ /\/memory\/src\/card\/2player\/(.*) HTTP/;

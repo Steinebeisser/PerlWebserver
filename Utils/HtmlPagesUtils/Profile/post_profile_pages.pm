@@ -93,15 +93,13 @@ sub get_meta_data {
 sub create_meta_data {
     my ($name, $filename, $filepath, $dir_path) = @_;
     my %meta_data = (
-        $name => {
-            filename => $filename,
-            filepath => $filepath,
-            uploaded_at => time(),
-            size => -s $filepath
-        }
+        filename => $filename,
+        filepath => $filepath,
+        uploaded_at => time(),
+        size => -s $filepath
     );
 
-    user_utils::update_user_metadata($main::user->{uuid}, $meta_data{$name});
+    user_utils::update_user_metadata($main::user->{uuid}, \%meta_data);
 
     open my $fh, '>', "$dir_path/metadata.json" or die "Cannot open file: $!";
     binmode $fh; 
@@ -141,11 +139,12 @@ sub post_profile_ploud_download {
     my $header = HTTP_RESPONSE::OK_WITH_DATA_HEADER($file_size, $filename);
     send($client_socket, $header, 0);
 
+    my $chunk_size = 1024*128;
     $epoll::clients{fileno $client_socket}{filestream} = {
         file => $fh,
         file_size => $file_size,
         file_pos => 0,
-        chunk_size => 4096,
+        chunk_size => $chunk_size,
     };
     epoll_ctl($main::epoll, EPOLL_CTL_MOD, fileno $client_socket, EPOLLIN | EPOLLOUT) >= 0 || die "Can't add client socket to main::epoll: $!";
     $epoll::clients{fileno $client_socket}{"has_out"} = 1;

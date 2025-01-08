@@ -130,7 +130,7 @@ sub get_client_data {
         $epoll::clients{$client_fd}{"content_length"} = $1;
     }
     if ($request =~ /Sec-WebSocket-Key: (.*)\r\n/) {
-        print("WEBSOCKET REQUEST1\n");
+        # print("WEBSOCKET REQUEST1\n");
         websocket_utils::handle_websocket_request($client_socket, $request);
         return;
     }
@@ -147,6 +147,7 @@ sub get_client_data {
             $epoll::clients{$client_fd}{"is_upload"} = 1;
             my $referer = request_utils::get_referer($header);
             $epoll::clients{$client_fd}{"referer"} = $referer;
+            ($epoll::clients{$client_fd}{"location"}) = $header =~ /POST (.*) HTTP/;
         }
         # $epoll::clients{$client_fd}{"body"} = $body;
         $epoll::clients{$client_fd}{"bytes_read"} = $bytes_read;
@@ -178,14 +179,17 @@ sub get_client_data {
         # }
 
         if ($content_length) {
-            print("CONTENT LENGTH: $content_length\n");
-            print("MAX STORAGE: $main::max_storage\n");
+            # print("CONTENT LENGTH: $content_length\n");
+            # print("MAX STORAGE: $main::max_storage\n");
 
             if ($uuid) {
                 my $max_storage = user_utils::get_user_max_storage($uuid);
-                my $max_file_size = $max_storage - user_utils::get_current_used_storage($uuid);
-                print("MAX FILE SIZE: $max_file_size\n");
-                print("MAX STORAGE: $max_storage\n");
+                my $max_file_size = $max_storage;
+                if ($epoll::clients{$client_fd}{"location"} =~ /profile\/ploud/) {
+                    $max_file_size = $max_storage - user_utils::get_current_used_storage($uuid);
+                }
+                # print("MAX FILE SIZE: $max_file_size\n");
+                # print("MAX STORAGE: $max_storage\n");
                 # my $max_server_size = user_utils::get_max_server_size();
                 # if ($max_file_size > $max_server_size * $server::storage_bottleneck) {
                 #     print("SERVER STORAGE EXCEEDED\n");
@@ -195,9 +199,9 @@ sub get_client_data {
                 if ($content_length > $max_file_size) {
                     print("File too large\n");
 
-                    print("CURRENT USED STORAGE: ".user_utils::get_current_used_storage($uuid)."\n");
-                    print("MAX FILE SIZE: $max_file_size\n");
-                    print("CONTENT LENGTH: $content_length\n");
+                    # print("CURRENT USED STORAGE: ".user_utils::get_current_used_storage($uuid)."\n");
+                    # print("MAX FILE SIZE: $max_file_size\n");
+                    # print("CONTENT LENGTH: $content_length\n");
                     http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_413("File too large"));
                     return;
                 }
@@ -207,7 +211,7 @@ sub get_client_data {
         $epoll::clients{$client_fd}{"message"} = $request;
         # print("MESSAGE: $request\n");
         if (!$epoll::clients{$client_fd}{"is_ws"}) {
-            print("ADDING TO TRIES\n");
+            # print("ADDING TO TRIES\n");
             $epoll::clients{$client_fd}{"tries"}++;
         }
     }
@@ -231,7 +235,7 @@ sub handle_client_data {
             main::remove_client($client_fd);
             return;
         }
-        print("Writing to temp file: $temp_file\n");
+        # print("Writing to temp file: $temp_file\n");
         open(my $fh, ">>", $temp_file) || die "Can't open temp file: $!";
         print $fh $buffer;
         close $fh;

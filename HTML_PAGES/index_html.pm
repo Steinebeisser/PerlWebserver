@@ -11,8 +11,8 @@ sub new {
 
     my $usercount = user_utils::get_user_count();
 
-    print("MAIN USER: $main::user\n");
-    print("USERCOUNT: $usercount\n");
+    # print("MAIN USER: $main::user\n");
+    # print("USERCOUNT: $usercount\n");
     my $html_body = <<HTML;
     <h1>Index</h1>
     <div class="userCount">
@@ -39,7 +39,10 @@ HTML
     <a href="/calender/year">$translations->{calender}</a><br>
     <a href="/about">$translations->{about}</a><br>
     <a href="/updateLog">$translations->{updateLog}</a><br>
-    <a href="/support">$translations->{support}</a>
+    <a href="/support">$translations->{support}</a><br>
+    <a href="/streaming">$translations->{streaming}</a><br>
+    <a href="/streaming/videos">$translations->{videos}</a><br>
+    <a href="/streaming/live">$translations->{live}</a><br>
     <br>
 HTML
 

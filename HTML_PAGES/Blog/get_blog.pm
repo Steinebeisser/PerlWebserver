@@ -5,7 +5,7 @@ use warnings;
 
 sub get_blog {
     my ($page, $sort_type) = @_;
-    print("SORT TYPE: $sort_type\n");
+    # print("SORT TYPE: $sort_type\n");
     my $translations = language_utils::load_language("blog, login, register");
     
     my $html_body = html_utils::get_blog_top_bar_account($translations);

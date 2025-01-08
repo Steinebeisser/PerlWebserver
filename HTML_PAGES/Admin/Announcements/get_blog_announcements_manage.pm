@@ -31,7 +31,7 @@ HTML
 HTML
     }
     foreach my $announcement (@announcements) {
-        print("Announcement: $announcement\n");
+        # print("Announcement: $announcement\n");
         my $status = defined $announcement->{active} && $announcement->{active} eq "true" ? "Active" : "Deactivated";
 
         $html_body .= <<HTML;
