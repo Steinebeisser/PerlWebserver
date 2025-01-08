@@ -122,6 +122,8 @@ CSS
     .main {
         flex: 1;
         z-index: 1;
+        display: flex;
+        flex-direction: column;
     }
 CSS
 
@@ -408,6 +410,9 @@ CSS
         text-decoration: none; 
         color: var(--month-bg);
     }
+    .footer {
+        margin-top: 20px;
+    }
 
 CSS
     }
@@ -418,7 +423,6 @@ CSS
         position: relative;
         bottom: 0;
         width: 100%;
-        margin-top: 20px;
         display: inline-block;
         text-align: center;
         background-color: var(--footer-bg);
@@ -1207,6 +1211,245 @@ CSS
         $css .= <<CSS;
     .hidden {
         display: none;
+    }
+CSS
+    }
+
+    if ($html_body =~ /class="StreamingView"/) {
+        $css .= <<CSS;
+    .StreamingTop {
+        display: flex;
+        background-color: #16171d;
+        border-radius: 8px;
+        padding: 10px 0 10px 0;
+    }
+    .StreamingTopLeft {
+        width: 25%;
+    }
+    .StreamingTopCenter {
+        width: 50%;
+        margin: auto;
+    }
+    .StreamingTopRight {
+        width: 25%;
+    }
+    .StreamingMainLeft {
+        width: 10%;
+        flex-wrap: wrap;
+        justify-content: center;
+        background-color: #2a2d37;
+        border-right: 5px black solid;
+        border-radius: 10px;
+    }
+    .StreamingMain {
+        display: flex;
+        flex: 1;
+        border-top: 5px black solid;
+        border-bottom: 5px solid black;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .StreamingMainCenter {
+        width: 80%;
+        background-color: #4c3f54;
+
+    }
+    .StreamingMainRight {
+        width: 10%;
+        background-color: #2a2d37;
+        border-left: 5px black solid;
+        border-radius: 10px;
+    }
+    .StreamingView {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        border: 5px black solid;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.6);
+    }
+    .Videos {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    /*.Video { 
+        width: 21%; 
+        margin: 2%; 
+        border-radius: 8px; 
+        overflow: hidden; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+    } 
+    .Thumbnail { 
+        aspect-ratio: 16 / 9; 
+        background-color: #000; 
+    } */
+    .Video {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin: 15px;
+        overflow: hidden;
+        flex: 1 1 calc(25% - 30px);
+        max-width: calc(25% - 30px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    \@media (max-width: 1200px) {
+        .Video {
+            flex: 1 1 calc(33.33% - 30px); 
+            max-width: calc(33.33% - 30px);
+        }
+    }
+
+    \@media (max-width: 768px) {
+        .Video {
+            flex: 1 1 calc(50% - 30px); 
+            max-width: calc(50% - 30px);
+        }
+    }
+
+    \@media (max-width: 480px) {
+        .Video {
+            flex: 1 1 100%; 
+            max-width: 100%;
+        }
+    }
+
+    .Thumbnail {
+        border: none;
+        cursor: pointer;
+        background: black; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 100%;
+        aspect-ratio: 16 / 9;
+        padding: unset;
+    }
+
+    .Thumbnail img {
+        object-fit: cover;
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+
+    .VideoMetadata {
+        display: flex;
+    }
+
+    .ChannelIcon {
+        flex-shrink: 0;
+        margin: 5px 0 0 5px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ChannelIcon img {
+        object-fit: cover;
+    }
+
+    .OtherMetadata {
+        flex: 1;
+        display: flex;
+        flex-wrap: wrap;
+        margin: 5px 10px 5px 10px;
+    }
+
+    .VideoTitle {
+        font-size: 1.2rem;
+        font-weight: bold;
+        width: 100%;
+    }
+
+    .VideoTitle a {
+        margin: unset;
+        padding: unset;
+        width: fit-content;
+        text-align: left;
+        background-color: unset;
+    }
+
+    .VideoTitle a:hover {
+        color: #007bff;
+    }
+
+    .ChannelName {
+        width: 100%;
+        text-align: left;
+    }
+
+    .ChannelName a {
+        margin: unset;
+        padding: unset;
+        width: fit-content;
+        text-align: left;
+    }
+
+    .VideoInline {
+        display: flex;
+        font-size: 0.9rem;
+        color: #777;
+        justify-content: space-between;
+        flex: 1;
+    }
+CSS
+    }
+
+    if ($html_body =~ /class="StreamingChannel"/) {
+        $css .= <<CSS;
+    .ChannelBanner {
+        position:absolute;
+        z-index: -1;
+        width: 100%;
+        height: 200px;
+    }
+    .ChannelBanner img {
+        width: 100%;
+        height: 200px;
+    }
+    .ChannelInfo {
+        display: flex;
+        height: 200px;
+    }
+    .ChannelIcon {
+        margin-left: 30%;
+        margin-top: unset;
+        justify-content: center;
+        display: flex;
+    }
+    .channel_icon {
+        margin: auto;
+        width: 100px;
+    }
+    .ChannelText {
+        margin-left: 5%;
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .ChannelName {
+        position: relative;
+        top: 30%;
+        margin: unset;
+        width: 100%;
+    }
+    .ChannelName h1 {
+        margin: unset;
+        text-align: left;
+    }
+    .SubscribeButton {
+        position: relative;
+        top: 55%;
     }
 CSS
     }

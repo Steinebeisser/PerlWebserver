@@ -29,7 +29,7 @@ sub get_fonts {
             }
             close $fh;
 
-            my $response = HTTP_RESPONSE::OK_WITH_DATA($font_data, $font);
+            my $response = HTTP_RESPONSE::OK_WITH_DATA_AND_CACHE($font_data, $font, "font/ttf");
             http_utils::send_http_response($client_socket, $response);
         } else {
             http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Font not found"));

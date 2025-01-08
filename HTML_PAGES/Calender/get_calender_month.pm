@@ -18,7 +18,7 @@ sub get_calender_month {
 
     my $translations = language_utils::load_language("calender");
 
-    print($calender_data_json);
+    # print($calender_data_json);
 
     if (!defined $calender_data) {
         main::serve_error(HTTP_RESPONSE::ERROR_404("No holiday data found for $year/$month"));
@@ -72,7 +72,7 @@ HTML
     </div>
     <br>
 HTML
-    print("/calender/year/$year/month/$next_month");
+    # print("/calender/year/$year/month/$next_month");
 
 
 
@@ -129,7 +129,7 @@ HTML
             }
 
             if ($calender_data->{days}{$scan_day}) {
-                print("HOLIDAY FOUND: $month $day\n");
+                # print("HOLIDAY FOUND: $month $day\n");
                 $html_body .= <<HTML;
                 <div class="day holiday">$day</div>
 HTML

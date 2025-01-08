@@ -12,10 +12,10 @@ sub new {
     my $role = $user_stats->{role}; 
     my $email = $user_stats->{email};
     my $human_username = user_utils::decode_uri($username);
-    print("Username: $username\n");
-    print("Human username: $human_username\n");
+    # print("Username: $username\n");
+    # print("Human username: $human_username\n");
     if (!$username || !$password) {
-        print("Missing username or password\n");
+        # print("Missing username or password\n");
         return 0;
     }
     if (!$role) {

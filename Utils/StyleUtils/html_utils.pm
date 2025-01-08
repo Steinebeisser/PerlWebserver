@@ -68,14 +68,13 @@ HTML
         if (!$metadata) {
             $parsed_date = "Unknown";
         } else {   
-            print("Metadata: $metadata->{file}->{uploaded_at}\n");
-            my $uploaded_at = $metadata->{file}->{uploaded_at};
+            my $uploaded_at = $metadata->{uploaded_at};
             $parsed_date = calender_utils::parse_date($uploaded_at);
         }
         if (!$metadata) {
             $size = "Unknown";
         } else {
-            $size = $metadata->{file}->{size};
+            $size = $metadata->{size};
             if (!$size) {
                 $size = "Unknown";
             }

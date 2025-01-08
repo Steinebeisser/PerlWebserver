@@ -20,7 +20,7 @@ sub new {
     }
 
     if (-f $card_dir . "/" . $file_name) {
-        print("GAME ALREADY EXISTS\n");
+        # print("GAME ALREADY EXISTS\n");
         return 0;
     }
 
@@ -55,7 +55,7 @@ sub new {
 
     open my $fh, ">", "$card_dir/$file_name", or do 
     {
-        print "Can't open file $card_dir/$file_name: $!";
+        # print "Can't open file $card_dir/$file_name: $!";
         return;
     };
     print $fh encode_json(\%card_pairs);
@@ -92,7 +92,7 @@ sub load {
 
     open my $fh, "<", "$card_dir/$file_name", or do 
     {
-        print "Can't open file $card_dir/$file_name: $!";
+        # print "Can't open file $card_dir/$file_name: $!";
         return;
     };
     my $json = do { local $/; <$fh> };
@@ -128,7 +128,7 @@ sub create_field {
     }
     open my $fh, "<", $script_path or do 
     {
-        print "Can't open file: $!";
+        # print "Can't open file: $!";
         return;
     };
     my $script = do { local $/; <$fh> };
@@ -137,7 +137,7 @@ sub create_field {
     my $both_script_path = $base_path . "/Utils/JavaScript/memory/both.js";
     open $fh, "<", $both_script_path or do 
     {
-        print "Can't open file: $!";
+        # print "Can't open file: $!";
         return;
     };
     my $both_script = do { local $/; <$fh> };

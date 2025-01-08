@@ -12,6 +12,8 @@ use lib '.';
 use HTTP_RESPONSE;
 use html_pages;
 
+$SIG{PIPE} = 'IGNORE';
+
 
 my $cookie_language;
 $main::max_storage = 1*1024*1024*1024; # 1GB
@@ -22,6 +24,7 @@ my $is_post;
 my $user;
 my $is_shutdown = 0;
 my $port = 80;
+my $udp_port = 8080;
 $server::storage_bottleneck = 0.8;
 # my %memory::spectate_games;
 
@@ -103,6 +106,17 @@ my %index_router = (
 
     "/support" => \&get_support_pages::get_starting_page,
     "/support/request/new" => \&support_utils::handle_new_request,
+
+    "/streaming" => \&get_streaming_pages::get_streaming_home,
+    "/streaming/upload" => \&get_streaming_pages::get_streaming_upload,
+    "/streaming/watch" => \&get_streaming_pages::get_streaming_watch,
+    "/streaming/video/src" => \&get_streaming_pages::get_streaming_video_src,
+    "/streaming/image/src" => \&get_streaming_pages::get_streaming_image_src,
+    "/streaming/image/channel_icon" => \&get_streaming_pages::get_streaming_image_channel_icon,
+    "/streaming/image/channel_banner" => \&get_streaming_pages::get_streaming_image_channel_banner,
+    "/streaming/channel" => \&get_streaming_pages::get_streaming_channel,
+    "/streaming/videos" => \&get_streaming_pages::get_streaming_videos,
+    "/streaming/live" => \&get_streaming_pages::get_streaming_live,
 );
 
 my %post_router = (
@@ -166,8 +180,20 @@ listen($server, 5) || die "Can't listen: $!";
 
 print("Accepting connections\n");
 
-epoll_ctl($main::epoll, EPOLL_CTL_ADD, fileno $server, EPOLLIN) >= 0 || die "Can't add server socket to main::epoll: $!";
 
+# print("Creating UDP Socket\n");
+# socket(
+#     my $udp_socket,
+#     AF_INET,
+#     SOCK_DGRAM,
+#     0) || die "Can't create udp socket: $!";
+
+# print("Binding UDP Socket to port $udp_port\n");
+# bind($udp_socket, sockaddr_in($udp_port, INADDR_ANY)) || die "Can't bind udp socket: $!";
+
+
+epoll_ctl($main::epoll, EPOLL_CTL_ADD, fileno $server, EPOLLIN) >= 0 || die "Can't add server socket to main::epoll: $!";
+# epoll_ctl($main::epoll, EPOLL_CTL_ADD, fileno $udp_socket, EPOLLIN) >= 0 || die "Can't add udp socket to main::epoll: $!";
 # sleep(2);
 # smtp_send::send_email("Noah.Bach\@sinc.de", "Noah.Bach\@sinc.de", "Hallo Ich", "Bin ich du, oder bist du ich?\n:)");
 epoll_loop();
@@ -187,7 +213,7 @@ sub epoll_loop {
                 my $client_addr = accept(my $client_socket, $server);
                 my ($client_port, $client_ip) = sockaddr_in($client_addr);
                 my $client_ip_str = inet_ntoa($client_ip);
-                print("ACCEPTED NEW CONNECTION FROM $client_ip_str:$client_port\n");
+                # print("ACCEPTED NEW CONNECTION FROM $client_ip_str:$client_port\n");
                 # my $geo_location = ip_utils::get_geolocation($client_ip_str);
                 # print("ACCEPTED NEW CONNECTION\n");
                 # print("CLIENT SOCKET:" .$client_socket . "\n");
@@ -202,6 +228,9 @@ sub epoll_loop {
                 epoll_ctl($main::epoll, EPOLL_CTL_ADD, fileno $client_socket, EPOLLIN) >= 0 || die "Can't add client socket to main::epoll: $!";
                 $epoll::clients{fileno($client_socket)}{"has_in"} = 1;
 
+            # } elsif ($event->[0] == fileno $udp_socket) {
+            #     print("RECEIVED UDP PACKET\n");
+            #     die;
             } elsif ($event->[1] & EPOLLIN) {
                 # print("Handling client\n");
                 handle_client($event->[0]);
@@ -239,14 +268,14 @@ sub handle_client {
     }
 
     if (!$epoll::clients{$client_fd}{"header"}) {
-        print("1");
+        # print("1");
         $epoll::clients{$client_fd}{"is_ws"} = 1;
         websocket_utils::handle_websocket_communication($client_fd);
         return;
     }
 
     if ($epoll::clients{$client_fd}{"header"} =~ /Sec-WebSocket-Version: (.*)\r\n/) {
-        print("2");
+        # print("2");
         websocket_utils::handle_websocket_request($client_socket, $epoll::clients{$client_fd}{"header"});
         return;
     } else {
@@ -263,7 +292,7 @@ sub handle_client {
 
 sub handle_filestream {
     my ($client_fd) = @_;
-    print("CLIENT FD: $client_fd\n");
+    # print("CLIENT FD: $client_fd\n");
 
     my $client_socket = $epoll::clients{$client_fd}{"socket"};
     my $filestream = $epoll::clients{$client_fd}{"filestream"};
@@ -291,7 +320,7 @@ sub handle_filestream {
     # print("FINISHED SENDING BUFFER\n");
     if ($filestream->{file_pos} == $filestream->{file_size}) {
         close($fh);
-        print("FILESTREAM COMPLETE\n");
+        # print("FILESTREAM COMPLETE\n");
         remove_client_out($client_fd);
     }
 }
@@ -299,7 +328,7 @@ sub handle_filestream {
 sub remove_client_in {
     my ($client_fd) = @_;
     $epoll::clients{$client_fd}{"has_in"} = 0;
-    print("removing client in\n");
+    # print("removing client in\n");
 
     if (!$epoll::clients{$client_fd}{"has_out"}) {
         remove_client_complete($client_fd);
@@ -324,7 +353,7 @@ sub remove_client_out {
     my ($client_fd) = @_;
     $epoll::clients{$client_fd}{"has_out"} = 0;
     epoll_ctl($main::epoll, EPOLL_CTL_MOD, $client_fd, EPOLLIN) >= 0 || die "Can't add client socket to main::epoll: $!";
-    print("removing client out\n");
+    # print("removing client out\n");
 
     if (!$epoll::clients{$client_fd}{"has_in"}) {
         remove_client_complete($client_fd);
@@ -335,7 +364,7 @@ sub remove_client_out {
 
 sub remove_client_complete {
     my ($client_fd) = @_;
-    print("REMOVING CLIENT\n");
+    # print("REMOVING CLIENT\n");
     close($epoll::clients{$client_fd}{"socket"});
     delete $epoll::clients{$client_fd};
 }
@@ -353,9 +382,9 @@ sub handle_normal_request {
     my $client_socket = $epoll::clients{$client_fd}{"socket"};
 
     $main::header = $epoll::clients{$client_fd}{"header"};
-    print("HEADER: $main::header\n");
+    # print("HEADER: $main::header\n");
     ($main::uri) = $main::header =~ /(?:GET|POST) (.*?) HTTP/;
-    print("URI: $main::uri\n");
+    # print("URI: $main::uri\n");
     # print("1");
     my $method = handle_method($client_socket, $main::header);
     # print("2");
@@ -397,7 +426,7 @@ sub handle_normal_request {
     # print("USER: " . (defined $main::user ? $main::user : "undef") . "\n");
     # print("IMAIL: " . (defined $main::user && defined $main::user->{email} ? $main::user->{email} : "undef") . "\n");
     if (defined $main::user && !$main::user->{email} && !$skipidy) {
-        # print("HELLO\n");
+        print("HELLO\n");
         my $html = get_require_email::get_require_email();
         http_utils::send_response($client_socket, HTTP_RESPONSE::OK($html));
         close($client_socket);
@@ -405,7 +434,7 @@ sub handle_normal_request {
     }
     if ($main::user && !user_utils::is_email_verified && !$skipidy) {
         my $html = get_email_not_verified::get_email_not_verified();
-        # print("HELLO\n");
+        print("HELLO\n");
         http_utils::send_response($client_socket, HTTP_RESPONSE::OK($html));
         close($client_socket);
         return;
@@ -417,7 +446,7 @@ sub handle_normal_request {
 
     # print("8");
     if (!$epoll::clients{$client_fd}{"has_out"}) {
-        # print("9");
+        print("9");
         http_utils::send_response($client_socket, HTTP_RESPONSE::OK($response));
     }
     # print("SENT RESPONSE\n");
@@ -448,8 +477,8 @@ sub handle_method {
         $method = "POST";
         substr($header, 0, 5) = "";
     } else {
-        print "Received an unknown request\n";
-        print("REQUEST: $header\n");
+        # print "Received an unknown request\n";
+        # print("REQUEST: $header\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_405);
     }
 
@@ -488,14 +517,14 @@ sub handle_get_index {
         return;
     }
 
-    print("HANDLING GET REQUEST\n");
-    print("MAIN URI: $main::uri\n");
+    # print("HANDLING GET REQUEST\n");
+    # print("MAIN URI: $main::uri\n");
     foreach my $route (@sorted_routes) {
         # print "Checking route $route\n";
         if ($main::uri =~ /^$route/) {
-            print "Received a get request for $route\n";
+            # print "Received a get request for $route\n";
             if ($route eq "/verify") {
-                print("ROUTE: $route\n");
+                # print("ROUTE: $route\n");
                 $response = email_utils::handle_email_verification($client_socket, $main::uri);
             } elsif ($route eq "/calender") {
                 $response = calender_utils::handle_calender($client_socket, $main::uri);

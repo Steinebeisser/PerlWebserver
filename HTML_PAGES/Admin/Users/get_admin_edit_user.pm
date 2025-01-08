@@ -12,9 +12,9 @@ sub get_admin_edit_user {
         return 0;
     }
     
-    print("USERNAME: $username\n");
+    # print("USERNAME: $username\n");
     my $uuid = user_utils::get_uuid_by_username($username);
-    print("UUID: $uuid\n");
+    # print("UUID: $uuid\n");
     if (!user_utils::check_if_user_exists($client_socket, $uuid)) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("User not found"));
     }
@@ -40,7 +40,7 @@ HTML
         foreach my $role (user_utils::get_all_roles()) {
             my $selected = $username_role eq $role ? "selected" : "";
             $html_body .= qq(<option value="$role" $selected>$role</option>\n);
-            print(" ROLLONE: $role\n");
+            # print(" ROLLONE: $role\n");
         }
         
 

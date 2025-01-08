@@ -26,7 +26,7 @@ sub load_language {
     foreach my $single_route (@routes) {
         $single_route =~ s/\s+//g;
         my $file_path = "$language_path/$language/$single_route.json";
-        print("LOADING $file_path\n");
+        # print("LOADING $file_path\n");
         my $language_data = read_json_file($file_path);
         %combined_language_data = (%combined_language_data, %$language_data) if $language_data;
     }

@@ -7,7 +7,7 @@ use JSON;
 
 sub get_calender_year {
     my ($year) = @_;
-    print("YEAHAH: $year\n");
+    # print("YEAHAH: $year\n");
     if ($year =~ /^(\d+)\//) {
         $year = $1;
     }
@@ -21,7 +21,7 @@ sub get_calender_year {
     my $calender_data = decode_json($calender_data_json) if $calender_data_json;
     $calender_data = $calender_data->{lang}->{$language} if $calender_data;
 
-    print("GOT DATA $calender_data\n$calender_data_json\n");
+    # print("GOT DATA $calender_data\n$calender_data_json\n");
     my $translations = language_utils::load_language("calender");
 
     if (!defined $calender_data) {
@@ -138,7 +138,7 @@ HTML
             }
 
             if ($holidays{$month}{$scan_day}) {
-                print("HOLIDAY FOUND: $month $day\n");
+                # print("HOLIDAY FOUND: $month $day\n");
                 $html_body .= <<HTML;
                 <div class="day holiday">$day</div>
 HTML
@@ -159,7 +159,7 @@ HTML
         }
         foreach my $month (keys %holidays) {
             foreach my $day (keys %{$holidays{$month}}) {
-                print("HOLIDAY: $month $day\n");
+                # print("HOLIDAY: $month $day\n");
             }
         }
 

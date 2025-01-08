@@ -20,7 +20,7 @@ sub get_admin_delete_user {
         return HTTP_RESPONSE::ERROR_404("User does not exist");
     } 
     
-    print("TO DELETE USERNAME $username\n");
+    # print("TO DELETE USERNAME $username\n");
     $html_body = <<HTML;
     <h1>Delete user $human_username</h1>
     <br>

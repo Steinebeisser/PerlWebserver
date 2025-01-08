@@ -51,7 +51,7 @@ sub get_vanta_bg {
         scale: 1.00,
         scaleMobile: 1.00,
 VANTA_BG
-print("Main scheme: $main::scheme\n");
+# print("Main scheme: $main::scheme\n");
     if ($main::scheme eq "dark") {
         $vanta_bg .= <<VANTA_BG;
         colorMode: "lerp",

@@ -37,6 +37,19 @@ sub OK {
     return $response;
 }
 
+sub OK_ACCEPT_RANGE {
+    my ($video_data, $content_length, $content_type) = @_;
+    my $content_length = length($video_data);
+    my $response = "HTTP/1.1 200 OK\r\n"
+                . "Accept-Ranges: bytes\r\n"
+                . "Content-Length: $content_length\r\n"
+                . "Content-Type: $content_type\r\n"
+                . "Connection: close\r\n"
+                . "\r\n";
+
+    return $response;
+}
+
 sub OK_JS_WITH_CACHE {
     my ($html_content) = @_;
     my $content_length = length($html_content);
@@ -105,12 +118,16 @@ sub OK_WITH_DATA {
 }
 
 sub OK_WITH_DATA_AND_CACHE {
-    my ($data, $filename) = @_;
+    my ($data, $filename, $content_type) = @_;
     my $content_length = length($data);
+    if (!$content_type) {
+        $content_type = "application/octet-stream";
+    }
     my $response = "HTTP/1.1 200 OK\r\n"
-                . "Content-Type: application/octet-stream\r\n"
+                . "Content-Type: $content_type\r\n"
                 . "Content-Disposition: attachment; filename=\"$filename\"\r\n"
                 . "Cache-Control: public, max-age=604800\r\n"
+                . "X-Content-Type-Options: nosniff\r\n"
                 . "Content-Length: " . length($data) . "\r\n"
                 . "Connection: close\r\n"
                 . "\r\n"
@@ -125,6 +142,33 @@ sub OK_WITH_DATA_HEADER {
                 . "Content-Type: application/octet-stream\r\n"
                 . "Content-Disposition: attachment; filename=\"$filename\"\r\n"
                 . "Content-Length: $file_size\r\n"
+                . "Connection: close\r\n"
+                . "\r\n";
+
+    return $response;
+}
+
+sub PARTIAL_CONTENT_206 {
+    my ($data, $start_range, $end_range, $file_size, $content_type) = @_;
+    my $content_length = length($data);
+    my $response = "HTTP/1.1 206 Partial Content\r\n"
+                . "Content-Type: $content_type\r\n"
+                . "Content-Length: " . length($data) . "\r\n"
+                . "X-Content-Type-Options: nosniff\r\n"
+                . "Content-Range: bytes $start_range-$end_range/$file_size\r\n"
+                . "Connection: close\r\n"
+                . "\r\n"
+                . $data;
+
+    return $response;
+}
+
+sub PARTIAL_CONTENT_206_NO_CONTENT_RANGE {
+    my ($file_size, $content_type) = @_;
+    my $response = "HTTP/1.1 206 Partial Content\r\n"
+                . "Content-Type: $content_type\r\n"
+                . "Content-Length: $file_size\r\n"
+                . "X-Content-Type-Options: nosniff\r\n"
                 . "Connection: close\r\n"
                 . "\r\n";
 

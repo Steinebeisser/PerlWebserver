@@ -43,7 +43,7 @@ sub get_session_cookie {
     my ($username) = @_;
     my $uuid = user_utils::get_uuid_by_username($username);
     my $session_id = generate_session_id($uuid);
-    print("SESSION ID: $session_id\n");
+    # print("SESSION ID: $session_id\n");
     my $session_data = "$uuid|$session_id";
     my $encrypted_data = encrypt_cookie($session_data);
     my $cookie = "session=$encrypted_data; HttpOnly; SameSite=Strict; Path=/";
@@ -67,14 +67,14 @@ sub validate_session {
     }
 
     my $session_data = decrypt_cookie($encrypted_data);
-    print("SESSION_DATA: $session_data\n");
+    # print("SESSION_DATA: $session_data\n");
     if (!$session_data) {
         return 0;
     }
 
     my ($uuid, $session_id) = split(/\|/, $session_data);
-    print("UUID: $uuid\n");
-    print("SESSION ID: $session_id\n");
+    # print("UUID: $uuid\n");
+    # print("SESSION ID: $session_id\n");
     return ($uuid, $session_id);
 }
 

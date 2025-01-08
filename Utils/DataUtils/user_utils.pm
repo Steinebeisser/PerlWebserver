@@ -13,34 +13,34 @@ my $userdata_folder = "$base_dir/Data/UserData";
 sub exist_not_banned {
     my ($client_socket, $uuid) = @_;
 
-    print("CHECKING USER EXISTS\n");
+    # print("CHECKING USER EXISTS\n");
     if (!user_exists($client_socket, $uuid)) {
-        print("User does not exist\n");
+        # print("User does not exist\n");
         return 0;
     }
-    print("EXISTS\n");
+    # print("EXISTS\n");
 
     if (is_banned($client_socket, $uuid)) {
-        print("User is banned\n");
+        # print("User is banned\n");
         return 0;
     }
 
-    print("USER EXISTS\n");
-
+    # print("USER EXISTS\n");
+    return 1;
 }
 
 sub user_exists {
     my ($client_socket, $uuid) = @_;
 
-    print("CHECKING USER EXISTS\n");
-    print("UUID: $uuid\n");
+    # print("CHECKING USER EXISTS\n");
+    # print("UUID: $uuid\n");
     my $filename = "$userdata_folder/Users/$uuid/$uuid.json";
     if (-e $filename) {
-        print("USER EXISTS\n");
+        # print("USER EXISTS\n");
         return 1;
     }
     if (!$client_socket) {
-        print("RETURNING 0\n");
+        # print("RETURNING 0\n");
         return 0;
     }
     my $html_body = <<HTML;
@@ -110,7 +110,7 @@ sub get_all_users {
 
         my ($role) = get_user_stat($uuid, "role");
         my $username = get_username_by_uuid($uuid);
-        print("PUSHING USER: $username\n");
+        # print("PUSHING USER: $username\n");
         my $user_hash = {
             uuid => $uuid,
             username => $username,
@@ -181,13 +181,13 @@ sub update_user_values {
 
     my $filename = "$userdata_folder/Users/$uuid/$uuid.json";
     my $data = get_json_data($uuid);
-    print("UPDATING USER VALUES\n");
+    # print("UPDATING USER VALUES\n");
     if ($data->{$key}) {
         $data->{$key} = $value;
     } else {
         $data->{$key} = $value;
     }
-    print("DATA: $data\n"); 
+    # print("DATA: $data\n"); 
     my $json = encode_json($data);
     open(my $file, '>', $filename) or return 0;
     print $file $json;
@@ -199,14 +199,14 @@ sub get_user_stat {
     my ($uuid, $key) = @_;
     my $data = get_json_data($uuid);
     if (!$data) {
-        print("CANT FETCH DATA FOR $uuid\n");
+        # print("CANT FETCH DATA FOR $uuid\n");
         return 0;
     }
     if (!$data->{$key}) {
-        print("CANT FETCH DATA FOR $uuid\n");
+        # print("CANT FETCH DATA FOR $uuid\n");
         return 0;
     }
-    print("DATA: $data->{$key}\n");
+    # print("DATA: $data->{$key}\n");
     return $data->{$key};
 }
 
@@ -216,7 +216,7 @@ sub get_json_data {
     # print("JASN DATA: $uuid\n");
     my $filename = "$userdata_folder/Users/$uuid/$uuid.json";
     open(my $file, '<', $filename) or do {
-        print("Error opening file $filename\n");
+        # print("Error opening file $filename\n");
         return 0;
     };
     my $json_text = do {
@@ -226,7 +226,7 @@ sub get_json_data {
     close($file);
     my $data = eval { decode_json($json_text) };
     if ($@) {
-        print("Error decoding JSON: $@\n");
+        # print("Error decoding JSON: $@\n");
         return 0;
     }
     return $data;
@@ -349,9 +349,9 @@ sub delete_user {
     }
     
     my $start_dir = "$base_dir/Data/UserData/Users/$uuid";
-    print("DELETING USER\nStart dir: $start_dir\n");
+    # print("DELETING USER\nStart dir: $start_dir\n");
     if (!delete_files_recursive($start_dir))  {
-        print("Error deleting files\n");
+        # print("Error deleting files\n");
         return 0;
     }
 
@@ -370,8 +370,8 @@ sub remove_from_user_json {
     my $json = do { local $/; <$file> };
     close $file;
     my $data = decode_json($json);
-    print("JSON: $json\n");
-    print("DATA: $data\n");
+    # print("JSON: $json\n");
+    # print("DATA: $data\n");
     my $uuid_to_user = $data->{uuid_to_user};
     my $user_to_uuid = $data->{user_to_uuid};
     delete $uuid_to_user->{$uuid} or die "Could not delete $uuid from uuid_to_user $!";
@@ -385,7 +385,7 @@ sub delete_files_recursive {
 
     opendir(my $dir, $path) or do 
     { 
-        print("Could not open $path $!"); 
+        # print("Could not open $path $!"); 
         return 0;
     };
 
@@ -400,7 +400,7 @@ sub delete_files_recursive {
             unlink($path);
         }
     }
-    print("Removing $path\n");
+    # print("Removing $path\n");
     rmdir($path) or die "Could not remove $path $!";
     return 1;
 }
@@ -682,8 +682,8 @@ sub create_random_string {
 sub populate_user {
     my ($cookie) = @_;
 
-    print("POPULATING USER\n");
-    print("COOKIE: $cookie\n");
+    # print("POPULATING USER\n");
+    # print("COOKIE: $cookie\n");
     # my $cookie_data = cookie_utils::read_cookie($cookie);
     my ($uuid, $session_id) = cookie_utils::validate_session($cookie);
     if (!$uuid || !$session_id) {
@@ -701,7 +701,7 @@ sub populate_user {
     #     print("KEY: $key\n");
     #     print("VALUE: $user_stats->{$key}\n");
     # }
-    print("creating User\n");
+    # print("creating User\n");
     $main::user = User->new($user_stats);
 }
 
@@ -727,7 +727,7 @@ sub get_user_stats {
         my $json = do { local $/; <$file>};
         close $file;
         my $user_stats = decode_json($json);
-        print("USER STATS: $user_stats\n");
+        # print("USER STATS: $user_stats\n");
         # foreach my $key (keys %$user_stats) {
         #     print("KEY: $key\n");
         #     print("VALUE: $user_stats->{$key}\n");
@@ -841,5 +841,15 @@ sub save_used_emails {
     };
     print $file encode_json($data);
     close($file);
+}
+
+sub get_display_name_with_uuid {
+    my ($uuid) = @_;
+    my $username = get_username_by_uuid($uuid);
+    my $display_name = get_user_stat($uuid, "display_name");
+    if ($display_name) {
+        return $display_name;
+    }
+    return $username;
 }
 1;
