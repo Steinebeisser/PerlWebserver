@@ -16,21 +16,27 @@ sub get_thumbnail {
     my $full_file_path;
     open my $fh, "<", $videos_file;
     
+    # print("VIDEO ID: $video_id\n");
     while (my $line = <$fh>) {
         chomp $line;
+        # print("LINE: $line\n");
         if ($line !~ /$video_id/) {
             next;
         }
         my $meta_data_file = "$base_dir/$line";
+        # print("META DATA FILE: $meta_data_file\n");
         open my $meta_fh, "<", $meta_data_file;
         my $meta_data = do { local $/; <$meta_fh> };
         close $meta_fh;
+        if (!$meta_data) {
+            next;
+        }
         my $video_data = decode_json($meta_data);
 
         my $file_path = $video_data->{thumbnail};
 
         $full_file_path = "$base_dir/$file_path";
-        print("Full file path: $full_file_path\n");
+        # print("Full file path: $full_file_path\n");
         last;
     }
     close $fh;
@@ -42,24 +48,27 @@ sub get_channel_icon {
     my ($channel_id, $client_socket) = @_;
 
     my $base_dir = getcwd();
-    my $channel_path = "$base_dir/Data/UserData/Users/$channel_id/Streaming";
+    my $channel_path = "$base_dir/Data/UserData/Users/$channel_id/Streaming/Channel";
+    print("CHANNEL PATH: $channel_path\n");
     if (!-d $channel_path) {
+        warn "no channel path\n";
         get_default_channel_icon($client_socket);
         return;
     }
-    my $channel_metadata_file = "$channel_path/channel_metadata.txt";
+    my $channel_metadata_file = "$channel_path/Icon/channel_icon.txt";
     if (!-e $channel_metadata_file) {
+        warn "no icon file\n";
         get_default_channel_icon($client_socket);
         return;
     }
     my $full_file_path;
     open my $fh, "<", $channel_metadata_file;
-    my $channel_metadata = do { local $/; <$fh> };
+    my $icon_path = do { local $/; <$fh> };
+    $icon_path =~ s/\n//g;
     close $fh;
-    my $channel_data = decode_json($channel_metadata);
-    my $file_path = $channel_data->{channel_icon};
-    $full_file_path = "$base_dir/$file_path";
+    $full_file_path = "$base_dir/$icon_path";
     if (!-e $full_file_path) {
+        warn "no icon file2\n";
         get_default_channel_icon($client_socket);
         return;
     }
@@ -123,7 +132,13 @@ sub get_default_channel_banner {
 sub get_image {
     my ($full_file_path, $client_socket) = @_;
 
+    if (!-e $full_file_path) {
+        my $error = HTTP_RESPONSE::ERROR_404("Image not found");
+        http_utils::send_response($client_socket, $error);
+        return;
+    }
     my $file_size = -s $full_file_path;
+    print("FILE PATH: $full_file_path\n");
     open my $fh, '<', $full_file_path or die "Cannot open file: $!";
     $epoll::clients{fileno $client_socket}{filestream} = {
         file => $fh,

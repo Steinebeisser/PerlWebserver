@@ -1215,7 +1215,7 @@ CSS
 CSS
     }
 
-    if ($html_body =~ /class="StreamingView"/) {
+    if ($html_body =~ /class="StreamingView"/ || $html_body =~ /class="channel_videos"/ || $html_body =~ /class="ManageVideo"/) {
         $css .= <<CSS;
     .StreamingTop {
         display: flex;
@@ -1273,19 +1273,7 @@ CSS
         display: flex;
         flex-wrap: wrap;
     }
-    /*.Video { 
-        width: 21%; 
-        margin: 2%; 
-        border-radius: 8px; 
-        overflow: hidden; 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-    } 
-    .Thumbnail { 
-        aspect-ratio: 16 / 9; 
-        background-color: #000; 
-    } */
+
     .Video {
         background: #fff;
         border-radius: 8px;
@@ -1328,6 +1316,7 @@ CSS
         justify-content: center;
         min-width: 100%;
         aspect-ratio: 16 / 9;
+        max-width: fit-content;
         padding: unset;
     }
 
@@ -1353,6 +1342,7 @@ CSS
         display: flex;
         align-items: center;
         justify-content: center;
+        cursor: pointer;
     }
 
     .ChannelIcon img {
@@ -1364,20 +1354,28 @@ CSS
         display: flex;
         flex-wrap: wrap;
         margin: 5px 10px 5px 10px;
+        width: calc(100% - 65px);
     }
 
     .VideoTitle {
         font-size: 1.2rem;
         font-weight: bold;
         width: 100%;
+        height: calc(1.2em * 2);
     }
 
     .VideoTitle a {
         margin: unset;
         padding: unset;
-        width: fit-content;
+        width: auto;
         text-align: left;
         background-color: unset;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        display: -webkit-box;
+        white-space: normal;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .VideoTitle a:hover {
@@ -1442,14 +1440,34 @@ CSS
         top: 30%;
         margin: unset;
         width: 100%;
+        height: fit-content;
     }
     .ChannelName h1 {
         margin: unset;
         text-align: left;
     }
+    .SubscriberCount {
+        height: fit-content;
+    }
     .SubscribeButton {
         position: relative;
         top: 55%;
+        height: fit-content;
+    }
+    .ChannelFeatures {
+        display: flex;
+        background-color: aquamarine;
+        justify-content: space-evenly;
+    }
+    .ChannelFeatures a {
+        width: auto;
+    }
+    .ManageAccount {
+        margin-left: auto;
+    }
+    .ManageAccount a {
+        margin: 10px;
+        width: auto;
     }
 CSS
     }

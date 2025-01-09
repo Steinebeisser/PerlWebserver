@@ -7,7 +7,8 @@ use JSON;
 
 my %locations = (
     "streaming/upload" => \&create_streaming_path,
-    "/profile/ploud/upload" => \&create_ploud_path
+    "/profile/ploud/upload" => \&create_ploud_path,
+    "/update/streaming/manage/channel" => \&create_streaming_update_path
 );
 
 my %upload_name_list = (
@@ -18,6 +19,7 @@ my %upload_name_list = (
 
 my $client; 
 
+my $save_length = 50;
 
 sub handle_upload {
     my ($client_fd) = @_;
@@ -43,8 +45,12 @@ sub handle_upload {
     }
 
     if ($epoll::clients{$client_fd}{finished}) {
-        print("FINISHED UPLOAD\n");
-        create_meta_data($client_fd);
+        if (!$epoll::clients{$client_fd}{update}) {
+            print("FINISHED UPLOAD 1\n");
+            create_meta_data($client_fd);
+        } else {
+            print("FINISHED UPDATE 2\n");
+        }
         my $referer = $epoll::clients{$client_fd}{referer};
         print("REFERER: $referer\n");
         if (!$referer) {
@@ -122,7 +128,7 @@ sub create_meta_data {
         if (!-d $user_path) {
             return;
         }
-        my $user_videos_file = "$user_path/streaming/videos.txt";
+        my $user_videos_file = "$user_path/Streaming/videos.txt";
         print("USER VIDEOS FILE: $user_videos_file\n");
         open my $user_fh, '>>', $user_videos_file or die "Cannot open file: $!";
         print($user_fh "$trimmed_filepath\n");
@@ -207,7 +213,6 @@ sub extract_metadata {
     $epoll::clients{$client_fd}{filename} = $filename;
     $epoll::clients{$client_fd}{content_type} = $content_type;
     $epoll::clients{$client_fd}{name} = $name;
-
     # print("FILE DATA: $file_data\n");
     create_file($client_fd, $file_data);
 }
@@ -258,10 +263,28 @@ sub create_file {
 
     print("FILE DATA: $file_data\n");
 
+    my $boundary = $epoll::clients{$client_fd}{boundary};
+    my $write_data;
+    my $save_data;
+
+
+    if ($file_data =~ /$boundary--\r\n/) {
+        $epoll::clients{$client_fd}{finished} = 1;
+        $write_data = $file_data;
+    } else {
+        $write_data = substr($file_data, 0, -$save_length);
+        $save_data  = substr($file_data, -$save_length);
+    }
+
+    if ($save_data) {
+        $epoll::clients{$client_fd}{buffer} = $save_data;
+    }
+
     open my $fh, '>', $filepath or die "Cannot open file: $!";
     binmode $fh; 
-    print $fh $file_data;
+    print $fh $write_data;
     close $fh;
+    print("FILE CREATED, now reading until finished\n");
 }
 
 sub create_ploud_path {
@@ -284,15 +307,16 @@ sub create_ploud_path {
 }
 
 sub create_streaming_path {
-    my ($client_fd, $user_path, $file_data) = @_;
+    my ($client_fd, $user_path) = @_;
 
-    my $streaming_path = "$user_path/streaming";
+    my $streaming_path = "$user_path/Streaming";
     print("STREAMING PATH: $streaming_path\n");
     if (!-d $streaming_path) {
         mkdir $streaming_path or die "Cannot create directory: $!";
     }
+    my $videos_path = "$streaming_path/Videos";
     my $video_id = video_utils::create_new_video_id();
-    my $dir_path = "$streaming_path/$video_id";
+    my $dir_path = "$videos_path/$video_id";
     if (!-d $dir_path) {
         mkdir $dir_path or die "Cannot create directory: $!";
     }
@@ -306,6 +330,177 @@ sub create_streaming_path {
     return ($filepath, $dir_path);
 }
 
+my %update_categorys = (
+    "channel" => \&update_channel,
+    "videos" => \&update_videos,
+);
+
+sub create_streaming_update_path {
+    my ($client_fd, $user_path) = @_;
+
+    my $streaming_path = "$user_path/Streaming";
+    if (!-d $streaming_path) {
+        http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_404());
+        return;
+    }
+    print("LOCATION: $epoll::clients{$client_fd}{location}\n");
+    my ($username, $category, $video_id, $item) = $epoll::clients{$client_fd}{location} =~ /^\/update\/streaming\/manage\/channel\/([^\/]+)\/([^\/]+)(?:\/([^\/]+))?\/([^\/]+)$/;
+    print("USERNAME: $username\n");
+    print("CATEGORY: $category\n");
+    print("VIDEO ID: $video_id\n");
+    print("ITEM: $item\n");
+    if (!$username || !$category || !$item) {
+        http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_404());
+        return;
+    }
+    if (!channel_utils::has_manage_access(user_utils::get_uuid_by_username($username))) {
+        http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_401());
+        return;
+    }
+
+    if (!$update_categorys{$category}) {
+        http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_404());
+        return;
+    }
+    my ($filepath, $dir_path) = $update_categorys{$category}($streaming_path, $video_id, $item, $client_fd);
+
+
+    my $filepath = "$dir_path/$epoll::clients{$client_fd}{filename}";
+    print("FILEPATH: $filepath\n");
+
+    
+    
+    $epoll::clients{$client_fd}{update} = 1;
+
+    return ($filepath, $dir_path);
+}
+
+my %update_channel_items = (
+    "icon" => \&update_channel_icon,
+    "banner" => \&update_channel_banner,
+);
+
+sub update_channel {
+    my ($streaming_path, $video_id, $item, $client_fd) = @_;
+
+    my $channel_path = "$streaming_path/Channel";
+    if (!-d $channel_path) {
+        mkdir $channel_path or do {
+            http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_500("Cannot create directory"));
+            return;
+        };
+    }
+
+    if (!$update_channel_items{$item}) {
+        http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_404());
+        return;
+    }
+
+    my ($filepath, $dir_path) = $update_channel_items{$item}($channel_path, $client_fd);
+
+    return ($filepath, $dir_path);
+}
+
+sub update_channel_icon {
+    my ($channel_path, $client_fd) = @_;
+
+    my $dir_path = "$channel_path/Icon";
+    if (!-d $dir_path) {
+        mkdir $dir_path or do {
+            http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_500("Cannot create directory"));
+            return;
+        };
+    }
+    my $filepath = "$dir_path/$epoll::clients{$client_fd}{filename}";
+    print("FILEPATH: $filepath\n");
+    my $base_dir = getcwd;
+    my ($trimmed_filepath) = $filepath =~ /$base_dir\/(.*)/;
+
+    my $icon_file = "$dir_path/channel_icon.txt";
+    open my $fh, '>', $icon_file or do {
+        http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_500("Cannot create file"));
+        return;
+    };
+    print $fh $trimmed_filepath;
+    close $fh;
+
+    return ($filepath, $dir_path);
+}
+
+sub update_channel_banner {
+    my ($channel_path, $client_fd) = @_;
+
+    my $dir_path = "$channel_path/Banner";
+    if (!-d $dir_path) {
+        mkdir $dir_path or do {
+            http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_500("Cannot create directory"));
+            return;
+        };
+    }
+    my $filepath = "$dir_path/$epoll::clients{$client_fd}{filename}";
+    print("FILEPATH: $filepath\n");
+
+    return ($filepath, $dir_path);
+}
+
+sub update_videos {
+    my ($streaming_path, $video_id, $item, $client_fd) = @_;
+
+    my $dir_path = "$streaming_path/Videos/$video_id";
+    my $filepath = "$dir_path/$epoll::clients{$client_fd}{filename}";
+    print("FILEPATH: $filepath\n");
+
+
+    my $metadata_file_path = "$dir_path/metadata.json";
+    print("METADATA FILE PATH: $metadata_file_path\n");
+    open my $fh, '<', $metadata_file_path or die "Cannot open file: $!";
+    my $data = do { local $/; <$fh> };
+    close $fh;
+    print("DATA: $data\n");
+    my $meta_data = decode_json($data);
+
+    if (!$meta_data) {
+        http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_404());
+        return;
+    }
+    
+    my $old_thumbnail = $meta_data->{thumbnail};
+    foreach my $old_file (@{$meta_data->{old_thumbnails}}) {
+        if ($old_file eq $old_thumbnail) {
+            my ($filename, $file_extension) = $old_thumbnail =~ /(.*)\.(.*)$/;
+            my $new_filename;
+            my $counter = 1;
+
+            while (1) {
+                if ($old_file =~ /\Q$filename\E(\d*)\.\Q$file_extension\E$/) {
+                    my $num = $1 || 0;
+                    $num++;
+                    $new_filename = "$filename$num.$file_extension";
+                } else {
+                    $new_filename = "$filename$counter.$file_extension";
+                    $counter++;
+                }
+                last unless grep { $_ eq $new_filename } @{$meta_data->{old_thumbnails}};
+                if ($counter > 10) {
+                    serve_error($client_fd, HTTP_RESPONSE::ERROR_500("Too many Thumbnails, delete old ones"));
+                }
+            }
+        }
+            
+    }
+    push @{$meta_data->{old_thumbnails}}, $old_thumbnail;
+    print("OLD THUMBNAILS: $meta_data->{old_thumbnails}\n");
+    my $base_dir = getcwd;
+    my ($trimmed_filepath) = $filepath =~ /$base_dir\/(.*)/;
+    $meta_data->{thumbnail} = $trimmed_filepath;
+
+    open my $meta_fh, '>', $metadata_file_path or die "Cannot open file: $!";
+    print $meta_fh encode_json($meta_data);
+    close $meta_fh;
+
+    return ($filepath, $dir_path, $meta_data);
+}
+
 # my $sysread_bytes = 0;
 sub write_file_until_boundary {
     my ($client_fd) = @_;
@@ -313,7 +508,7 @@ sub write_file_until_boundary {
     
     my $bytes_read = sysread($client->{socket}, my $buffer, 1024*256);
     if ($bytes_read == 0) {
-        die "Client disconnected";
+        warn "Client disconnected";
         $client->{error} = 1;
         return;
     }
@@ -324,7 +519,6 @@ sub write_file_until_boundary {
 
     process_buffer($client_fd);
 }
-my $save_length = 50;
 sub process_buffer {
     my ($client_fd) = @_;
     my $client = $epoll::clients{$client_fd};

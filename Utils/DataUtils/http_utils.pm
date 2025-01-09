@@ -23,12 +23,7 @@ sub send_response {
     }
     my $bytes_written = send($client_socket, $response, 0);
     if (!defined $bytes_written) {
-        if ($! == EPIPE) {
-            warn "Client disconnected (EPIPE)";
-            # Clean up the socket or connection here
-        } else {
-            warn "Error writing to client: $!";	
-        }
+        # noting 
     }
 }
 sub serve_error {

@@ -6,6 +6,8 @@ use warnings;
 sub post_admin_update_log_add {
     my ($client_socket, $route, $temp_file) = @_;
 
+    print($temp_file);
+
     if (!admin_utils::check_if_admin_and_logged_in($client_socket)) {
         return;
     }
