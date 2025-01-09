@@ -67,18 +67,30 @@ sub get_streaming_image_channel_banner {
 sub get_streaming_channel {
     my ($client_socket, $route) = @_;
     my ($username) = $route =~ /\/channel\/(.*)/;
+    my $location;
+    if ($username =~ /(.*)\/(.*)/) {
+        $username = $1;
+        $location = $2;
+    }
     if (!$username) {
         return HTTP_RESPONSE::ERROR_404("Channel not found");
     }
     print("USERNAME: $username\n");
-    return streaming_channel::get_streaming_channel($username, $client_socket);
-}
-sub get_streaming_videos {
-
+    return streaming_channel::get_streaming_channel($username, $client_socket, $location);
 }
 
-sub get_streaming_live {
-
+sub get_streaming_manage_channel {
+    my ($client_socket, $route) = @_;
+    my ($username) = $route =~ /\/manage\/channel\/(.*)/;
+    my $path;
+    if ($username =~ /^([^\/]+)\/(.*)$/) {
+        $username = $1;
+        $path = $2;
+    }
+    if (!$username) {
+        return HTTP_RESPONSE::ERROR_404("Channel not found");
+    }
+    return streaming_manage_channel::get_streaming_manage_channel($username, $client_socket, $path);
 }
 
 1;

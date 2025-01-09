@@ -45,42 +45,7 @@ sub get_streaming_home {
 HTML
 
     foreach my $video (@videos) {
-        my $video_id = $video->{video_id};
-        my $video_title = user_utils::decode_uri($video->{title});
-        my $thumbnail_path = $video->{thumbnail_path};
-        my $channel_name = $video->{channel_name} || "Cant fetch Channel";
-        my $channel_username = $video->{channel_username};
-        $html .= <<HTML;
-                        <div class="Video">
-                            <button type="button" class="Thumbnail" onclick="window.location.href='/streaming/watch/v=$video_id'">
-                                <img src="/streaming/image/src/$video_id" alt="Video Thumbnail: $video_title">
-                            </button>
-                            <div class="VideoMetadata">
-                                <button type="button" class="ChannelIcon" onclick="window.location.href='/streaming/channel/$channel_username'">
-                                    <img src="/streaming/image/channel_icon/$channel_username" alt="Channel Icon">
-                                </button>
-                                <div class="OtherMetadata">
-                                    <div class="VideoTitle">
-                                        <a href="/streaming/watch/v=$video_id">$video_title</a>
-                                    </div>
-                                    <div class="ChannelName">
-                                        <a href="/streaming/channel/$channel_username">$channel_name</a>
-                                    </div>
-                                    <div class="VideoInline">
-                                        <div class="VideoViews">
-                                            0 views
-                                        </div>
-                                        <div class="VideoSeparator">
-                                            •
-                                        </div>
-                                        <div class="VideoUploadDate">
-                                            0 days ago
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-HTML
+        $html .= video_utils::create_video_emblem($video);
     }
 
     $html .= <<HTML;
@@ -88,12 +53,18 @@ HTML
                 </div>
             </div>
             <div class="StreamingMainRight">
-                <div class="StreamingMainRightTop">
-                    <a href="/streaming/videos">Videos</a>
+HTML
+    if ($main::user) {
+        $html .= <<HTML;
+                <div class="Account">
+                    <a href="/streaming/channel/$main::user->{username}">My Channel</a>
                 </div>
-                <div class="StreamingMainRightBottom">
-                    <a href="/streaming/live">Live</a>
+                <div class="ManageAccount">
+                    <a href="/streaming/manage/channel/$main::user->{username}">Manage Account</a>
                 </div>
+HTML
+    }
+    $html .= <<HTML;
                 <div class="Upload">
                     <a href="/streaming/upload">Upload</a>
                 </div>

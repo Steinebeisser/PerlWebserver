@@ -185,7 +185,7 @@ sub get_client_data {
             if ($uuid) {
                 my $max_storage = user_utils::get_user_max_storage($uuid);
                 my $max_file_size = $max_storage;
-                if ($epoll::clients{$client_fd}{"location"} =~ /profile\/ploud/) {
+                if ($epoll::clients{$client_fd}{"location"} && $epoll::clients{$client_fd}{"location"} =~ /profile\/ploud/) {
                     $max_file_size = $max_storage - user_utils::get_current_used_storage($uuid);
                 }
                 # print("MAX FILE SIZE: $max_file_size\n");

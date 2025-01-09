@@ -115,8 +115,7 @@ my %index_router = (
     "/streaming/image/channel_icon" => \&get_streaming_pages::get_streaming_image_channel_icon,
     "/streaming/image/channel_banner" => \&get_streaming_pages::get_streaming_image_channel_banner,
     "/streaming/channel" => \&get_streaming_pages::get_streaming_channel,
-    "/streaming/videos" => \&get_streaming_pages::get_streaming_videos,
-    "/streaming/live" => \&get_streaming_pages::get_streaming_live,
+    "/streaming/manage/channel" => \&get_streaming_pages::get_streaming_manage_channel,
 );
 
 my %post_router = (
@@ -154,6 +153,8 @@ my %post_router = (
     "/unlink_email" => \&email_utils::post_unlink_email,
 
     "/resend_verification_email" => \&email_utils::post_resend_verification_email,
+
+    "/update/streaming/manage/channel/" => \&post_streaming_pages::post_streaming_manage_channel,
 );
 
 print("Creating main::Epoll\n");

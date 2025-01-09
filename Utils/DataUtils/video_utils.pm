@@ -32,37 +32,60 @@ sub get_videos {
     while (my $line = <$fh>) {
         chomp $line;
         my $meta_data_file = "$base_dir/$line";
-        open my $meta_fh, "<", $meta_data_file or do {
-            warn "Could not open file $meta_data_file: $!";
-            next;
-        };
-        my $meta_data = do { local $/; <$meta_fh> };
-        close $meta_fh;
-        my $video = { video_name => $meta_data };
-        my $video_data = decode_json($meta_data);
-        # print("VIDEO DATA: $video_data\n");
-        # print("FILE: $file\n");
-        # foreach my $key (keys %$file) {
-        #     print("KEY: $key\n");
-        #     print("VALUE: $file->{$key}\n");
-        # }
-        if ($video_data->{enabled}) {
-            # $video->{filepath} = $file->{filepath};
-            my %new_video_data;
-
-            $new_video_data{title} = user_utils::decode_uri($video_data->{title});
-            $new_video_data{thumbnail_path} = "$base_dir/$video_data->{thumbnail_path}";
-            $new_video_data{video_id} = $video_data->{video_id};
-            $new_video_data{channel_name} = user_utils::decode_uri(user_utils::get_display_name_with_uuid($video_data->{channel_uuid}));
-            $new_video_data{channel_username} = user_utils::get_username_by_uuid($video_data->{channel_uuid});
-            
-            push(@videos, \%new_video_data);
+        
+        my $video_data = get_video_metadata($meta_data_file);
+        print("VIDEO DATA: $video_data\n");
+        print("IS ENABLED: $video_data->{enabled}\n");
+        if ($video_data->{enabled} && !$video_data->{private}) {
+            print("PUSHING VIDEO: $video_data->{title}\n");
+            push(@videos, $video_data);
         }
 
     }
     close $fh;
 
     return @videos;
+}
+
+sub get_video_metadata {
+    my ($meta_data_file) = @_;
+
+    open my $meta_fh, "<", $meta_data_file or do {
+        warn "Could not open file $meta_data_file: $!";
+        return;
+    };
+    my $base_dir = getcwd();
+    my $meta_data = do { local $/; <$meta_fh> };
+    close $meta_fh;
+    if (!$meta_data) {
+        return;
+    }
+    my $video = { video_name => $meta_data };
+    my $video_data = decode_json($meta_data);
+    print("THUMBNAIL PATH: $video_data->{thumbnail}\n");
+    # print("VIDEO DATA: $video_data\n");
+    # print("FILE: $file\n");
+    # foreach my $key (keys %$file) {
+    #     print("KEY: $key\n");
+    #     print("VALUE: $file->{$key}\n");
+    # }
+        # $video->{filepath} = $file->{filepath};
+    my %new_video_data;
+
+    $new_video_data{title} = user_utils::decode_uri($video_data->{title});
+    $new_video_data{thumbnail_path} = "$base_dir/$video_data->{thumbnail}";
+    $new_video_data{video_id} = $video_data->{video_id};
+    $new_video_data{channel_name} = user_utils::decode_uri(user_utils::get_display_name_with_uuid($video_data->{channel_uuid}));
+    $new_video_data{channel_username} = user_utils::get_username_by_uuid($video_data->{channel_uuid});
+    $new_video_data{description} = user_utils::decode_uri($video_data->{description});
+    $new_video_data{description} =~ s/\+/ /g;
+    $new_video_data{enabled} = $video_data->{enabled};
+    $new_video_data{private} = $video_data->{private};
+    $new_video_data{channel_uuid} = $video_data->{channel_uuid};
+
+    print("VIDEO DATA: $new_video_data{title}\n");
+        
+    return \%new_video_data;
 }
 
 
@@ -122,6 +145,9 @@ sub get_video {
             # print("KEY: $key\n");
             # print("VALUE: $file->{$key}\n");
         # }
+        if (!$video_data->{enabled} && $main::user->{uuid} ne $video_data->{channel_uuid}) {
+            return HTTP_RESPONSE::ERROR_404("Video not found");
+        }
         my $file_path = $video_data->{filepath};
         # print("FILE PATH: $file_path\n");
         $full_file_path = "$base_dir/$file_path";
@@ -190,6 +216,48 @@ sub get_video {
     http_utils::send_response($client_socket, $partial_content);
 }
 
+sub create_video_emblem {
+    my ($video) = @_;
 
+    my $video_id = $video->{video_id};
+    my $video_title = user_utils::decode_uri($video->{title});
+    my $thumbnail_path = $video->{thumbnail_path};
+    my $channel_name = $video->{channel_name} || "Cant fetch Channel";
+    my $channel_username = $video->{channel_username};
+    my $channel_uuid = $video->{channel_uuid};
+    my $html .= <<HTML;
+                        <div class="Video">
+                            <button type="button" class="Thumbnail" onclick="window.location.href='/streaming/watch/v=$video_id'">
+                                <img src="/streaming/image/src/$video_id" alt="Video Thumbnail: $video_title">
+                            </button>
+                            <div class="VideoMetadata">
+                                <button type="button" class="ChannelIcon" onclick="window.location.href='/streaming/channel/$channel_username'">
+                                    <img src="/streaming/image/channel_icon/$channel_uuid" alt="Channel Icon">
+                                </button>
+                                <div class="OtherMetadata">
+                                    <div class="VideoTitle">
+                                        <a href="/streaming/watch/v=$video_id" title="$video_title">$video_title</a>
+                                    </div>
+                                    <div class="ChannelName">
+                                        <a href="/streaming/channel/$channel_username">$channel_name</a>
+                                    </div>
+                                    <div class="VideoInline">
+                                        <div class="VideoViews">
+                                            0 views
+                                        </div>
+                                        <div class="VideoSeparator">
+                                            •
+                                        </div>
+                                        <div class="VideoUploadDate">
+                                            0 days ago
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+HTML
+
+    return $html;
+}
 
 1;
