@@ -9,7 +9,8 @@ sub post_streaming_manage_channel {
         return;
     }
 
-    my ($username, $category, $video_id, $update_item) = $route =~ /\/manage\/channel\/([^\/]+)\/([^\/]+)(?:\/([^\/]+))?\/(.*)/;
+    print("ROUTE: $route\n");
+    my ($username, $category, $video_id, $update_item) = $route =~ /\/manage\/channel\/([^\/]+)(?:\/([^\/]+))(?:\/([^\/]+))?\/(.*)/;
     if (!$username || !$category || !$update_item) {
         # print("ROUTE: $route\n");
         # print("USERNAME: $username\n");
@@ -19,11 +20,11 @@ sub post_streaming_manage_channel {
         return;
     }
 
+    # print("ROUTE: $route\n");
     # print("USERNAME: $username\n");
     # print("CATEGORY: $category\n");
     # print("VIDEO ID: $video_id\n");
     # print("UPDATE ITEM: $update_item\n");
-
 
     if (!channel_utils::has_manage_access(user_utils::get_uuid_by_username($username))) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("Unauthorized"));
@@ -31,5 +32,6 @@ sub post_streaming_manage_channel {
 
     channel_utils::update_channel_item($username, $category, $video_id, $update_item, $temp_file, $client_socket);
 }
+
 
 1;

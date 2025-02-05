@@ -75,7 +75,7 @@ sub get_video_metadata {
     $new_video_data{title} = user_utils::decode_uri($video_data->{title});
     $new_video_data{thumbnail_path} = "$base_dir/$video_data->{thumbnail}";
     $new_video_data{video_id} = $video_data->{video_id};
-    $new_video_data{channel_name} = user_utils::decode_uri(user_utils::get_display_name_with_uuid($video_data->{channel_uuid}));
+    $new_video_data{channel_name} = user_utils::decode_uri(user_utils::get_displayname_with_uuid($video_data->{channel_uuid}));
     $new_video_data{channel_username} = user_utils::get_username_by_uuid($video_data->{channel_uuid});
     $new_video_data{description} = user_utils::decode_uri($video_data->{description});
     $new_video_data{description} =~ s/\+/ /g;

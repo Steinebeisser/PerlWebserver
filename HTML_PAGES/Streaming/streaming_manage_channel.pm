@@ -445,7 +445,7 @@ sub get_main_manage {
     my ($username, $client_socket) = @_;
     
     my $uuid = user_utils::get_uuid_by_username($username);
-    my $human_username = user_utils::decode_uri(user_utils::get_display_name_with_uuid($uuid));
+    my $displayname = user_utils::decode_uri(user_utils::get_displayname_with_uuid($uuid));
     my $html = <<HTML;
     <div class="ChannelInfo">
         <div class="ChannelBanner">
@@ -464,15 +464,61 @@ sub get_main_manage {
         </div>
         <div class="ChannelText">
             <div class="ChannelName">
-                <h1>$human_username</h1>
-                <form action="/streaming/manage/channel/$username/settings" method="post">
-                    <input type="text" name="displayname" placeholder="$human_username">
-                    <input type="submit" value="Change Display Name">
-                </form>
+                <div id="ChannelNameText" class="ChannelNameText">
+                    <h1>Channel Name</h1><br>
+                    <h1>$displayname</h1>
+                </div>
+                <input type="text" id="displayname" name="displayname" value="$displayname">
+                <button class="ChangeDisplaynameButton" onclick="changeDisplayname()">Change Displayname</button>
             </div>
         </div>
     </div>
 HTML
+
+    #! img size validation perl on uplaod again
+    my $script = <<SCRIPT;
+    <script>
+        var channelUsername = "$username";
+        document.getElementById("iconInput").addEventListener("change", function(event) {
+            var iconFile = event.target.files[0];
+            
+            var img = new Image();
+            img.onload = function() {
+                if (img.width != 40 || img.height != 40) {
+                    alert("Icon must be 40x40 pixels");
+                    event.preventDefault();
+                    document.getElementById("iconInput").value = "";
+                } else {
+                    alert("Icon is 40x40 pixels");
+                }
+            };
+            img.src = URL.createObjectURL(iconFile);
+        });
+
+        function changeDisplayname() {
+            var displayname = document.getElementById("displayname").value;
+            fetch("/update/streaming/manage/channel/" + channelUsername + "/channel/displayname", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    displayname: displayname,
+                }),
+            }).then(response => {
+                if (response.ok) {
+                    document.getElementById("ChannelNameText").innerHTML = ("<h1>Channel Name</h1><br><h1>" + displayname + "</h1>");
+                } else {
+                    alert("Failed to change displayname");
+                }
+            }).catch(error => {
+                alert("Network error: " + error.message);
+            });
+        }
+    </script>
+SCRIPT
+
+    $html .= $script;
 
     return $html;
 }
