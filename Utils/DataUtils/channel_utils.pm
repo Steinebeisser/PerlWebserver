@@ -14,6 +14,13 @@ my %items = (
     "channel_banner" => \&update_channel_banner,
 );
 
+my %channel_items = (
+    "channel_icon" => \&update_channel_icon,
+    "channel_banner" => \&update_channel_banner,
+    "about" => \&update_channel_about,
+    "displayname" => \&update_channel_displayname,
+);
+
 my %categories = (
     "Videos" => \&update_video,
     "Channel" => \&update_channel,
@@ -26,45 +33,100 @@ my %categories_server_style = (
 sub update_channel_item {
     my ($username, $category, $video_id, $update_item, $temp_file, $client_socket) = @_;
 
+
     my $category = $categories_server_style{$category};
     if (!has_manage_access(user_utils::get_uuid_by_username($username))) {
         return;
     }
     
-    my $uuid = user_utils::get_uuid_by_username($username);
-    my $base_dir = getcwd();
-    my $channel_path = "$base_dir/Data/UserData/Users/$uuid/Streaming";
-    my $category_folder = "$channel_path/$category";
-    # print("CATEGORY FOLDER: $category_folder\n");
-    
-    if (!-d $category_folder) {
-        mkdir $category_folder;
+    if (!$categories{$category}) {
+        die;
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Category not found"));
+        return;
     }
 
-    # print("CLIENT SOCKET: $client_socket\n");
-
-    $categories{$category}->($category_folder, $video_id, $update_item, $temp_file, $client_socket);
+    $categories{$category}->($username, $video_id, $update_item, $temp_file, $client_socket);
 }
 
 sub update_channel {
-    my ($category_folder, $video_id, $update_item, $temp_file, $client_socket) = @_;
+    my ($username, $video_id, $update_item, $temp_file, $client_socket) = @_;
 
-    my $file_path = "$category_folder/$update_item" . ".txt";
-    # print("FILE PATH: $file_path\n");
-    if (!-e $file_path) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("File not found"));
+
+    if (!$channel_items{$update_item}) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Item not found"));
         return;
     }
-    # print("TEMP FILE: $temp_file\n");
-    # print("FILE PATH: $file_path\n");
+
+    $channel_items{$update_item}->($username, $video_id, $update_item, $temp_file, $client_socket);
+}
+
+sub update_channel_displayname {
+    my ($username, $video_id, $update_item, $temp_file, $client_socket) = @_;
 
     my $data = body_utils::load_temp_file($temp_file);
-    # print("DATA: $data\n");
     my $json = decode_json($data);
-    my $new_about = $json->{about};
-    # print("NEW ABOUT: $new_about\n");
-    open my $fh, ">", $file_path;
-    print $fh $new_about;
+    my $new_displayname = $json->{displayname};
+    print("NEW DISPLAYNAME: $new_displayname\n");
+    if (user_utils::is_wide($new_displayname)) {
+        $new_displayname = user_utils::encode_uri($new_displayname);
+    }
+    
+    
+    my $old_displayname = user_utils::get_displayname_with_uuid($main::user->{uuid});
+
+    if (!$new_displayname) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Displayname not provided"));
+        return;
+    }
+
+    if ($new_displayname eq $old_displayname) {
+        return 1;
+    }
+
+    my $base_dir = getcwd();
+    my $displayname_file = "$base_dir/Data/UserData/displaynames.json";
+    if (!-e $displayname_file) {
+        open my $fh, ">", $displayname_file;
+        print $fh "{ \"displaynames\": {}, \"uuid_to_displayname\": {} }";
+        close $fh;
+    }
+
+    open my $fh, "<", $displayname_file;
+    $data = do { local $/; <$fh> };
+    close $fh;
+
+    $json = decode_json($data);
+    my $displaynames = $json->{displaynames};
+    my $uuid_to_displayname = $json->{uuid_to_displayname};
+
+    if ($uuid_to_displayname->{$main::user->{uuid}}) {
+        if ($displaynames->{$old_displayname}) {
+            my $user = $displaynames->{$old_displayname};
+            my @keeping_uuids;
+            foreach my $uuid (@$user) {
+                if ($uuid eq $main::user->{uuid}) {
+                    next;
+                }
+                push @keeping_uuids, $uuid;
+            }
+            if (@keeping_uuids) {
+                $displaynames->{$old_displayname} = \@keeping_uuids;
+            } else {
+                delete $displaynames->{$old_displayname};
+            }
+        }
+    }
+
+    if ($displaynames->{$new_displayname}) {
+        push @{$displaynames->{$new_displayname}}, $main::user->{uuid};
+    } else {
+        $displaynames->{$new_displayname} = [$main::user->{uuid}];
+    }
+
+    $uuid_to_displayname->{$main::user->{uuid}} = $new_displayname;
+
+    open my $fh, ">", $displayname_file;
+    print $fh encode_json($json);
     close $fh;
 }
 
