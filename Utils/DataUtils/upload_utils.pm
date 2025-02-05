@@ -315,6 +315,9 @@ sub create_streaming_path {
         mkdir $streaming_path or die "Cannot create directory: $!";
     }
     my $videos_path = "$streaming_path/Videos";
+    if (!-d $videos_path) {
+        mkdir $videos_path or die "Cannot create directory: $!";
+    }
     my $video_id = video_utils::create_new_video_id();
     my $dir_path = "$videos_path/$video_id";
     if (!-d $dir_path) {
