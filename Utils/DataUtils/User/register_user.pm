@@ -151,7 +151,7 @@ sub register_user {
     my %user_data = (
         uuid => $uuid,
         username => $username,
-        display_name => $username,
+        displayname => $username,
         password_hash => $password,
         email => $email,
         email_status => "pending",

@@ -63,6 +63,14 @@ sub update_channel {
 sub update_channel_displayname {
     my ($username, $video_id, $update_item, $temp_file, $client_socket) = @_;
 
+    my $base_dir = getcwd();
+    my $user_file = "$base_dir/Data/UserData/Users/$main::user->{uuid}/$main::user->{uuid}.json";
+    if (!-e $user_file) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("User not found"));
+        return;
+    }
+
+
     my $data = body_utils::load_temp_file($temp_file);
     my $json = decode_json($data);
     my $new_displayname = $json->{displayname};
@@ -83,7 +91,6 @@ sub update_channel_displayname {
         return 1;
     }
 
-    my $base_dir = getcwd();
     my $displayname_file = "$base_dir/Data/UserData/displaynames.json";
     if (!-e $displayname_file) {
         open my $fh, ">", $displayname_file;
@@ -128,6 +135,15 @@ sub update_channel_displayname {
     open my $fh, ">", $displayname_file;
     print $fh encode_json($json);
     close $fh;
+
+    open my $user_data_fh, "<", $user_file;
+    $data = do { local $/; <$user_data_fh> };
+    close $user_data_fh;
+    $json = decode_json($data);
+    $json->{displayname} = $new_displayname;
+    open my $user_data_fh, ">", $user_file;
+    print $user_data_fh encode_json($json);
+    close $user_data_fh;
 }
 
 my %update_video_items = (

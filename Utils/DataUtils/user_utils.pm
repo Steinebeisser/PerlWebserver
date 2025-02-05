@@ -846,9 +846,9 @@ sub save_used_emails {
 sub get_displayname_with_uuid {
     my ($uuid) = @_;
     my $username = get_username_by_uuid($uuid);
-    my $display_name = get_user_stat($uuid, "display_name");
-    if ($display_name) {
-        return $display_name;
+    my $displayname = get_user_stat($uuid, "displayname");
+    if ($displayname) {
+        return $displayname;
     }
     return $username;
 }
