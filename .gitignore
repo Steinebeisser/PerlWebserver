@@ -16,8 +16,8 @@ Data/Blog/upload_date.txt
 Data/Blog/views.txt
 HTML_PAGES/Gameroom/Memory/activeGames/*
 !HTML_PAGES/Gameroom/Memory/activeGames/.gitkeep
-Emails/*
-!Emails/.gitkeep
+Data/Emails/*
+!Data/Emails/.gitkeep
 Data/DevLists/*
 !Data/DevLists/.gitkeep
 Utils/DataUtils/Important/no_upload.pm
@@ -26,3 +26,4 @@ RememberMeCookies/*
 !RememberMeCookies/.gitkeep
 Sessions/*
 !Sessions/.gitkeep
+STRACE/*
