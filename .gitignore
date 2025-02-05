@@ -27,3 +27,4 @@ RememberMeCookies/*
 Sessions/*
 !Sessions/.gitkeep
 STRACE/*
+Data/Streaming/Videos/*
