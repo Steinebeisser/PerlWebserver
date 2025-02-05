@@ -16,7 +16,7 @@ sub get_fonts {
         # print("FONT: $font\n");
 
         my $base_dir = getcwd();
-        my $font_path = "$base_dir/fonts/$font";
+        my $font_path = "$base_dir/Data/fonts/$font";
         # print("FONT PATH: $font_path\n");
         if (-e $font_path) {
             open my $fh, '<', $font_path or die "Cannot open file: $!";
