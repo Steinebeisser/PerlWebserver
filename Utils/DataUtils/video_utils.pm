@@ -9,11 +9,15 @@ use Digest::SHA qw(sha256_hex);
 use JSON;
 
 sub get_top_videos {
+    my ($last_video) = @_;
+    if (!$last_video) {
+        return;
+    }
     my $base_dir = getcwd();
     my $video_path = "$base_dir/Data/Streaming/Videos";
     my $videos_file = "$video_path/videos.txt";
     
-    my @videos = get_videos($videos_file);
+    my @videos = get_videos($videos_file, $last_video);
     # foreach my $video (@videos) {
         # print("VIDEO: $video\n");
     # }
@@ -21,7 +25,12 @@ sub get_top_videos {
 }
 
 sub get_videos {
-    my ($videos_file) = @_;
+    my ($videos_file, $last_video) = @_;
+    if ($last_video) {
+        return;
+    }
+    my $counter = 0;
+    my $videos_amount = 4;
 
     my $base_dir = getcwd();
     open my $fh, "<", $videos_file or do {
@@ -30,6 +39,11 @@ sub get_videos {
     };
     my @videos;
     while (my $line = <$fh>) {
+        last if $counter >= $videos_amount + $last_video;
+        if ($counter < $last_video) {
+            $counter++;
+            next;
+        }
         chomp $line;
         my $meta_data_file = "$base_dir/$line";
         
@@ -40,6 +54,7 @@ sub get_videos {
             # print("PUSHING VIDEO: $video_data->{title}\n");
             push(@videos, $video_data);
         }
+        $counter++;
 
     }
     close $fh;
@@ -73,7 +88,7 @@ sub get_video_metadata {
     my %new_video_data;
 
     $new_video_data{title} = user_utils::decode_uri($video_data->{title});
-    $new_video_data{thumbnail_path} = "$base_dir/$video_data->{thumbnail}";
+    $new_video_data{thumbnail} = $video_data->{thumbnail};
     $new_video_data{video_id} = $video_data->{video_id};
     $new_video_data{channel_name} = user_utils::decode_uri(user_utils::get_displayname_with_uuid($video_data->{channel_uuid}));
     $new_video_data{channel_username} = user_utils::get_username_by_uuid($video_data->{channel_uuid});
@@ -82,6 +97,10 @@ sub get_video_metadata {
     $new_video_data{enabled} = $video_data->{enabled};
     $new_video_data{private} = $video_data->{private};
     $new_video_data{channel_uuid} = $video_data->{channel_uuid};
+    $new_video_data{views} = $video_data->{views};
+    $new_video_data{uploaded_at} = $video_data->{uploaded_at};
+    $new_video_data{likes} = $video_data->{likes};
+    $new_video_data{dislikes} = $video_data->{dislikes};
 
     # print("VIDEO DATA: $new_video_data{title}\n");
         
@@ -216,12 +235,39 @@ sub get_video {
     http_utils::send_response($client_socket, $partial_content);
 }
 
+sub get_video_metadata_with_video_id {
+    my ($video_id) = @_;
+    # print("VIDEO ID: $video_id\n");
+    my $base_dir = getcwd();
+    my $video_path = "$base_dir/Data/Streaming/Videos";
+    my $videos_file = "$video_path/videos.txt";
+    if (!-e $videos_file) {
+        return;
+    }
+    open my $fh, "<", $videos_file;
+    my $video_data;
+    my $metadata;
+    while (my $line = <$fh>) {
+        chomp $line;
+        if ($line !~ /$video_id/) {
+            next;
+        }
+        my $meta_data_file = "$base_dir/$line";
+        # print("META DATA FILE: $meta_data_file\n");
+        $metadata = get_video_metadata($meta_data_file);
+        last;
+    }
+    return $metadata
+}
+
+
 sub create_video_emblem {
     my ($video) = @_;
 
     my $video_id = $video->{video_id};
     my $video_title = user_utils::decode_uri($video->{title});
-    my $thumbnail_path = $video->{thumbnail_path};
+    my $base_dir = getcwd();
+    my $thumbnail_path = "$base_dir/$video->{thumbnail}";
     my $channel_name = $video->{channel_name} || "Cant fetch Channel";
     my $channel_username = $video->{channel_username};
     my $channel_uuid = $video->{channel_uuid};

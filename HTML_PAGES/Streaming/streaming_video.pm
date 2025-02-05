@@ -7,6 +7,12 @@ sub get_streaming_video {
     my ($video_id) = @_;
 
     my $translations = language_utils::load_language("streaming");
+    my $video_metadata = video_utils::get_video_metadata_with_video_id($video_id);
+    my $channel_metadata = channel_utils::get_channel_metadata($video_metadata->{channel_uuid});
+    print("VIDEO METADATA: $video_metadata\n");
+    if (!$video_metadata || $video_metadata->{enabled} == 0) {
+        return "Video not found"; 
+    }
 
     my $html = <<HTML;
     <div class="StreamingView">
@@ -23,23 +29,23 @@ HTML
                 </div>
                 <div class="streaming_video_info">
                     <div class="VideoTitle">
-                        <h1>#!title</h1>
+                        <h1>$video_metadata->{title}</h1>
                     </div>
                     <div class="Group">
                         <div class="ChannelInfo">
-                            <div class="ChannelIcon" onclick="window.location.href='/streaming/channel/#!username'">
-                                <img src="/streaming/image/channel_icon/#!uuid" class="channel_icon">
+                            <div class="ChannelIcon" onclick="window.location.href='/streaming/channel/$video_metadata->{channel_username}'">
+                                <img src="/streaming/image/channel_icon/$video_metadata->{channel_uuid}" class="channel_icon">
                             </div>
                             <div class="ChannelText">
                                 <div class="ChannelName">
-                                    <a href="/streaming/channel/#!displayname">aye♥</a>
+                                    <a href="/streaming/channel/$video_metadata->{channel_username}">$video_metadata->{channel_name}</a>
                                 </div>
                                 <div class="Subscribers" id="SubscriberCount">
-                                    #!subscirbercount
+                                    @{[$channel_metadata->{subscriberCount} ? $channel_metadata->{subscriberCount} : 0]} Subscribers
                                 </div>
                             </div>
 HTML
-    $html .= streaming_html::get_subscribe_button();#!channel_username
+    $html .= streaming_html::get_subscribe_button($video_metadata->{channel_username});
     $html .= <<HTML;     
                         </div>
                         <div class="VideoUtils">
@@ -47,7 +53,7 @@ HTML
                                 <div class="Like">
                                     <button type="button" class="LikeButton" onclick="likeVideo(`#!video_id`)" id=Like0>
                                         <div class="LikeAmount" id="LikeAmount">
-                                            #!likes
+                                            $video_metadata->{likes}
                                         </div>
                                         👍
                                     </button>
@@ -55,7 +61,7 @@ HTML
                                 <div class="Dislike">
                                     <button type="button" class="DislikeButton" onclick="dislikeVideo(`#!video_id`)" id=Dislike-1>
                                         <div class="DislikeAmount" id="DislikeAmount">
-                                            #!dislikes
+                                            $video_metadata->{dislikes}
                                         </div>
                                         👎
                                     </button>
@@ -69,15 +75,15 @@ HTML
                     <div class="VideoInfo" onclick="expandDescription()">
                         <div class="Group">
                             <div class="VideoViews">
-                                #!views
+                                $video_metadata->{views} views
                             </div>
                             <div class="VideoUploadDate">
-                                #!upload_date
+                                @{[streaming_html::parse_date($video_metadata->{uploaded_at})]}
                             </div>
                         </div>
                         <br>
                         <div class="VideoDescription" id="VideoDescription">
-                            #!description
+                            $video_metadata->{description}
                             <br>
                             <div class="CloseDescription">
                                 <button type="button" onclick="event.stopPropagation(); collapseDescription()">Close</button>

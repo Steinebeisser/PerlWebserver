@@ -111,16 +111,30 @@ HTML
 #! logic if subscribed with data and so on
 sub get_subscribe_button {
     my ($channel_username) = @_;
+
     my $html = <<HTML;
     <div class="SubscribeButton">
-        <button onclick="subscribeChannel($channel_username)">Subscribe</button>
+HTML
+    if (!$main::user) {
+        $html .= <<HTML;
+        <button onclick="subscribeToLogin(`$channel_username`)">Subscribe</button>
+HTML
+    } elsif (channel_utils::is_subscribed($channel_username)) {
+        $html .= <<HTML;
+        <button onclick="unsubscribeFrom(`$channel_username`)">Unsubscribe</button>
+HTML
+    } else {
+        $html .= <<HTML;
+        <button onclick="subscribeTo(`$channel_username`)">Subscribe</button>
+HTML
+    }
+    $html .= <<HTML;
     </div>
 HTML
 
     my $script = <<'SCRIPT';
     <script>
     function subscribeTo(username) {
-        //username = decodeURIComponent(username);
         fetch(`/streaming/channel/${username}/subscribe`, {
             method: 'POST',
             headers: {
@@ -139,7 +153,6 @@ HTML
     }
 
     function unsubscribeFrom(username) {
-        //username = decodeURIComponent(username);
         fetch(`/streaming/channel/${username}/unsubscribe`, {
             method: 'POST',
             headers: {
@@ -166,6 +179,17 @@ SCRIPT
     $html .= $script;
 
     return $html;
+}
+
+sub parse_date {
+    my ($timestamp) = @_;
+
+    print("TIMESTAMP: $timestamp\n");
+    my ($sec, $min, $hour, $day, $month, $year) = localtime($timestamp);
+    $year += 1900;
+    $month++;
+    my $date = "$day.$month.$year";
+    return $date;
 }
 
 sub get_video_loading_script  {

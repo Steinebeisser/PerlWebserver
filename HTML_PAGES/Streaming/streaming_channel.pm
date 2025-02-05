@@ -21,7 +21,6 @@ sub get_streaming_channel {
     my $videos_file = "$channel_path/videos.txt";
 
     my $human_username = user_utils::decode_uri(user_utils::get_displayname_with_uuid($uuid));
-    my @videos = video_utils::get_videos($videos_file);
 
     my $html = <<HTML;
     <div class="StreamingChannel">
@@ -84,7 +83,7 @@ sub get_streaming_channel_videos {
     my $channel_path = "$base_dir/Data/UserData/Users/$uuid/Streaming";
     my $videos_file = "$channel_path/videos.txt";
 
-    my @videos = video_utils::get_videos($videos_file);
+    my @videos = video_utils::get_videos($videos_file, 0, $uuid);
 
     my $html = <<HTML;
     <div class="channel_videos">
