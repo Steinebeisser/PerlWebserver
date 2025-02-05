@@ -11,7 +11,7 @@ sub get_external_js {
     if ($request =~ /\/ExternalJS\/(.*)/) {
         my $filename = $1;
         my $base_dir = getcwd();
-        my $file_path = "$base_dir/ExternalJS/$filename";
+        my $file_path = "$base_dir/Data/ExternalJS/$filename";
         if (-e $file_path) {
             open my $fh, '<', $file_path or die "Cannot open file: $!";
             binmode $fh;
