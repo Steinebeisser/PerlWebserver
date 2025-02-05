@@ -49,7 +49,7 @@ sub get_channel_icon {
 
     my $base_dir = getcwd();
     my $channel_path = "$base_dir/Data/UserData/Users/$channel_id/Streaming/Channel";
-    print("CHANNEL PATH: $channel_path\n");
+    # print("CHANNEL PATH: $channel_path\n");
     if (!-d $channel_path) {
         warn "no channel path\n";
         get_default_channel_icon($client_socket);
@@ -138,7 +138,7 @@ sub get_image {
         return;
     }
     my $file_size = -s $full_file_path;
-    print("FILE PATH: $full_file_path\n");
+    # print("FILE PATH: $full_file_path\n");
     open my $fh, '<', $full_file_path or die "Cannot open file: $!";
     $epoll::clients{fileno $client_socket}{filestream} = {
         file => $fh,
@@ -148,7 +148,7 @@ sub get_image {
     };
     epoll_ctl($main::epoll, EPOLL_CTL_MOD, fileno $client_socket, EPOLLIN | EPOLLOUT) >= 0 || die "Can't add client socket to main::epoll: $!";
     $epoll::clients{fileno $client_socket}{"has_out"} = 1;
-    print("Added client socket to writeepoll\n");
+    # print("Added client socket to writeepoll\n");
 
     main::handle_filestream(fileno $client_socket);
 }

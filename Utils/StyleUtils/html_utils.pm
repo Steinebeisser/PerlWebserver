@@ -123,7 +123,7 @@ sub show_ranks {
     close $fh;
 
     my $ranks = decode_json($json);
-    print("RANKS: $ranks\n");
+    # print("RANKS: $ranks\n");
 
     my $html = <<HTML;
     <div class="ranks">
@@ -138,7 +138,7 @@ sub show_ranks {
 HTML
 
     foreach my $rank_id (sort keys %$ranks) {
-        print("RANK ID: $rank_id\n");
+        # print("RANK ID: $rank_id\n");
         my $rank = $ranks->{$rank_id};
         my $formatted_storage = user_utils::format_bytes($rank->{benefits}->{max_storage});
         $html .= <<HTML;
@@ -184,7 +184,7 @@ HTML
         my $print_part = $part;
         $part =~ s/\s+//g;
         if ($part =~ /\/(.*)/) {
-            print("Invalid path: $part\n");
+            # print("Invalid path: $part\n");
             $print_part = $1;
         }
         $current_path .= "/$part";

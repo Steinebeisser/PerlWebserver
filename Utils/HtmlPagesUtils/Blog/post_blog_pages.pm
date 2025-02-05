@@ -23,8 +23,8 @@ sub post_announcement_create {
 
 sub post_blog_create {
     my ($client_socket, $route, $temp_file, $is_announcement) = @_;
-    print("BLOG CREATE\n");
-    print("IS ANNOUNCEMENT: $is_announcement\n");
+    # print("BLOG CREATE\n");
+    # print("IS ANNOUNCEMENT: $is_announcement\n");
 
     my $blog_name;
     my $blog_content;
@@ -69,9 +69,9 @@ sub post_blog_create {
 
     $blog_content = user_utils::decode_uri($blog_content);
 
-    print("CONTENT: $blog_content\n");
+    # print("CONTENT: $blog_content\n");
     if ($blog_content =~ /</) {
-        print("ENCODE CHARACTERS\n");
+        # print("ENCODE CHARACTERS\n");
         $blog_content =http_utils::encode_characters($blog_content);
     }
 

@@ -21,7 +21,7 @@ HTML
     $html .= html_utils::get_game_online_status($translations);
 
 
-    print("CREATING NEW\n");
+    # print("CREATING NEW\n");
     my $file_name = "$game_id.json";
     my $is_multiplayer = 1;
     $html .= <<HTML;
@@ -34,7 +34,7 @@ HTML
 HTML
     my $game = memory_utils::new($file_name, $is_multiplayer);
     if (!$game) {
-        print("LOADING CUZ ALREADY EXISTS\n");
+        # print("LOADING CUZ ALREADY EXISTS\n");
         $game = memory_utils::load($file_name, $is_multiplayer);
     }
     if (!$game) {

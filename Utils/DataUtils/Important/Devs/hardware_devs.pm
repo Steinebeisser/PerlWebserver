@@ -11,7 +11,7 @@ sub send_to_hardware_devs {
     foreach my $hardware_dev (@hardware_devs) {
         my $name = $hardware_dev->{name};
         my $email = $hardware_dev->{email};
-        print("Sending email to hardware dev: $email\n");
+        # print("Sending email to hardware dev: $email\n");
         dev_utils::send_email($email, $name, "Hardware issue", "$reason, please check it out.");
     }
 }

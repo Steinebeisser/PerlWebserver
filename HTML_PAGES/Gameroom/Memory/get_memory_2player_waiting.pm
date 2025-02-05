@@ -28,7 +28,7 @@ HTML
     my $script_path = $base_dir . "/Utils/JavaScript/Queue/memory_queue.js";
     open my $fh, "<", $script_path or do
     {
-        print "Can't open file $script_path: $!";
+        # print "Can't open file $script_path: $!";
         return;
     };
     my $script = do { local $/; <$fh> };

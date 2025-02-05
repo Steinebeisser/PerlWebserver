@@ -244,7 +244,7 @@ sub ERROR_400_WEBSOCKET_VERSION {
 
 sub ERROR_401 {
     my ($additional_info) = @_;
-    print("SENDING 401\n");
+    # print("SENDING 401\n");
     my $html_content = "<h1>401 Unauthorized</h1>";
     if ($additional_info) {
         $html_content .= "<p>$additional_info</p>";
@@ -262,7 +262,7 @@ sub ERROR_401 {
 
 sub ERROR_401_WITH_COOKIE {
     my ($additional_info, $cookie) = @_;
-    print("SENDING 401 WITH COOKIE\n");
+    # print("SENDING 401 WITH COOKIE\n");
     my $html_content = "<h1>401 Unauthorized</h1>";
     if ($additional_info) {
         $html_content .= "<p>$additional_info</p>";
@@ -281,7 +281,7 @@ sub ERROR_401_WITH_COOKIE {
 
 sub ERROR_404 {
     my ($additional_info) = @_;
-    print("SENDING 404\n");
+    # print("SENDING 404\n");
     my $html_content = "<h1>404 Not Found</h1>";
     if ($additional_info) {
         $html_content .= "<p>$additional_info</p>";
@@ -299,7 +299,7 @@ sub ERROR_404 {
 
 sub ERROR_404_WITH_COOKIE {
     my ($html_content, $cookie) = @_;
-    print("SENDING 404 WITH COOKIE\n");
+    # print("SENDING 404 WITH COOKIE\n");
     my $content_length = length($html_content);
     my $response = "HTTP/1.1 404 Not Found\r\n"
                 . "Content-Type: text/html; charset=utf-8\r\n"

@@ -7,7 +7,7 @@ use Socket;
 
 sub send_email {
     my ($from, $to, $subject, $message, $content_type, $smtp_server, $smtp_port, $client_fd, $srs_from, $username, $to_username) = @_;
-    print("SENDING EMAIL\n");
+    # print("SENDING EMAIL\n");
 
     if (!$smtp_server) {
         $smtp_server = "localhost";
@@ -34,13 +34,13 @@ sub send_email {
 
     socket(my $smtp_socket, AF_INET, SOCK_STREAM, 0);
     connect($smtp_socket, sockaddr_in($smtp_port, inet_aton($smtp_server))) || do {
-        print("Can't connect to SMTP server: $!\n");
+        # print("Can't connect to SMTP server: $!\n");
         return;
     };
-    print("Connected to SMTP server\n");
+    # print("Connected to SMTP server\n");
 
     recv($smtp_socket, my $greeting, 1024, 0);
-    print("RECEIVED GREETING: $greeting\n");
+    # print("RECEIVED GREETING: $greeting\n");
     if ($greeting !~ /^220/) {
         if (!smtp_utils2::try_with_gmail($client_fd, $greeting, $client_fd)) {
             smtp_utils2::return_to_sender($client_fd, $greeting, $client_fd);
@@ -54,19 +54,19 @@ sub send_email {
     my $message_id = "<" . time() . "." . $$ . "\@" . "sinc.de" . ">";
     smtp_utils2::send_msg($smtp_socket, "Message-ID: $message_id");   
     smtp_utils2::send_msg($smtp_socket, "Subject: $subject\r\nFrom: \"$username\" <$from> \r\nTo: \"$to_username\" <$to>\r\n$content_type\r\n\r\n$message");
-    print("EMAIL MSG: Subject: $subject\r\nFrom: \"$username\" <$from>\r\nTo: \"$to_username\" <$to>\r\n$content_type\r\n\r\n$message\n");
+    # print("EMAIL MSG: Subject: $subject\r\nFrom: \"$username\" <$from>\r\nTo: \"$to_username\" <$to>\r\n$content_type\r\n\r\n$message\n");
     smtp_utils2::send_and_receive($smtp_socket, "\r\n.", $client_fd);
     smtp_utils2::send_and_receive($smtp_socket, "QUIT", $client_fd);
 
-    print("WHOLE EMAIL\n");
-    print("Subject: $subject\r\nFrom: $from\r\nTo: $to\r\n\r\n$message\n");
-    print("Sent email\n");
+    # print("WHOLE EMAIL\n");
+    # print("Subject: $subject\r\nFrom: $from\r\nTo: $to\r\n\r\n$message\n");
+    # print("Sent email\n");
     close($smtp_socket);
 }
 
 sub send_without_ehlo {
     my ($from, $to, $subject, $message, $smtp_server, $smtp_port, $client_fd) = @_;
-    print("SENDING EMAIL\n");
+    # print("SENDING EMAIL\n");
 
     if (!$smtp_server) {
         return;
@@ -80,7 +80,7 @@ sub send_without_ehlo {
     smtp_utils2::send_and_receive($smtp_server, "\r\n.", $client_fd);
     smtp_utils2::send_and_receive($smtp_server, "QUIT", $client_fd);
 
-    print("Sent email\n");
+    # print("Sent email\n");
     close($smtp_server);
 }
 1;

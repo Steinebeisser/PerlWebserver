@@ -47,7 +47,7 @@ sub get_session_cookie {
     my $session_data = "$uuid|$session_id";
     my $encrypted_data = encrypt_cookie($session_data);
     my $cookie = "session=$encrypted_data; HttpOnly; SameSite=Strict; Path=/";
-    print("COOKIE: $cookie\n");
+    # print("COOKIE: $cookie\n");
     return $cookie;
 }
 

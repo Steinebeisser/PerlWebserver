@@ -321,8 +321,8 @@ sub add_new_update_point {
         $useNewTime = 0;
     }
     my $date = get_date();
-    print("ID: $id\n");
-    print("DATE: $date\n");
+    # print("ID: $id\n");
+    # print("DATE: $date\n");
     $update->{updatePoints}->{$id} = {
         title => $content->{title},
         description => $content->{description},

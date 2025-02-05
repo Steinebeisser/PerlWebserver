@@ -17,7 +17,7 @@ sub post_login {
 
     my $body = body_utils::load_temp_file($temp_file);
 
-    print("BODY: $body\n");
+    # print("BODY: $body\n");
     my $json = decode_json($body);
     $username = $json->{username};
     $password = $json->{password};
@@ -79,13 +79,13 @@ sub login_user {
     }
 
     my $uuid = $user_to_uuid{$username};
-    print("UUID: $uuid\n");
+    # print("UUID: $uuid\n");
 
 
     my $filename = "$base_dir/Data/UserData/Users/$uuid/$uuid.json";
 
     if (!-e $filename) {
-        print("FILE DOES NOT EXIST\n");
+        # print("FILE DOES NOT EXIST\n");
         return 0;
     }
 
@@ -99,14 +99,14 @@ sub login_user {
     my $data = decode_json($json);
     my $password_hash = $data->{password_hash};
 
-    print("PASSWORD HASH: $password_hash\n");
+    # print("PASSWORD HASH: $password_hash\n");
     if (!user_utils::verify_password($password, $password_hash)) {
-        print("PASSWORDS DO NOT MATCH\n");
+        # print("PASSWORDS DO NOT MATCH\n");
         return 0;
     }
 
     if (!user_utils::exist_not_banned($client_socket, $uuid)) {
-        print("USER IS BANNED/DOESNT EXIST\n");
+        # print("USER IS BANNED/DOESNT EXIST\n");
         return 0;
     }
 
