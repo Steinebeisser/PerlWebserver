@@ -108,12 +108,11 @@ HTML
     return $html;
 }
 
-#! logic if subscribed with data and so on
 sub get_subscribe_button {
     my ($channel_username) = @_;
 
     my $html = <<HTML;
-    <div class="SubscribeButton">
+    <div class="SubscribeButton" id="SubscribeButton">
 HTML
     if (!$main::user) {
         $html .= <<HTML;

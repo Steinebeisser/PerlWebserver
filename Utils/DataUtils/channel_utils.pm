@@ -394,6 +394,38 @@ sub subscribe_to_channel {
     close $fh;
 }
 
+sub unsubscribe_from_channel {
+    my ($channel_username, $temp_file, $client_socket) = @_;
+
+    if (!is_subscribed($channel_username)) {
+        return;
+    }
+    my $base_dir = getcwd();
+    my $channel_uuid = user_utils::get_uuid_by_username($channel_username);
+
+    my $channel_metadata = get_channel_metadata($channel_uuid);
+    if (!$channel_metadata) {
+        return 0;
+    }
+    $channel_metadata->{subscriberCount}--;
+    open my $fh, ">", "$base_dir/$channel_metadata->{filepath}";
+    print $fh encode_json($channel_metadata);
+    close $fh;
+
+    my $metadata_file = create_channel_metadata_file($channel_uuid);
+    if (!$metadata_file) {
+        return;
+    }
+    open my $fh, "<", $metadata_file;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+    my $json = decode_json($data);
+    $json->{subscribedTo} = 0;
+    open my $fh, ">", $metadata_file;
+    print $fh encode_json($json);
+    close $fh;
+}
+
 sub is_subscribed {
     my ($channel_username) = @_;
 
