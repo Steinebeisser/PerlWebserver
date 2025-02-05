@@ -78,7 +78,7 @@ sub get_streaming_manage_channel_videos {
     my $channel_path = "$base_dir/Data/UserData/Users/$uuid/Streaming";
     my $videos_file = "$channel_path/videos.txt";
     # print("VIDEOS FILE: $videos_file\n");
-    my @videos = video_utils::get_videos($videos_file);
+    my @videos = video_utils::get_videos($videos_file, 0, $uuid);
 
     my $html = <<HTML;
     <div class="channel_videos">

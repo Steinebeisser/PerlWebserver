@@ -155,6 +155,7 @@ my %post_router = (
     "/resend_verification_email" => \&email_utils::post_resend_verification_email,
 
     "/update/streaming/manage/channel/" => \&post_streaming_pages::post_streaming_manage_channel,
+    "/streaming/channel" => \&post_streaming_pages::post_streaming_channel,
 );
 
 print("Creating main::Epoll\n");

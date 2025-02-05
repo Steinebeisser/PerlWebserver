@@ -10,10 +10,10 @@ sub post_streaming_manage_channel {
     }
 
     print("ROUTE: $route\n");
-    my ($username, $category, $video_id, $update_item) = $route =~ /\/manage\/channel\/([^\/]+)(?:\/([^\/]+))(?:\/([^\/]+))?\/(.*)/;
-    if (!$username || !$category || !$update_item) {
+    my ($channel_username, $category, $video_id, $update_item) = $route =~ /\/manage\/channel\/([^\/]+)(?:\/([^\/]+))(?:\/([^\/]+))?\/(.*)/;
+    if (!$channel_username || !$category || !$update_item) {
         # print("ROUTE: $route\n");
-        # print("USERNAME: $username\n");
+        # print("channel_USERNAME: $channel_username\n");
         # print("CATEGORY: $category\n");
         # print("UPDATE ITEM: $update_item\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Bad Request"));
@@ -21,17 +21,30 @@ sub post_streaming_manage_channel {
     }
 
     # print("ROUTE: $route\n");
-    # print("USERNAME: $username\n");
+    # print("channel_USERNAME: $channel_username\n");
     # print("CATEGORY: $category\n");
     # print("VIDEO ID: $video_id\n");
     # print("UPDATE ITEM: $update_item\n");
 
-    if (!channel_utils::has_manage_access(user_utils::get_uuid_by_username($username))) {
+    if (!channel_utils::has_manage_access(user_utils::get_uuid_by_channel_username($channel_username))) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("Unauthorized"));
     }
 
-    channel_utils::update_channel_item($username, $category, $video_id, $update_item, $temp_file, $client_socket);
+    channel_utils::update_channel_item($channel_username, $category, $video_id, $update_item, $temp_file, $client_socket);
 }
 
+sub post_streaming_channel {
+    my ($client_socket, $route, $temp_file) = @_;
+    if (!$main::user) {
+        return;
+    }
 
+    my ($channel_username, $category) = $route =~ /\/channel\/([^\/]+)\/(.*)/;
+    if (!$channel_username || !$category) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Bad Request"));
+        return;
+    }
+
+    channel_utils::post_streaming_channel($channel_username, $category, $temp_file, $client_socket);
+}
 1;

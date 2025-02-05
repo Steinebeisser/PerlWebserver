@@ -344,4 +344,127 @@ sub has_manage_access {
     return 0;
 }
 
+
+my %post_streaming_channel_items = (
+    "subscribe" => \&subscribe_to_channel,
+    "unsubscribe" => \&unsubscribe_from_channel,
+);
+sub post_streaming_channel {
+    my ($channel_username, $category, $temp_file, $client_socket) = @_;
+
+    if (!$post_streaming_channel_items{$category}) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Category not found"));
+        return;
+    }
+
+    $post_streaming_channel_items{$category}->($channel_username, $temp_file, $client_socket);
+}
+
+sub subscribe_to_channel {
+    my ($channel_username, $temp_file, $client_socket) = @_;
+
+
+    if (is_subscribed($channel_username)) {
+        return;
+    }
+    my $base_dir = getcwd();
+    my $channel_uuid = user_utils::get_uuid_by_username($channel_username);
+
+    my $channel_metadata = get_channel_metadata($channel_uuid);
+    if (!$channel_metadata) {
+        return 0;
+    }
+    $channel_metadata->{subscriberCount}++;
+    open my $fh, ">", "$base_dir/$channel_metadata->{filepath}";
+    print $fh encode_json($channel_metadata);
+    close $fh;
+
+
+    my $metadata_file = create_channel_metadata_file($channel_uuid);
+    if (!$metadata_file) {
+        return;
+    }
+    open my $fh, "<", $metadata_file;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+    my $json = decode_json($data);
+    $json->{subscribedTo} = 1;
+    open my $fh, ">", $metadata_file;
+    print $fh encode_json($json);
+    close $fh;
+}
+
+sub is_subscribed {
+    my ($channel_username) = @_;
+
+    my $base_dir = getcwd();
+    my $uuid = user_utils::get_uuid_by_username($channel_username);
+    my $metadata_file = create_channel_metadata_file($uuid);
+    if (!$metadata_file) {
+        return 0;
+    }
+    open my $fh, "<", $metadata_file;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+    print("DATA: $data\n");
+    my $json = decode_json($data);
+    if ($json->{subscribedTo} == 1) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+sub create_channel_metadata_file {
+    my ($uuid) = @_;
+
+    my $base_dir = getcwd();
+    my $user_path = "$base_dir/Data/UserData/Users/$main::user->{uuid}";
+    if (!-d $user_path) {
+        return 0;
+    }
+    my $streaming_path = "$user_path/Streaming";
+    if (!-d $streaming_path) {
+        mkdir $streaming_path;
+    }
+    my $other_people_info_path = "$streaming_path/OtherPeopleInfo";
+    if (!-d $other_people_info_path) {
+        mkdir $other_people_info_path;
+    }
+    my $channel_other_people_info_path = "$other_people_info_path/$uuid";
+    if (!-d $channel_other_people_info_path) {
+        mkdir $channel_other_people_info_path;
+    }
+    my $channel_other_people_info_channel_path = "$channel_other_people_info_path/Channel";
+    if (!-d $channel_other_people_info_channel_path) {
+        mkdir $channel_other_people_info_channel_path;
+    }
+    my $metadata_file = "$channel_other_people_info_channel_path/metadata.json";
+    if (!-e $metadata_file) {
+        open my $fh, ">", $metadata_file;
+        print $fh "{ \"subscribedTo\": 0 }";
+        close $fh;
+    }
+    return $metadata_file;
+}
+
+sub get_channel_metadata {
+    my ($channel_uuid) = @_;
+    my $base_dir = getcwd();
+    my $channel_path = "$base_dir/Data/UserData/Users/$channel_uuid/Streaming/Channel";
+    
+    my $metadata_file = "$channel_path/metadata.json";
+    my ($trimmed_filepath) = $metadata_file =~ /$base_dir(.*)/;
+
+    if (!-e $metadata_file) {
+        open my $fh, ">", $metadata_file;
+        print $fh "{ \"subscriberCount\": 0, \"viewCount\": 0, \"filepath\": \"$trimmed_filepath\" }";
+    }
+
+    open my $fh, "<", $metadata_file;
+    my $metadata = do { local $/; <$fh> };
+    close $fh;
+
+    return decode_json($metadata);
+}
 1;
