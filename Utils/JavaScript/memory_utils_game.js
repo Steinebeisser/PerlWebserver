@@ -6,7 +6,7 @@ var knownCards = {};
 var moves = 0;
 
 
-var socket = new WebSocket("http://10.31.0.18:6969/gameroom/memory/game");
+var socket = new WebSocket("http://172.17.77.9/gameroom/memory/game");
 
 socket.onopen = function(event) {
     console.log("WebSocket is open now.");

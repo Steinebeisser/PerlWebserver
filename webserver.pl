@@ -14,7 +14,7 @@ use html_pages;
 
 $SIG{PIPE} = 'IGNORE';
 
-
+$server::ip = "172.17.77.9";
 my $cookie_language;
 $main::max_storage = 1*1024*1024*1024; # 1GB
 my $cookie_dark_mode;
@@ -73,7 +73,7 @@ my %index_router = (
 
     "/gameroom" => \&get_gameroom_page::get_gameroom,
     "/gameroom/memory" => \&get_memory_pages::get_memory,
-    # "/gameroom/memory/src" => \&get_memory_pages::get_memory_src,
+    "/gameroom/memory/src" => \&get_memory_pages::get_memory_src,
     # "/gameroom/memory/src/card" => \&get_memory_pages::get_memory_src_card,
     "/gameroom/memory/alone" => \&get_memory_pages::get_memory_alone,
     "/gameroom/memory/2player" => \&get_memory_pages::get_memory_2player,

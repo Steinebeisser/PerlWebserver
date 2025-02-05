@@ -1,6 +1,6 @@
 
 
-var socket = new WebSocket("http://10.31.0.18/gameroom/memory/queue");
+var socket = new WebSocket("http://172.17.77.9/gameroom/memory/queue");
 var game_id_value = "game_id_placeholder";
 socket.onopen = function(event) {
     console.log("WebSocket is open now.");
