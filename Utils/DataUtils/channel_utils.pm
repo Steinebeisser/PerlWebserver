@@ -40,7 +40,6 @@ sub update_channel_item {
     }
     
     if (!$categories{$category}) {
-        die;
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Category not found"));
         return;
     }
@@ -365,6 +364,7 @@ sub subscribe_to_channel {
 
 
     if (is_subscribed($channel_username)) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Already subscribed"));
         return;
     }
     my $base_dir = getcwd();
@@ -372,7 +372,8 @@ sub subscribe_to_channel {
 
     my $channel_metadata = get_channel_metadata($channel_uuid);
     if (!$channel_metadata) {
-        return 0;
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Channel not found"));
+        return;
     }
     $channel_metadata->{subscriberCount}++;
     open my $fh, ">", "$base_dir/$channel_metadata->{filepath}";
@@ -380,8 +381,9 @@ sub subscribe_to_channel {
     close $fh;
 
 
-    my $metadata_file = create_channel_metadata_file($channel_uuid);
+    my $metadata_file = get_channel_metadata_file($channel_uuid);
     if (!$metadata_file) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Channel not found"));
         return;
     }
     open my $fh, "<", $metadata_file;
@@ -398,6 +400,7 @@ sub unsubscribe_from_channel {
     my ($channel_username, $temp_file, $client_socket) = @_;
 
     if (!is_subscribed($channel_username)) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Not subscribed"));
         return;
     }
     my $base_dir = getcwd();
@@ -405,6 +408,7 @@ sub unsubscribe_from_channel {
 
     my $channel_metadata = get_channel_metadata($channel_uuid);
     if (!$channel_metadata) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Channel not found"));
         return 0;
     }
     $channel_metadata->{subscriberCount}--;
@@ -412,7 +416,7 @@ sub unsubscribe_from_channel {
     print $fh encode_json($channel_metadata);
     close $fh;
 
-    my $metadata_file = create_channel_metadata_file($channel_uuid);
+    my $metadata_file = get_channel_metadata_file($channel_uuid);
     if (!$metadata_file) {
         return;
     }
@@ -431,14 +435,14 @@ sub is_subscribed {
 
     my $base_dir = getcwd();
     my $uuid = user_utils::get_uuid_by_username($channel_username);
-    my $metadata_file = create_channel_metadata_file($uuid);
+    my $metadata_file = get_channel_metadata_file($uuid);
     if (!$metadata_file) {
         return 0;
     }
     open my $fh, "<", $metadata_file;
     my $data = do { local $/; <$fh> };
     close $fh;
-    print("DATA: $data\n");
+    # print("DATA: $data\n");
     my $json = decode_json($data);
     if ($json->{subscribedTo} == 1) {
         return 1;
@@ -447,7 +451,7 @@ sub is_subscribed {
     }
 }
 
-sub create_channel_metadata_file {
+sub get_channel_metadata_file {
     my ($uuid) = @_;
 
     my $base_dir = getcwd();
@@ -480,6 +484,44 @@ sub create_channel_metadata_file {
     return $metadata_file;
 }
 
+sub get_channel_video_metadata_file {
+    my ($video_id) = @_;
+
+    my $channel_uuid = video_utils::get_video_publisher($video_id);
+    my $base_dir = getcwd();
+    my $user_path = "$base_dir/Data/UserData/Users/$main::user->{uuid}";
+    if (!-d $user_path) {
+        return 0;
+    }
+    my $streaming_path = "$user_path/Streaming";
+    if (!-d $streaming_path) {
+        mkdir $streaming_path;
+    }
+    my $other_people_info_path = "$streaming_path/OtherPeopleInfo";
+    if (!-d $other_people_info_path) {
+        mkdir $other_people_info_path;
+    }
+    my $channel_other_people_info_path = "$other_people_info_path/$channel_uuid";
+    if (!-d $channel_other_people_info_path) {
+        mkdir $channel_other_people_info_path;
+    }
+    my $channel_other_people_info_videos_path = "$channel_other_people_info_path/Videos";
+    if (!-d $channel_other_people_info_videos_path) {
+        mkdir $channel_other_people_info_videos_path;
+    }
+    my $video_path = "$channel_other_people_info_videos_path/$video_id";
+    if (!-d $video_path) {
+        mkdir $video_path;
+    }
+    my $metadata_file = "$video_path/$video_id.json";
+    if (!-e $metadata_file) {
+        open my $fh, ">", $metadata_file;
+        print $fh "{ \"liked\": 0 }";
+        close $fh;
+    }
+    return $metadata_file;
+}
+
 sub get_channel_metadata {
     my ($channel_uuid) = @_;
     my $base_dir = getcwd();
@@ -498,5 +540,225 @@ sub get_channel_metadata {
     close $fh;
 
     return decode_json($metadata);
+}
+
+my %post_streaming_video_items = (
+    "like" => \&like_video,
+    "dislike" => \&dislike_video,
+);
+
+sub post_streaming_video {
+    my ($category, $video_id, $temp_file, $client_socket) = @_;
+
+
+    if (!$post_streaming_video_items{$category}) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Category not found"));
+        return;
+    }
+
+    $post_streaming_video_items{$category}->($video_id, $temp_file, $client_socket);
+}
+
+sub like_video {
+    my ($video_id, $temp_file, $client_socket) = @_;
+
+    if (is_video_liked($video_id)) {
+        if (!remove_like($video_id)) {
+            http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Failed to remove like"));
+            return;
+        }
+        return 1;
+    }
+    if (is_video_disliked($video_id)) {
+        if (!remove_dislike($video_id)) {
+            http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Failed to remove dislike"));
+            return;
+        }
+    }
+    my $metadata_file = get_channel_video_metadata_file($video_id);
+    if (!$metadata_file) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Video not found"));
+        return;
+    }
+
+    if (!add_like($video_id)) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Failed to add like"));
+        return;
+    }
+
+    open my $fh, "<", $metadata_file;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+    my $json = decode_json($data);
+
+    $json->{liked} = 1;
+    open my $fh, ">", $metadata_file;
+    print $fh encode_json($json);
+    close $fh;   
+}
+
+sub dislike_video {
+    my ($video_id, $temp_file, $client_socket) = @_;
+
+    if (is_video_disliked($video_id)) {
+        if (!remove_dislike($video_id)) {
+            http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Failed to remove dislike"));
+            return;
+        } 
+        return 1;
+    }
+
+    if (is_video_liked($video_id)) {
+        if (!remove_like($video_id)) {
+            http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Failed to remove like"));
+            return;
+        }
+    }
+    my $metadata_file = get_channel_video_metadata_file($video_id);
+    if (!$metadata_file) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Video not found"));
+        return;
+    }
+
+    if (!add_dislike($video_id)) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Failed to add dislike"));
+        return;
+    }
+
+    open my $fh, "<", $metadata_file;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+    my $json = decode_json($data);
+    $json->{liked} = -1;
+    open my $fh, ">", $metadata_file;
+    print $fh encode_json($json);
+    close $fh;
+}
+
+sub is_video_liked {
+    my ($video_id) = @_;
+
+    my $metadata_file = get_channel_video_metadata_file($video_id);
+    if (!$metadata_file) {
+        return 0;
+    }
+    open my $fh, "<", $metadata_file;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+    my $json = decode_json($data);
+    if ($json->{liked} == 1) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+sub is_video_disliked {
+    my ($video_id) = @_;
+
+    my $metadata_file = get_channel_video_metadata_file($video_id);
+    if (!$metadata_file) {
+        return 0;
+    }
+    open my $fh, "<", $metadata_file;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+    my $json = decode_json($data);
+    if ($json->{liked} == -1) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+sub add_like {
+    my ($video_id) = @_;
+        
+
+    my $video_metadata = video_utils::get_video_metadata_with_video_id($video_id);
+    if (!$video_metadata) {
+        return;
+    }
+    $video_metadata->{likes}++;
+
+    my $base_dir = getcwd();
+    print("FILEPATH: $video_metadata->{metadata_filepath}\n");
+    open my $fh, ">", "$base_dir/$video_metadata->{metadata_filepath}" or die "Cannot open file: $!";
+    print $fh encode_json($video_metadata);
+    close $fh;
+}
+
+sub remove_like {
+    my ($video_id) = @_;
+
+    my $video_metadata = video_utils::get_video_metadata_with_video_id($video_id);
+    if (!$video_metadata) {
+        return;
+    }
+    $video_metadata->{likes}--;
+
+    my $base_dir = getcwd();
+    open my $fh, ">", "$base_dir/$video_metadata->{metadata_filepath}";
+    print $fh encode_json($video_metadata);
+    close $fh;
+
+    my $metadata_file = get_channel_video_metadata_file($video_id);
+    if (!$metadata_file) {
+        return;
+    }
+
+    open my $fh, "<", $metadata_file;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+    my $json = decode_json($data);
+
+    $json->{liked} = 0;
+    open my $fh, ">", $metadata_file;
+    print $fh encode_json($json);
+    close $fh;
+}
+
+sub add_dislike {
+    my ($video_id) = @_;
+
+    my $video_metadata = video_utils::get_video_metadata_with_video_id($video_id);
+    if (!$video_metadata) {
+        return;
+    }
+    $video_metadata->{dislikes}++;
+
+    my $base_dir = getcwd();
+    open my $fh, ">", "$base_dir/$video_metadata->{metadata_filepath}";
+    print $fh encode_json($video_metadata);
+    close $fh;
+}
+
+sub remove_dislike {
+    my ($video_id) = @_;
+
+    my $video_metadata = video_utils::get_video_metadata_with_video_id($video_id);
+    if (!$video_metadata) {
+        return;
+    }
+    $video_metadata->{dislikes}--;
+
+    my $base_dir = getcwd();
+    open my $fh, ">", "$base_dir/$video_metadata->{metadata_filepath}";
+    print $fh encode_json($video_metadata);
+    close $fh;
+
+    my $metadata_file = get_channel_video_metadata_file($video_id);
+    if (!$metadata_file) {
+        return;
+    }
+
+    open my $fh, "<", $metadata_file;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+    my $json = decode_json($data);
+    $json->{liked} = 0;
+    open my $fh, ">", $metadata_file;
+    print $fh encode_json($json);
+    close $fh;
 }
 1;

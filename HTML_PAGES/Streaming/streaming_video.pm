@@ -9,7 +9,10 @@ sub get_streaming_video {
     my $translations = language_utils::load_language("streaming");
     my $video_metadata = video_utils::get_video_metadata_with_video_id($video_id);
     my $channel_metadata = channel_utils::get_channel_metadata($video_metadata->{channel_uuid});
-    print("VIDEO METADATA: $video_metadata\n");
+    my $private_video_stats = video_utils::get_private_video_stats($video_id);
+    my $isLiked = $private_video_stats->{liked} == 1 ? 1 : 0;
+    my $isDisliked = $private_video_stats->{liked} == -1 ? 1 : 0;
+    # print("VIDEO METADATA: $video_metadata\n");
     if (!$video_metadata || $video_metadata->{enabled} == 0) {
         return "Video not found"; 
     }
@@ -51,7 +54,7 @@ HTML
                         <div class="VideoUtils">
                             <div class="Reviews">
                                 <div class="Like">
-                                    <button type="button" class="LikeButton" onclick="likeVideo(`#!video_id`)" id=Like0>
+                                    <button type="button" class="LikeButton" onclick="likeVideo(`$video_id`)" id=Like$private_video_stats->{liked}>
                                         <div class="LikeAmount" id="LikeAmount">
                                             $video_metadata->{likes}
                                         </div>
@@ -59,7 +62,7 @@ HTML
                                     </button>
                                 </div>
                                 <div class="Dislike">
-                                    <button type="button" class="DislikeButton" onclick="dislikeVideo(`#!video_id`)" id=Dislike-1>
+                                    <button type="button" class="DislikeButton" onclick="dislikeVideo(`$video_id`)" id=Dislike$private_video_stats->{liked}>
                                         <div class="DislikeAmount" id="DislikeAmount">
                                             $video_metadata->{dislikes}
                                         </div>
@@ -68,7 +71,7 @@ HTML
                                 </div>
                             </div>
                             <div class="Share">
-                                <button type="button" id="ShareButton" onclick="shareVideo(`#!video_id`)">Share</button>
+                                <button type="button" id="ShareButton" onclick="shareVideo(`$video_id`)">Share</button>
                             </div>
                         </div>
                     </div>
@@ -150,8 +153,8 @@ HTML
 
     my $script = <<SCRIPT;
     <script>
-        var isLiked = 0;
-        var isDisliked = 1;
+        var isLiked = $isLiked;
+        var isDisliked = $isDisliked;
         const video_id = `$video_id`;
         var isLoading = false;
         var noMoreComments = false;
