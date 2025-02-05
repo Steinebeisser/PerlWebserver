@@ -6,7 +6,7 @@ use warnings;
 sub post_admin_update_log_add {
     my ($client_socket, $route, $temp_file) = @_;
 
-    print($temp_file);
+    # print($temp_file);
 
     if (!admin_utils::check_if_admin_and_logged_in($client_socket)) {
         return;
@@ -33,13 +33,13 @@ sub post_admin_update_log_edit {
     my $request = body_utils::load_temp_file($temp_file);
     my ($update_log_id, $update_point_id, $content) = update_log::parse_edit_request($main::uri, $request);
 
-    print($update_point_id);
-    print("update_log_id: $update_log_id\n");
+    # print($update_point_id);
+    # print("update_log_id: $update_log_id\n");
     if (!defined($update_point_id)) {
         $update_point_id = undef;
     }
-    print("update_point_id: $update_point_id\n");
-    print("content: $content\n");
+    # print("update_point_id: $update_point_id\n");
+    # print("content: $content\n");
 
     if (!$update_log_id || !$content) {
         my $response = HTTP_RESPONSE::ERROR_400("Bad Request");

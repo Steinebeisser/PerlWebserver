@@ -26,7 +26,7 @@ sub get_spectate_games {
     my @spectate_games;
     foreach my $game_id (keys %memory::spectate_games) {
         push(@spectate_games, $game_id);
-        print("SPECTATE GAMES: $game_id\n");
+        # print("SPECTATE GAMES: $game_id\n");
     }
 
 

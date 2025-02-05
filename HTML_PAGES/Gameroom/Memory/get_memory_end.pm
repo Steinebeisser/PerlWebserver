@@ -23,7 +23,7 @@ sub get_memory_end {
     my $game_path = "$base_dir/HTML_PAGES/Gameroom/Memory/activeGames/$game_file";
 
     if (!-f $game_path) {
-        print("GAME_PATH: $game_path\n");
+        # print("GAME_PATH: $game_path\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404($translations->{"game_not_found"}));
     }
 
@@ -37,19 +37,19 @@ sub get_memory_end {
     my $moves;
 
     if (!$data) {
-        print("DATA: $data\n");
+        # print("DATA: $data\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404($translations->{"game_not_found"}));
     }
 
     if (!$memory::game_info{$game_id}) {
-        print("GAME_INFO: $memory::game_info{$game_id}\n");
+        # print("GAME_INFO: $memory::game_info{$game_id}\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404($translations->{"game_not_found"}));
     }
 
     if (!$memory::game_info{$game_id}{"alone"}) {
         if ($memory::game_info{$game_id}{"player1"} ne $username) {
             if ($memory::game_info{$game_id}{"player2"} ne $username) {
-                print("GAME_INFO: $memory::game_info{$game_id}\n");
+                # print("GAME_INFO: $memory::game_info{$game_id}\n");
                 http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404($translations->{"game_not_found"}));
             } else {
                 $my_player = $memory::game_info{$game_id}{"player2"};
@@ -69,7 +69,7 @@ sub get_memory_end {
     $username = user_utils::encode_uri($my_player);
     my $human_opponent = user_utils::decode_uri($opponent);
     $opponent = user_utils::encode_uri($opponent);
-    print("USERNAME: $username\n");
+    # print("USERNAME: $username\n");
     my $solved_cards = $data->{$username}{solved_cards};
     my $solved_cards_amount_self = $data->{$username}{solved_cards_amount}/2;
     my $solved_cards_amount_enemy = $data->{$opponent}{solved_cards_amount}/2;

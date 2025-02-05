@@ -230,7 +230,7 @@ sub epoll_loop {
                 $epoll::clients{fileno($client_socket)}{"has_in"} = 1;
 
             # } elsif ($event->[0] == fileno $udp_socket) {
-            #     print("RECEIVED UDP PACKET\n");
+                # print("RECEIVED UDP PACKET\n");
             #     die;
             } elsif ($event->[1] & EPOLLIN) {
                 # print("Handling client\n");
@@ -239,7 +239,7 @@ sub epoll_loop {
                 # print("Handling filestream\n");
                 handle_filestream($event->[0]);
             } else {
-                print("Unknown event\n");
+                # print("Unknown event\n");
             }
         }
     }
@@ -427,7 +427,7 @@ sub handle_normal_request {
     # print("USER: " . (defined $main::user ? $main::user : "undef") . "\n");
     # print("IMAIL: " . (defined $main::user && defined $main::user->{email} ? $main::user->{email} : "undef") . "\n");
     if (defined $main::user && !$main::user->{email} && !$skipidy) {
-        print("HELLO\n");
+        # print("HELLO\n");
         my $html = get_require_email::get_require_email();
         http_utils::send_response($client_socket, HTTP_RESPONSE::OK($html));
         close($client_socket);
@@ -435,7 +435,7 @@ sub handle_normal_request {
     }
     if ($main::user && !user_utils::is_email_verified && !$skipidy) {
         my $html = get_email_not_verified::get_email_not_verified();
-        print("HELLO\n");
+        # print("HELLO\n");
         http_utils::send_response($client_socket, HTTP_RESPONSE::OK($html));
         close($client_socket);
         return;
@@ -447,7 +447,7 @@ sub handle_normal_request {
 
     # print("8");
     if (!$epoll::clients{$client_fd}{"has_out"}) {
-        print("9");
+        # print("9");
         http_utils::send_response($client_socket, HTTP_RESPONSE::OK($response));
     }
     # print("SENT RESPONSE\n");
@@ -498,7 +498,7 @@ sub handle_index {
     }
 
     if (!defined($response)) {
-        print "Received an unknown request\n";
+        # print "Received an unknown request\n";
         # print("REQUEST: $request\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404);
     }

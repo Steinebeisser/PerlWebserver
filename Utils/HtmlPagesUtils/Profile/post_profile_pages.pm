@@ -55,13 +55,13 @@ sub get_meta_data {
 
                 my $base_dir = getcwd;
                 my $user_path = "$base_dir/Data/UserData/Users/$main::user->{uuid}";
-                print("USER PATH: $user_path\n");
+                # print("USER PATH: $user_path\n");
                 if (!-d $user_path) {
-                    print("WADAFUCK\n");
+                    # print("WADAFUCK\n");
                     mkdir $user_path or die "Cannot create directory: $!";
                 }
                 my $ploud_path = "$user_path/ploud";
-                print("PLOUD PATH: $ploud_path\n");
+                # print("PLOUD PATH: $ploud_path\n");
                 if (!-d $ploud_path) {
                     mkdir $ploud_path or die "Cannot create directory: $!";
                 }
@@ -148,7 +148,7 @@ sub post_profile_ploud_download {
     };
     epoll_ctl($main::epoll, EPOLL_CTL_MOD, fileno $client_socket, EPOLLIN | EPOLLOUT) >= 0 || die "Can't add client socket to main::epoll: $!";
     $epoll::clients{fileno $client_socket}{"has_out"} = 1;
-    print("Added client socket to writeepoll\n");
+    # print("Added client socket to writeepoll\n");
 
     main::handle_filestream(fileno $client_socket);
     # main::epoll_loop();

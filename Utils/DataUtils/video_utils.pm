@@ -15,7 +15,7 @@ sub get_top_videos {
     
     my @videos = get_videos($videos_file);
     # foreach my $video (@videos) {
-    #     print("VIDEO: $video\n");
+        # print("VIDEO: $video\n");
     # }
     return @videos;
 }
@@ -34,10 +34,10 @@ sub get_videos {
         my $meta_data_file = "$base_dir/$line";
         
         my $video_data = get_video_metadata($meta_data_file);
-        print("VIDEO DATA: $video_data\n");
-        print("IS ENABLED: $video_data->{enabled}\n");
+        # print("VIDEO DATA: $video_data\n");
+        # print("IS ENABLED: $video_data->{enabled}\n");
         if ($video_data->{enabled} && !$video_data->{private}) {
-            print("PUSHING VIDEO: $video_data->{title}\n");
+            # print("PUSHING VIDEO: $video_data->{title}\n");
             push(@videos, $video_data);
         }
 
@@ -62,12 +62,12 @@ sub get_video_metadata {
     }
     my $video = { video_name => $meta_data };
     my $video_data = decode_json($meta_data);
-    print("THUMBNAIL PATH: $video_data->{thumbnail}\n");
+    # print("THUMBNAIL PATH: $video_data->{thumbnail}\n");
     # print("VIDEO DATA: $video_data\n");
     # print("FILE: $file\n");
     # foreach my $key (keys %$file) {
-    #     print("KEY: $key\n");
-    #     print("VALUE: $file->{$key}\n");
+        # print("KEY: $key\n");
+        # print("VALUE: $file->{$key}\n");
     # }
         # $video->{filepath} = $file->{filepath};
     my %new_video_data;
@@ -83,7 +83,7 @@ sub get_video_metadata {
     $new_video_data{private} = $video_data->{private};
     $new_video_data{channel_uuid} = $video_data->{channel_uuid};
 
-    print("VIDEO DATA: $new_video_data{title}\n");
+    # print("VIDEO DATA: $new_video_data{title}\n");
         
     return \%new_video_data;
 }

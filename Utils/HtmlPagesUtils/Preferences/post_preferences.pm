@@ -76,7 +76,7 @@ sub post_dark_mode {
 
         }
     }
-    print("SWAPPED SCHEME: $scheme\n");
+    # print("SWAPPED SCHEME: $scheme\n");
 
 
 

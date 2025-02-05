@@ -24,7 +24,7 @@ HTML
     }
     my $max_storage = $user_stats->{rank}{benefits}{max_storage};
 
-    print("MAX STORAGE: $max_storage\n");
+    # print("MAX STORAGE: $max_storage\n");
 
     if (!$max_storage) {
         $max_storage = $main::max_storage
@@ -32,8 +32,8 @@ HTML
     my $storage_used = user_utils::get_current_used_storage($main::user->{uuid});
 
     my $full_percent = sprintf("%.2f", $storage_used / $max_storage * 100);
-    print("FULL PERCENT: $full_percent\n");
-    print($storage_used . " / " . $max_storage . " = " . $storage_used / $max_storage);
+    # print("FULL PERCENT: $full_percent\n");
+    # print($storage_used . " / " . $max_storage . " = " . $storage_used / $max_storage);
 
     my $max_storage_formated = user_utils::format_bytes($max_storage);
 

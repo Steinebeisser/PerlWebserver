@@ -34,7 +34,7 @@ sub handle_upload {
     }
 
     if (!$epoll::clients{$client_fd}{finished_metadata} && !$epoll::clients{$client_fd}{error}) {
-        print("GETTING METADATA\n");
+        # print("GETTING METADATA\n");
         get_metadata($client_fd);
         $epoll::clients{$client_fd}{write_file} = $epoll::clients{$client_fd}{filepath};
     }
@@ -46,18 +46,18 @@ sub handle_upload {
 
     if ($epoll::clients{$client_fd}{finished}) {
         if (!$epoll::clients{$client_fd}{update}) {
-            print("FINISHED UPLOAD 1\n");
+            # print("FINISHED UPLOAD 1\n");
             create_meta_data($client_fd);
         } else {
-            print("FINISHED UPDATE 2\n");
+            # print("FINISHED UPDATE 2\n");
         }
         my $referer = $epoll::clients{$client_fd}{referer};
-        print("REFERER: $referer\n");
+        # print("REFERER: $referer\n");
         if (!$referer) {
             $referer = "/";
         }
         my $response = HTTP_RESPONSE::REDIRECT_303($referer);
-        print("RESPOSE: $response\n");
+        # print("RESPOSE: $response\n");
         http_utils::send_http_response($epoll::clients{$client_fd}{socket}, $response);
     }
 }
@@ -68,7 +68,7 @@ sub look_for_extra_data {
 
     my $bytes_read = sysread($epoll::clients{$client_fd}{socket}, my $buffer, 1024);
     if ($bytes_read == 0) {
-        print("NO BYTES READ\n");
+        # print("NO BYTES READ\n");
         return;
     }
     
@@ -87,7 +87,7 @@ sub create_meta_data {
 
     my $file_path = $epoll::clients{$client_fd}{filepath};
     my $dir_path = $epoll::clients{$client_fd}{dir_path};
-    print("DIR PATH: $dir_path\n");
+    # print("DIR PATH: $dir_path\n");
     my $filepath = "$dir_path/metadata.json";
     my $base_dir = getcwd;
     my ($trimmed_filepath) = $file_path =~ /$base_dir\/(.*)/; 
@@ -117,7 +117,7 @@ sub create_meta_data {
             mkdir $video_path or die "Cannot create directory: $!";
         }
         my $videos_file = "$video_path/videos.txt";
-        print("VIDEOS FILE: $videos_file\n");
+        # print("VIDEOS FILE: $videos_file\n");
         my ($trimmed_filepath) = $filepath =~ /$base_dir\/(.*)/;
         open my $fh, '>>', $videos_file or die "Cannot open file: $!";
         binmode $fh; 
@@ -129,7 +129,7 @@ sub create_meta_data {
             return;
         }
         my $user_videos_file = "$user_path/Streaming/videos.txt";
-        print("USER VIDEOS FILE: $user_videos_file\n");
+        # print("USER VIDEOS FILE: $user_videos_file\n");
         open my $user_fh, '>>', $user_videos_file or die "Cannot open file: $!";
         print($user_fh "$trimmed_filepath\n");
         close $user_fh;
@@ -166,7 +166,7 @@ sub create_meta_data {
 sub get_metadata {
     my ($client_fd) = @_;
 
-    print("GETTING METADATA\n");
+    # print("GETTING METADATA\n");
     if (!$epoll::clients{$client_fd}{upload_tries} > 3) {
         # ! KILL CONNECTION
         die "Too many tries";
@@ -176,7 +176,7 @@ sub get_metadata {
         $epoll::clients{$client_fd}{read_temp_file} = 1;
         if ($data =~ /\r\n\r\n/) {
             my ($metadata, $file_data) = split(/\r\n\r\n/, $data, 2);
-            print("DATA123: $file_data\n");
+            # print("DATA123: $file_data\n");
             extract_metadata($metadata, $client_fd, $file_data);
             $epoll::clients{$client_fd}{finished_metadata} = 1;
         } else {
@@ -191,7 +191,7 @@ sub get_metadata {
         }
         if ($data =~ /\r\n\r\n/) {
             my ($metadata, $file_data) = split(/\r\n\r\n/, $data, 2);
-            print("DATA123: $file_data\n");
+            # print("DATA123: $file_data\n");
             extract_metadata($metadata, $client_fd, $file_data);
             $epoll::clients{$client_fd}{finished_metadata} = 1;
         }
@@ -229,9 +229,9 @@ sub create_file {
 
     my $base_dir = getcwd;
     my $user_path = "$base_dir/Data/UserData/Users/$uuid";
-    print("USER PATH: $user_path\n");
+    # print("USER PATH: $user_path\n");
     if (!-d $user_path) {
-        print("WADAFUCK\n");
+        # print("WADAFUCK\n");
         mkdir $user_path or die "Cannot create directory: $!";
     }
 
@@ -256,12 +256,12 @@ sub create_file {
     #     return;
     # }
 
-    print("CREATING FILEPATH: $filepath\n");
+    # print("CREATING FILEPATH: $filepath\n");
 
     $epoll::clients{$client_fd}{filepath} = $filepath;
     $epoll::clients{$client_fd}{dir_path} = $dir_path;
 
-    print("FILE DATA: $file_data\n");
+    # print("FILE DATA: $file_data\n");
 
     my $boundary = $epoll::clients{$client_fd}{boundary};
     my $write_data;
@@ -284,14 +284,14 @@ sub create_file {
     binmode $fh; 
     print $fh $write_data;
     close $fh;
-    print("FILE CREATED, now reading until finished\n");
+    # print("FILE CREATED, now reading until finished\n");
 }
 
 sub create_ploud_path {
     my ($client_fd, $user_path, $file_data) = @_;
 
     my $ploud_path = "$user_path/ploud";
-    print("PLOUD PATH: $ploud_path\n");
+    # print("PLOUD PATH: $ploud_path\n");
     if (!-d $ploud_path) {
         mkdir $ploud_path or die "Cannot create directory: $!";
     }
@@ -300,7 +300,7 @@ sub create_ploud_path {
         mkdir $dir_path or die "Cannot create directory: $!";
     }
     my $filepath = "$dir_path/$epoll::clients{$client_fd}{filename}";
-    print("FILEPATH: $filepath\n");
+    # print("FILEPATH: $filepath\n");
 
 
     return ($filepath, $dir_path);
@@ -310,7 +310,7 @@ sub create_streaming_path {
     my ($client_fd, $user_path) = @_;
 
     my $streaming_path = "$user_path/Streaming";
-    print("STREAMING PATH: $streaming_path\n");
+    # print("STREAMING PATH: $streaming_path\n");
     if (!-d $streaming_path) {
         mkdir $streaming_path or die "Cannot create directory: $!";
     }
@@ -324,7 +324,7 @@ sub create_streaming_path {
         mkdir $dir_path or die "Cannot create directory: $!";
     }
     my $filepath = "$dir_path/$epoll::clients{$client_fd}{filename}";
-    print("FILEPATH: $filepath\n");
+    # print("FILEPATH: $filepath\n");
 
     $epoll::clients{$client_fd}{video} = 1;
     $epoll::clients{$client_fd}{video_id} = $video_id;
@@ -346,12 +346,12 @@ sub create_streaming_update_path {
         http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_404());
         return;
     }
-    print("LOCATION: $epoll::clients{$client_fd}{location}\n");
+    # print("LOCATION: $epoll::clients{$client_fd}{location}\n");
     my ($username, $category, $video_id, $item) = $epoll::clients{$client_fd}{location} =~ /^\/update\/streaming\/manage\/channel\/([^\/]+)\/([^\/]+)(?:\/([^\/]+))?\/([^\/]+)$/;
-    print("USERNAME: $username\n");
-    print("CATEGORY: $category\n");
-    print("VIDEO ID: $video_id\n");
-    print("ITEM: $item\n");
+    # print("USERNAME: $username\n");
+    # print("CATEGORY: $category\n");
+    # print("VIDEO ID: $video_id\n");
+    # print("ITEM: $item\n");
     if (!$username || !$category || !$item) {
         http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_404());
         return;
@@ -369,7 +369,7 @@ sub create_streaming_update_path {
 
 
     my $filepath = "$dir_path/$epoll::clients{$client_fd}{filename}";
-    print("FILEPATH: $filepath\n");
+    # print("FILEPATH: $filepath\n");
 
     
     
@@ -415,7 +415,7 @@ sub update_channel_icon {
         };
     }
     my $filepath = "$dir_path/$epoll::clients{$client_fd}{filename}";
-    print("FILEPATH: $filepath\n");
+    # print("FILEPATH: $filepath\n");
     my $base_dir = getcwd;
     my ($trimmed_filepath) = $filepath =~ /$base_dir\/(.*)/;
 
@@ -441,7 +441,7 @@ sub update_channel_banner {
         };
     }
     my $filepath = "$dir_path/$epoll::clients{$client_fd}{filename}";
-    print("FILEPATH: $filepath\n");
+    # print("FILEPATH: $filepath\n");
 
     return ($filepath, $dir_path);
 }
@@ -451,15 +451,15 @@ sub update_videos {
 
     my $dir_path = "$streaming_path/Videos/$video_id";
     my $filepath = "$dir_path/$epoll::clients{$client_fd}{filename}";
-    print("FILEPATH: $filepath\n");
+    # print("FILEPATH: $filepath\n");
 
 
     my $metadata_file_path = "$dir_path/metadata.json";
-    print("METADATA FILE PATH: $metadata_file_path\n");
+    # print("METADATA FILE PATH: $metadata_file_path\n");
     open my $fh, '<', $metadata_file_path or die "Cannot open file: $!";
     my $data = do { local $/; <$fh> };
     close $fh;
-    print("DATA: $data\n");
+    # print("DATA: $data\n");
     my $meta_data = decode_json($data);
 
     if (!$meta_data) {
@@ -492,7 +492,7 @@ sub update_videos {
             
     }
     push @{$meta_data->{old_thumbnails}}, $old_thumbnail;
-    print("OLD THUMBNAILS: $meta_data->{old_thumbnails}\n");
+    # print("OLD THUMBNAILS: $meta_data->{old_thumbnails}\n");
     my $base_dir = getcwd;
     my ($trimmed_filepath) = $filepath =~ /$base_dir\/(.*)/;
     $meta_data->{thumbnail} = $trimmed_filepath;
@@ -538,7 +538,7 @@ sub process_buffer {
         my $save_data  = substr($buffer, -$save_length);
         # print("Write data length: " . length($write_data) . "\n");
         if (!$write_data && !$save_data) {
-            print("WRITE = BUFFER\n");
+            # print("WRITE = BUFFER\n");
             $write_data = $buffer;
         }
         write_to_file($client_fd, $write_data);
@@ -641,7 +641,7 @@ sub handle_form_metadata {
     my $client = $epoll::clients{$client_fd};
 
     chomp($metadata);
-    print($metadata);
+    # print($metadata);
     push @{$client->{forms}}, $metadata;
     
     if ($metadata =~ /Content-Disposition: form-data; name="([^"]+)"/) {
@@ -651,8 +651,8 @@ sub handle_form_metadata {
             warn "No action defined for form data: $name";
             return;
         }
-        print("TODO: $todo\n");
-        print("NAME: $name\n");
+        # print("TODO: $todo\n");
+        # print("NAME: $name\n");
         my $upload_meta_data_file = "/tmp/upload_meta_data_$client_fd";
         if (!-e $upload_meta_data_file) {
             open my $fh, '>', $upload_meta_data_file or die "Cannot open file: $!";
@@ -671,7 +671,7 @@ sub handle_form_metadata {
             if (!$body) {
                 die "No body";
             }
-            print("Writing metadata: $name => $body\n");
+            # print("Writing metadata: $name => $body\n");
             $upload_meta_data{$name} = $body;
             $client->{write_file} = "/tmp/noUse";
         } elsif ($todo eq "thumbnail") {
@@ -687,10 +687,10 @@ sub handle_form_metadata {
                 binmode $fh;
                 print $fh $body;
                 close $fh;
-                print("Thumbnail saved to $client->{write_file}\n"); 
+                # print("Thumbnail saved to $client->{write_file}\n"); 
                 # print("BODY: $body\n");
             } else {
-                print("NO FILENAME\n");
+                # print("NO FILENAME\n");
                 die;
             }
         } 
@@ -707,252 +707,10 @@ sub finalize_processing {
     $client->{finished} = 1;
 
     # Output processed form metadata
-    foreach my $form (@{$client->{forms}}) {
-        print "=========== FORM METADATA ===========\n";
-        print($form."\n");
-        print "=====================================\n";
-    }
+    # foreach my $form (@{$client->{forms}}) {
+        # print "=========== FORM METADATA ===========\n";
+        # print($form."\n");
+        # print "=====================================\n";
+    # }
 }
-
-
-# sub write_to_file {
-#     my ($client_fd, $buffer) = @_;
-#     my $client = $epoll::clients{$client_fd};
-
-#     open my $fh, '>>', $client->{write_file} or die "Cannot open file: $!";
-#     binmode $fh;
-#     print $fh $buffer;
-#     close $fh;
-# }
-
-
-# sub write_file_until_boundary {
-#     my ($client_fd) = @_;
-#     my $client = $epoll::clients{$client_fd};
-
-#     my $bytes_read = sysread($client->{socket}, my $buffer, 1024);
-#     if ($bytes_read == 0) {
-#         die "Client disconnected";
-#         $client->{error} = 1;
-#         return;
-#     }
-
-#     my $data_buffer = check_for_boundary($client_fd, $buffer);
-
-    
-#     if ($finish_write_data) {
-#         $buffer = $finish_write_data;
-#     }
-#     my $write_buffer = substr($buffer, 0, -30);
-#     $client->{last_buffer} = substr($buffer, -30);
-    
-#     open my $fh, '>>', $client->{write_file} or die "Cannot open file: $!";
-#     binmode $fh;
-#     print $fh $write_buffer;
-#     close $fh;
-#     if ($client->{write_file2}) {
-#         $client->{write_file} = $client->{write_file2};
-#         $client->{write_file2} = "";
-#     }
-# }
-
-# sub check_for_boundary {
-#     my ($client_fd, $buffer) = @_;
-
-#     if ($buffer !~ /--$client->{boundary}/) {
-#         return $buffer;
-#     }
-
-#     $buffer =~ /(.*?)--$client->{boundary}(.*)/s;
-#     my ($file_data, $remaining_data) = ($1, $2);
-
-#     my $data_buffer = check_for_boundary($client_fd, $remaining_data);
-
-#     print("REMAINING DATA: $data_buffer\n");
-
-#     if ($remaining_data eq "--\r\n") {
-#         $client->{finished} = 1;
-#         $client->{complete_finished} = 1;
-#         print("FINISHED PROCESSING\n");
-#         $buffer = user_utils::create_random_string(30) . $file_data;
-#         last;
-#     }
-
-#         $buffer = $remaining_data;
-#         $client->{last_buffer} = $buffer;
-#         print("REM DATA: $remaining_data\n");
-        
-#         if ($buffer =~ /Content-Disposition: form-data; name="([^"]+)"/) {
-#             my $name = $1;
-#             print("NAME: $name\n");
-#             my $todo = $upload_name_list{$name};
-#             if (!$todo) {
-#                 #! idk
-#                 print("NO TODO\n");
-#                 print("REMAINING DATA: $remaining_data\n");
-#                 print("NAME: $name\n");
-#                 die;
-#             }
-#             my $upload_meta_data_file = "/tmp/upload_meta_data_$client_fd";
-#             if (!-e $upload_meta_data_file) {
-#                 open my $fh, '>', $upload_meta_data_file or die "Cannot open file: $!";
-#                 binmode $fh;
-#                 print $fh "{}";
-#                 close $fh;
-#             }
-
-#             open my $meta_fh, '<', $upload_meta_data_file or warn "Cannot open file: $!";
-#             local $/;
-#             my %upload_meta_data = %{ decode_json(<$meta_fh>) };
-#             close $meta_fh;
-
-#             if ($todo eq "metadata") {
-#                 if (my ($value) = $file_data =~ /name=".*"\r\n\r\n(.*)/) {
-#                     print("Writing metadata: $name => $value\n");
-#                     $upload_meta_data{$name} = $value;
-#                     $client->{write_file2} = "/tmp/noUse";
-#                 }
-#                 open my $meta_fh, '>', $upload_meta_data_file or die "Cannot open file: $!";
-#                 binmode $meta_fh;
-#                 print $meta_fh encode_json(\%upload_meta_data);
-#                 close $meta_fh;
-#             } elsif ($todo eq "thumbnail") {
-#                 if ($remaining_data =~ /filename="(.*)"/) {
-#                     my $filename = $1;
-#                     $client->{write_file2} = "$client->{dir_path}/$filename";
-#                     $upload_meta_data{$name} = $client->{write_file2};
-
-#                     my ($write_data) = $remaining_data =~ /Content-Type: (.*)\r\n\r\n(.*)/s;
-#                     open my $fh, '>', $client->{write_file2} or die "Cannot open file: $!";
-#                     binmode $fh;
-#                     print $fh $write_data;
-#                     close $fh;
-#                     print("Thumbnail saved to $client->{write_file2}\n"); 
-#                 } else {
-#                     print("NO FILENAME\n");
-#                     die;
-#                 }
-#             } else {
-#                 print("NO TODO\n");
-#                 die;
-#             }
-#         }
-#     }
-# }
-#     # Save remaining data to a file
-#     $client->{last_buffer} = substr($buffer, -30);
-#     $buffer = substr($buffer, 0, -30) if length($buffer) > 1024;
-
-#     open my $fh, '>>', $client->{write_file} or die "Cannot open file: $!";
-#     binmode $fh;
-#     print $fh $buffer;
-#     close $fh;
-
-#     # Switch files if needed
-#     if ($client->{write_file2}) {
-#         print("Switching files from $client->{write_file} to $client->{write_file2}\n");
-#         $client->{write_file} = $client->{write_file2};
-#         $client->{write_file2} = "";
-#     }
-# }
-# sub write_file_until_boundary {
-#     my ($client_fd) = @_;
-#     # print("CLIENT SOCKET: $epoll::clients{$client_fd}{socket}\n");
-    
-#     my $bytes_read = sysread($epoll::clients{$client_fd}{socket}, my $buffer, 1024);
-#     if ($bytes_read == 0) {
-#         return;
-#     }
-#     my $last_buffer = $epoll::clients{$client_fd}{last_buffer};
-#     if ($last_buffer) {
-#         $buffer = $last_buffer . $buffer; # if BOUNDARY is split between two buffers
-#     }
-#     # print("BUFFER: $buffer\n");
-#     my $i = 0;
-#     if ($buffer =~ /--$epoll::clients{$client_fd}{boundary}/) {
-#         my $buffer_copy = $buffer;
-#         my ($write_data) = $buffer =~ /(.*?)--$epoll::clients{$client_fd}{boundary}/s;
-#         while ($buffer =~ /(.*?)--$epoll::clients{$client_fd}{boundary}(.*)/s) {
-#             my ($file_data, $remaining_data) = ($1, $2);
-
-#             if ($remaining_data eq "--\r\n") {
-#                 $epoll::clients{$client_fd}{finished} = 1;
-#                 $epoll::clients{$client_fd}{complete_finished} = 1;
-#                 print("FINITO\n");
-#                 $buffer = user_utils::create_random_string(30);
-#                 $buffer .= $file_data;
-#                 last;
-#             } 
-
-#             if ($remaining_data =~ /Content-Disposition: form-data; name="([^"]+)"/) {
-#                 my $name = $1;
-#                 my $todo = $upload_name_list{$name};
-#                 my $upload_meta_data_file = "/tmp/upload_meta_data_$client_fd";
-#                 if (!-e $upload_meta_data_file) {
-#                     open my $fh, '>', $upload_meta_data_file or die "Cannot open file: $!";
-#                     binmode $fh;
-#                     print $fh "{}";
-#                     close $fh;
-#                 }
-#                 open my $meta_fh, '<', $upload_meta_data_file or do {
-#                     warn "Cannot open file: $!";
-#                 };
-#                 binmode $meta_fh;
-#                 local $/;
-#                 my %upload_meta_data = %{ decode_json(<$meta_fh>) };
-#                 close $meta_fh;
-#                 if (!$todo) {
-#                     #! idk
-#                 } elsif ($todo eq "metadata") {
-#                     print("METADATA\n");
-#                     print("NAME: $name\n");
-#                     my ($value) = $file_data =~ /name=".*"\r\n\r\n(.*)/;
-#                     print("METADATANAME: WRITING: $value\n");
-#                     $upload_meta_data{$name} = $value;
-#                     $epoll::clients{$client_fd}{write_file2} = "/tmp/noUse";
-#                 } elsif ($todo eq "thumbnail") {
-#                     print($remaining_data);
-#                     if ($remaining_data =~ /filename="(.*)"/) {
-#                         my $filename = $1;
-#                         $epoll::clients{$client_fd}{write_file2} = "$epoll::clients{$client_fd}{dir_path}/$filename";
-#                         $upload_meta_data{$name} = $epoll::clients{$client_fd}{write_file2};
-#                         my ($content_type, $data) = $remaining_data =~ /Content-Type: (.*)\r\n\r\n(.*)/; 
-#                         open my $fh, '>', $epoll::clients{$client_fd}{write_file2} or die "Cannot open file: $!";
-#                         binmode $fh;
-#                         print $fh $data;
-#                         print("THUMBNAIL: WRITING $data to $epoll::clients{$client_fd}{write_file2}\n");
-#                         print("start\n$file_data\nend\n");
-#                         close $fh;
-#                     } else {
-#                         #! idk
-#                         die;
-#                     }
-#                 }
-#                 open my $meta_fh, '>', $upload_meta_data_file or die "Cannot open file: $!";
-#                 binmode $meta_fh;
-#                 print $meta_fh encode_json(\%upload_meta_data);
-#                 close $meta_fh;
-#             }
-            
-#             $buffer =~ s/(.*)--$epoll::clients{$client_fd}{boundary}//;
-#         } 
-#         $buffer = $write_data;
-#     }
-#     $epoll::clients{$client_fd}{last_buffer} = substr($buffer, -30);
-#     if (length($buffer) > 1024) {
-#         $buffer = substr($buffer, 0, -30);
-#     }
-#     open my $fh, '>>', $epoll::clients{$client_fd}{write_file} or die "Cannot open file: $!";
-#     binmode $fh;
-#     print $fh $buffer;
-#     close $fh;
-#     if ($epoll::clients{$client_fd}{write_file2}) {
-#         print("SWITCHING FILES\n");
-#         print("FILE1: $epoll::clients{$client_fd}{write_file}\n");
-#         print("FILE2: $epoll::clients{$client_fd}{write_file2}\n");
-#         $epoll::clients{$client_fd}{write_file} = $epoll::clients{$client_fd}{write_file2};
-#         $epoll::clients{$client_fd}{write_file2} = "";
-#     }
-# }
-
 1;

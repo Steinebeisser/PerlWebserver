@@ -187,8 +187,8 @@ sub get_blog_data {
     my ($blog_name, $is_announcement) = @_;
     my $base_path = getcwd();
     my $blog_path;
-    print("IS ANNOUNCEMENT: $is_announcement\n");
-    print("BLOG NAME: $blog_name\n");
+    # print("IS ANNOUNCEMENT: $is_announcement\n");
+    # print("BLOG NAME: $blog_name\n");
     if ($is_announcement) {
         $blog_path = "$base_path/Data/Blog/Announcements/$blog_name.json";
     } else {

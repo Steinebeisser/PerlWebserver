@@ -77,7 +77,7 @@ sub get_streaming_manage_channel_videos {
     my $base_dir = getcwd();
     my $channel_path = "$base_dir/Data/UserData/Users/$uuid/Streaming";
     my $videos_file = "$channel_path/videos.txt";
-    print("VIDEOS FILE: $videos_file\n");
+    # print("VIDEOS FILE: $videos_file\n");
     my @videos = video_utils::get_videos($videos_file);
 
     my $html = <<HTML;
@@ -146,10 +146,10 @@ sub get_streaming_manage_channel_single_video {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Video not found"));
         return;
     }
-    print("FILE PATH: $file_path\n");
+    # print("FILE PATH: $file_path\n");
     my $video = video_utils::get_video_metadata($file_path);
     if (!$video) {
-        print("Video not found\n");
+        # print("Video not found\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Video not found"));
         return;
     }
@@ -390,9 +390,9 @@ sub get_streaming_manage_channel_about {
     }
     my $about_file = "$channel_path/about.txt";
 
-    print("ABOUT FILE: $about_file\n");
+    # print("ABOUT FILE: $about_file\n");
     if (!-e $about_file) {
-        print("NO ABOUT FILE\n");
+        # print("NO ABOUT FILE\n");
         open(my $fh, ">", $about_file);
         print $fh "No about information";
         close $fh;

@@ -87,7 +87,7 @@ sub register_user {
     my $UserDataFolder = "$base_dir/Data/UserData";
     my $UsernameFile = "$UserDataFolder/usernames.json";
     my $uuid = create_uuid_as_string();
-    print("UUID: $uuid\n");
+    # print("UUID: $uuid\n");
 
     if (!-d $UserDataFolder) {
         mkdir $UserDataFolder or return 0;
@@ -107,7 +107,7 @@ sub register_user {
     }
 
     if (exists $user_to_uuid{$username}) {
-        print("User already exists\n");
+        # print("User already exists\n");
         return 0;
     }
 
@@ -129,7 +129,7 @@ sub register_user {
     print $file encode_json(\%data_to_save);
     close $file;
 
-    print "Username '$username' assigned UUID '$uuid'\n";
+    # print "Username '$username' assigned UUID '$uuid'\n";
 
     my $foldername = "$UserDataFolder/Users/$uuid";
     my $filename = "$foldername/$uuid.json";
@@ -146,8 +146,8 @@ sub register_user {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Email already in use"));
         return;
     }
-    print("EMAIL: $email\n");
-    print("MAX STORAGE: $max_storage\n");
+    # print("EMAIL: $email\n");
+    # print("MAX STORAGE: $max_storage\n");
     my %user_data = (
         uuid => $uuid,
         username => $username,
@@ -194,7 +194,7 @@ sub register_user {
     print $file $json . "\n";
     close $file;
     # $main::user = User->new($username, $password);
-    print("User '$username' registered\n");
+    # print("User '$username' registered\n");
     
     # my $html = get_operation_finished_pages::get_logined($username);
     # http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK_WITH_COOKIES($html, $cookie, $remember_me_cookie));

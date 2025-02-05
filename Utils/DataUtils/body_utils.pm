@@ -15,13 +15,13 @@ sub load_temp_file {
         return "";
     }
     if (-s $file_path > 1024*1024) {
-        print("File too large\n");
+        # print("File too large\n");
         return "";
     }
 
     open(my $fh, '<', $file_path) or die "Could not open file '$file_path' $!";
     my $content = do { local $/; <$fh> };
-    print("CONTENT: $content\n");
+    # print("CONTENT: $content\n");
     close($fh);
 
     return $content;

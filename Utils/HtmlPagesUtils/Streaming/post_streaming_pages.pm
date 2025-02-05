@@ -11,17 +11,18 @@ sub post_streaming_manage_channel {
 
     my ($username, $category, $video_id, $update_item) = $route =~ /\/manage\/channel\/([^\/]+)\/([^\/]+)(?:\/([^\/]+))?\/(.*)/;
     if (!$username || !$category || !$update_item) {
-        print("ROUTE: $route\n");
-        print("USERNAME: $username\n");
-        print("CATEGORY: $category\n");
-        print("UPDATE ITEM: $update_item\n");
-        die;
+        # print("ROUTE: $route\n");
+        # print("USERNAME: $username\n");
+        # print("CATEGORY: $category\n");
+        # print("UPDATE ITEM: $update_item\n");
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Bad Request"));
+        return;
     }
 
-    print("USERNAME: $username\n");
-    print("CATEGORY: $category\n");
-    print("VIDEO ID: $video_id\n");
-    print("UPDATE ITEM: $update_item\n");
+    # print("USERNAME: $username\n");
+    # print("CATEGORY: $category\n");
+    # print("VIDEO ID: $video_id\n");
+    # print("UPDATE ITEM: $update_item\n");
 
 
     if (!channel_utils::has_manage_access(user_utils::get_uuid_by_username($username))) {
