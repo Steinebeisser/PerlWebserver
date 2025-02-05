@@ -51,10 +51,14 @@ sub get_memory_src {
     # die "TEST IF IN USE";
     my $response;
 
-    $request =~ /\/memory\/src\/(.*) HTTP/ || $request =~ /\/memory\/src\/card\/2player\/(.*) HTTP/;
+    $request =~ /\/memory\/src\/(.*)/ || $request =~ /\/memory\/src\/card\/2player\/(.*)/;
     my $card = $1;
 
-    # print("CARD: $card\n");
+    if(!$card) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Card not found"));
+        return;
+    }
+    print("CARD: $card\n");
     my $base_dir = getcwd();
     my $card_path = "$base_dir/HTML_PAGES/Gameroom/Memory/src/$card";
     # print("CARD PATH: $card_path\n");

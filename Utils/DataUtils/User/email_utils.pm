@@ -20,7 +20,7 @@ sub create_email_verification_link {
     }
     my $random_verify_id = user_utils::create_random_string(20);
     my $filename = "$EmailFolder/$random_verify_id";
-    my $link = "10.31.0.18/verify/email/$random_verify_id";
+    my $link = "$server::ip/verify/email/$random_verify_id";
     
     my $timeout = 15 * 60 * 24;
     my $timeout_timestamp = time() + $timeout;
