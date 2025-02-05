@@ -456,10 +456,11 @@ sub get_main_manage {
             </form>
         </div>
         <div class="ChannelIcon">
+            Must be 40x40 pixels<br>
             <img src="/streaming/image/channel_icon/$uuid" class="channel_icon">
             <form action="/update/streaming/manage/channel/$username/channel/icon" method="post" enctype="multipart/form-data">
-                <input type="file" name="icon" id="icon">
-                <input type="submit" value="Upload Icon">
+                <input type="file" name="icon" id="iconInput" accept="image/png">
+                <input type="submit" value="Upload Icon" id="iconSubmit">
             </form>
         </div>
         <div class="ChannelText">
