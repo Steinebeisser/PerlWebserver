@@ -35,6 +35,7 @@ sub get_streaming_video_src {
     if (!$id) {
         return HTTP_RESPONSE::ERROR_404("Video not found");
     }
+    print("ID: $id\n");
     return video_utils::get_video($id, $client_socket);
 }
 sub get_streaming_image_src {

@@ -156,6 +156,7 @@ my %post_router = (
 
     "/update/streaming/manage/channel/" => \&post_streaming_pages::post_streaming_manage_channel,
     "/streaming/channel" => \&post_streaming_pages::post_streaming_channel,
+    "/update/streaming/video" => \&post_streaming_pages::post_streaming_video,
 );
 
 print("Creating main::Epoll\n");

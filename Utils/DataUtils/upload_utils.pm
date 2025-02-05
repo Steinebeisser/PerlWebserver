@@ -91,10 +91,12 @@ sub create_meta_data {
     my $filepath = "$dir_path/metadata.json";
     my $base_dir = getcwd;
     my ($trimmed_filepath) = $file_path =~ /$base_dir\/(.*)/; 
+    my ($trimmed_metadata_filepath) = $filepath =~ /$base_dir\/(.*)/;
 
     my %meta_data = (
         filename => $filename,
         filepath => $trimmed_filepath,
+        metadata_filepath => $trimmed_metadata_filepath,
         uploaded_at => time(),
         size => -s $file_path
     );

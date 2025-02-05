@@ -47,4 +47,19 @@ sub post_streaming_channel {
 
     channel_utils::post_streaming_channel($channel_username, $category, $temp_file, $client_socket);
 }
+
+sub post_streaming_video {
+    my ($client_socket, $route, $temp_file) = @_;
+    if (!$main::user) {
+        return;
+    }
+
+    my ($category, $video_id) = $route =~ /streaming\/video\/(.*)\/(.*)/;
+    if (!$category || !$video_id) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Bad Request"));
+        return;
+    }
+
+    channel_utils::post_streaming_video($category, $video_id, $temp_file, $client_socket);
+}
 1;

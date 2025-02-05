@@ -101,6 +101,8 @@ sub get_video_metadata {
     $new_video_data{uploaded_at} = $video_data->{uploaded_at};
     $new_video_data{likes} = $video_data->{likes};
     $new_video_data{dislikes} = $video_data->{dislikes};
+    $new_video_data{metadata_filepath} = $video_data->{metadata_filepath};
+    $new_video_data{filepath} = $video_data->{filepath};
 
     # print("VIDEO DATA: $new_video_data{title}\n");
         
@@ -165,6 +167,7 @@ sub get_video {
             # print("VALUE: $file->{$key}\n");
         # }
         if (!$video_data->{enabled} && $main::user->{uuid} ne $video_data->{channel_uuid}) {
+            die;
             return HTTP_RESPONSE::ERROR_404("Video not found");
         }
         my $file_path = $video_data->{filepath};
@@ -260,6 +263,17 @@ sub get_video_metadata_with_video_id {
     return $metadata
 }
 
+sub get_video_publisher {
+    my ($video_id) = @_;
+    
+    my $video_metadata = get_video_metadata_with_video_id($video_id);
+    if (!$video_metadata) {
+        return;
+    }
+    my $channel_uuid = $video_metadata->{channel_uuid};
+    return $channel_uuid;
+}
+
 
 sub create_video_emblem {
     my ($video) = @_;
@@ -304,6 +318,20 @@ sub create_video_emblem {
 HTML
 
     return $html;
+}
+
+sub get_private_video_stats {
+    my ($video_id) = @_;
+
+    my $video_stats_file = channel_utils::get_channel_video_metadata_file($video_id);
+
+    open my $fh, "<", $video_stats_file;
+    my $video_stats = do { local $/; <$fh> };
+    close $fh;
+
+    my $video_stats_json = decode_json($video_stats);
+    
+    return $video_stats_json;
 }
 
 1;
