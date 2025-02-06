@@ -445,7 +445,7 @@ sub get_main_manage {
     my ($username, $client_socket) = @_;
     
     my $uuid = user_utils::get_uuid_by_username($username);
-    my $displayname = user_utils::decode_uri(user_utils::get_displayname_with_uuid($uuid));
+    my $displayname = user_utils::decode_uri(user_utils::get_displayname_by_uuid($uuid));
     my $html = <<HTML;
     <div class="ChannelInfo">
         <div class="ChannelBanner">

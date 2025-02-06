@@ -20,7 +20,7 @@ sub get_streaming_channel {
     my $channel_path = "$base_dir/Data/UserData/Users/$uuid/Streaming";
     my $videos_file = "$channel_path/videos.txt";
 
-    my $human_username = user_utils::decode_uri(user_utils::get_displayname_with_uuid($uuid));
+    my $human_username = user_utils::decode_uri(user_utils::get_displayname_by_uuid($uuid));
 
     my $html = <<HTML;
     <div class="StreamingChannel">
