@@ -645,6 +645,7 @@ sub comment_video {
         dislikes => 0,
         comment => $comment,
         commented_at => time,
+        video_id => $video_id,
     );
 
     $comments_json->{$comment_id} = \%new_comment;

@@ -132,6 +132,16 @@ sub get_streaming_video_comments {
         $comment->{author_displayname} = user_utils::get_displayname_by_uuid($comment->{author_uuid});
         $comment->{author_username} = user_utils::get_username_by_uuid($comment->{author_uuid});
         $comment->{comment_date} = streaming_html::parse_date($comment->{commented_at});
+        my $replies = $comment->{replies};
+        if ($replies) {
+            foreach my $reply (keys %$replies) {
+                $reply = $replies->{$reply};
+                $reply->{author_displayname} = user_utils::get_displayname_by_uuid($reply->{author_uuid});
+                $reply->{author_username} = user_utils::get_username_by_uuid($reply->{author_uuid});
+                $reply->{comment_date} = streaming_html::parse_date($reply->{commented_at});
+                $reply->{parent_comment_id} = $comment->{comment_id};
+            }
+        }
     }
     return encode_json($comments_ref); 
 

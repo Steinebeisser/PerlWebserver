@@ -62,4 +62,19 @@ sub post_streaming_video {
 
     channel_utils::post_streaming_video($category, $video_id, $temp_file, $client_socket);
 }
+
+sub post_streaming_video_comments {
+    my ($client_socket, $route, $temp_file) = @_;
+    if (!$main::user) {
+        return;
+    }
+
+    my ($category, $video_id, $parent_comment_id) = $route =~ /update\/streaming\/video\/comments\/(.*)\/(.*)\/(\d+)/;
+    if (!$video_id) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Bad Request"));
+        return;
+    }
+
+    video_utils::manage_video_comments($category, $video_id, $parent_comment_id, $temp_file, $client_socket);
+}
 1;

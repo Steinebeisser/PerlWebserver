@@ -345,7 +345,10 @@ SCRIPT
                 repliesHTML = `
                     <div class="Replies">
                         <button class="RepliesButton" onclick="toggleReplies('${comment.comment_id}')">
-                            Show replies (${Object.keys(comment.replies).length})
+                            Show replies 
+                            <div class="RepliesAmount">
+                                 (${Object.keys(comment.replies).length})
+                            </div>
                         </button>
                         <div class="RepliesContainer" id="replies-${comment.comment_id}">
                 `;
@@ -357,6 +360,18 @@ SCRIPT
                 });
 
                 repliesHTML += `</div></div>`;
+            } else if (!isReply) {
+                repliesHTML = `
+                    <div class="Replies" style="display: none">
+                        <button class="RepliesButton" onclick="toggleReplies('${comment.comment_id}')">
+                            Show replies
+                            <div class="RepliesAmount">
+                                (0)
+                            </div>
+                        </button>
+                        <div class="RepliesContainer" id="replies-${comment.comment_id}"></div>
+                    </div>
+                `;
             }
 
             var initReplyInput = '';
@@ -364,7 +379,7 @@ SCRIPT
                 initReplyInput = `
                     <div class="ReplyInput">
                         <div class="UserSuggestions" id="UserSuggestions"></div>
-                        <input type="text" class="ReplyTextfield" placeholder="Write a reply..." id="@$userUUID"><p class=">@${displayName} </textarea>
+                        <div class="ReplyTextfield" placeholder="Write a reply..." contenteditable="true"><span class="user-mention" data-uuid="${userUUID}" onclick="showUser('${userUUID}')">@${displayName}</span> </div>
                         <button type="button" class="ReplyReplyButton" onclick="replyToComment('${comment.comment_id}')">Reply</button>
                         <button type="button" class="ReplyCloseButton" onclick="closeReply('${comment.comment_id}')">X</button>
                     </div>
@@ -531,8 +546,7 @@ SCRIPT
         var comment = document.getElementById(commentID);
         var replyInput = comment.getElementsByClassName('ReplyInput')[0];
         var replyTextfield = replyInput.getElementsByClassName('ReplyTextfield')[0];
-        var reply = replyTextfield.value;
-        var pingedUserUUID = replyTextfield.id;
+        var reply = replyTextfield.innerHTML;
         fetch(`/update/streaming/video/comments/reply/${video_id}/${commentID}`, {
             method: 'POST',
             headers: {
@@ -540,13 +554,19 @@ SCRIPT
             },
             body: JSON.stringify({
                 reply: reply,
-                pingedUserUUID: pingedUser
             }),
         }).then(response => {
             if (response.ok) {
                 response.json().then(data => {
-                    var commentList = document.getElementsByClassName('CommentsList')[0];
-                    commentList.innerHTML = createCommentHtml(data) + commentList.innerHTML;
+                    var commentList = document.getElementById('replies-' + commentID);
+                    commentList.innerHTML = createCommentHtml(data, true) + commentList.innerHTML;
+                    var repliesButton = comment.getElementsByClassName('RepliesButton')[0];
+                    var repliesAmountField = repliesButton.getElementsByClassName('RepliesAmount')[0];
+                    var repliesAmount = parseInt(repliesAmountField.innerHTML.match(/\d+/)[0]);
+                    var Replies = comment.getElementsByClassName('Replies')[0];
+                    Replies.style.display = 'flex';
+                    repliesAmount++;
+                    repliesAmountField.innerHTML = `(${repliesAmount})`;
                     console.log('Replied');
                 })
             } else {
@@ -562,7 +582,7 @@ SCRIPT
         var replyInput = comment.getElementsByClassName('ReplyInput')[0];
         var replyTextfield = replyInput.getElementsByClassName('ReplyTextfield')[0];
         var reply = replyTextfield.innerHTML;
-        fetch(`/update/streaming/video/comments/reply/${video_id}/${commentID}`, {
+        fetch(`/update/streaming/video/comments/reply/${video_id}/${ParentCommentID}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -573,8 +593,14 @@ SCRIPT
         }).then(response => {
             if (response.ok) {
                 response.json().then(data => {
-                    var commentList = document.getElementsByClassName('CommentsList')[0];
-                    commentList.innerHTML = createCommentHtml(data) + commentList.innerHTML;
+                    var commentList = document.getElementById('replies-' + ParentCommentID);
+                    commentList.innerHTML = createCommentHtml(data, true) + commentList.innerHTML;
+                    var parentComment = document.getElementById(ParentCommentID);
+                    var repliesButton = parentComment.getElementsByClassName('RepliesButton')[0];
+                    var repliesAmountField = repliesButton.getElementsByClassName('RepliesAmount')[0];
+                    var repliesAmount = parseInt(repliesAmountField.innerHTML.match(/\d+/)[0]);
+                    repliesAmount++;
+                    repliesAmountField.innerHTML = `(${repliesAmount})`;
                     console.log('Replied');
                 })
             } else {
