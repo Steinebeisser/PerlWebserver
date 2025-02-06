@@ -852,4 +852,20 @@ sub get_displayname_with_uuid {
     }
     return $username;
 }
+
+sub get_subscribed_to {
+    my $filename = "$userdata_folder/Users/$main::user->{uuid}/Streaming/OtherPeopleInfo/subscribed_to.txt";
+    if (!-e $filename) {
+        return;
+    }
+    my @subscribed_to;
+    open my $file, '<', $filename;
+    while (my $line = <$file>) {
+        print("LINE: $line\n");
+        chomp $line;
+        push @subscribed_to, $line;
+    }
+    close $file;
+    return @subscribed_to;
+}
 1;

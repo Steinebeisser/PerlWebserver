@@ -394,6 +394,15 @@ sub subscribe_to_channel {
     open $fh, ">", $metadata_file;
     print $fh encode_json($json);
     close $fh;
+
+    my $subscribed_to_file = "$base_dir/Data/UserData/Users/$main::user->{uuid}/Streaming/OtherPeopleInfo/subscribed_to.txt";
+    if (!-e $subscribed_to_file) {
+        open $fh, ">", $subscribed_to_file;
+        close $fh;
+    }
+    open $fh, ">>", $subscribed_to_file;
+    print $fh "$channel_uuid\n";
+    close $fh;
 }
 
 sub unsubscribe_from_channel {
@@ -427,6 +436,24 @@ sub unsubscribe_from_channel {
     $json->{subscribedTo} = 0;
     open $fh, ">", $metadata_file;
     print $fh encode_json($json);
+    close $fh;
+
+    my $subscribed_to_file = "$base_dir/Data/UserData/Users/$main::user->{uuid}/Streaming/OtherPeopleInfo/subscribed_to.txt";
+    if (!-e $subscribed_to_file) {
+        return;
+    }
+    open $fh, "<", $subscribed_to_file;
+    my $new_file;
+    foreach my $line (<$fh>) {
+        chomp $line;
+        if ($line eq $channel_uuid) {
+            next;
+        }
+        $new_file .= "$line\n";
+    }
+    close $fh;
+    open $fh, ">", $subscribed_to_file;
+    print $fh $new_file;
     close $fh;
 }
 
