@@ -79,7 +79,7 @@ sub update_channel_displayname {
     }
     
     
-    my $old_displayname = user_utils::get_displayname_with_uuid($main::user->{uuid});
+    my $old_displayname = user_utils::get_displayname_by_uuid($main::user->{uuid});
 
     if (!$new_displayname) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Displayname not provided"));
@@ -553,8 +553,14 @@ sub get_channel_metadata {
     my ($channel_uuid) = @_;
     my $base_dir = getcwd();
     my $channel_path = "$base_dir/Data/UserData/Users/$channel_uuid/Streaming/Channel";
+    if (!-d $channel_path) {
+        return 0;
+    }
     
     my $metadata_file = "$channel_path/metadata.json";
+    if (!-e $metadata_file) {
+        return;
+    }
     my ($trimmed_filepath) = $metadata_file =~ /$base_dir(.*)/;
 
     if (!-e $metadata_file) {
@@ -572,6 +578,7 @@ sub get_channel_metadata {
 my %post_streaming_video_items = (
     "like" => \&like_video,
     "dislike" => \&dislike_video,
+    "comment" => \&comment_video,
 );
 
 sub post_streaming_video {
@@ -584,6 +591,86 @@ sub post_streaming_video {
     }
 
     $post_streaming_video_items{$category}->($video_id, $temp_file, $client_socket);
+}
+
+sub comment_video {
+    my ($video_id, $temp_file, $client_socket) = @_;
+    print("VIDEO ID: $video_id\n");
+
+    my $data = body_utils::load_temp_file($temp_file);
+    my $json = decode_json($data);
+    my $comment = $json->{comment};
+    if (!$comment) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("no Comment"));
+        return;
+    }
+
+    my $base_dir = getcwd();
+    my $video_metadata = video_utils::get_video_metadata_with_video_id($video_id);
+    if (!$video_metadata) {
+        die;
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Video not found"));
+        return;
+    }
+    my $video_path = "$base_dir/Data/UserData/Users/$video_metadata->{channel_uuid}/Streaming/Videos/$video_id";
+    if (!-d $video_path) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Video not found"));
+        die;
+        return;
+    }
+
+    my $comments_path = "$video_path/Comments";
+    if (!-d $comments_path) {
+        mkdir $comments_path;
+    }
+
+    my $comment_file = "$comments_path/comments.json";
+    if (!-e $comment_file) {
+        open my $fh, ">", $comment_file;
+        print $fh "{}";
+        close $fh;
+    }
+
+    my $comment_id = get_comment_id($comment_file);
+    
+    open my $fh, "<", $comment_file;
+    my $comments = do { local $/; <$fh> };
+    close $fh;
+    my $comments_json = decode_json($comments);
+    my %new_comment = (
+        author_uuid => $main::user->{uuid},
+        replies => {},
+        comment_id => $comment_id,
+        likes => 0,
+        dislikes => 0,
+        comment => $comment,
+        commented_at => time,
+    );
+
+    $comments_json->{$comment_id} = \%new_comment;
+    open $fh, ">", $comment_file;
+    print $fh encode_json($comments_json);
+    close $fh;
+
+    $new_comment{author_displayname} = user_utils::get_displayname_by_uuid($new_comment{author_uuid});
+    $new_comment{author_username} = user_utils::get_username_by_uuid($new_comment{author_uuid});
+    $new_comment{comment_date} = streaming_html::parse_date($new_comment{commented_at});
+    
+    http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK_WITH_DATA(encode_json(\%new_comment)));
+}
+
+sub get_comment_id {
+    my ($comment_file) = @_;
+
+    open my $fh, "<", $comment_file;
+    my $comments = do { local $/; <$fh> };
+    close $fh;
+    my $comments_json = decode_json($comments);
+    my $comment_id = 1;
+    while ($comments_json->{$comment_id}) {
+        $comment_id++;
+    }
+    return $comment_id;
 }
 
 sub like_video {

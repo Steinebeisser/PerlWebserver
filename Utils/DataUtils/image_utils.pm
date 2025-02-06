@@ -51,7 +51,7 @@ sub get_channel_icon {
     my $channel_path = "$base_dir/Data/UserData/Users/$channel_id/Streaming/Channel";
     # print("CHANNEL PATH: $channel_path\n");
     if (!-d $channel_path) {
-        warn "no channel path\n";
+        # warn "no channel path\n";
         get_default_channel_icon($client_socket);
         return;
     }

@@ -37,7 +37,6 @@ sub get_streaming_video_src {
     if (!$id) {
         return HTTP_RESPONSE::ERROR_404("Video not found");
     }
-    print("ID: $id\n");
     return video_utils::get_video($id, $client_socket);
 }
 sub get_streaming_image_src {
@@ -109,9 +108,32 @@ sub get_streaming_videos {
         http_utils::send_http_response($client_socket, HTTP_RESPONSE::NO_MORE_CONTENT_204());
         return;
     }
-
-    print("VIDEOS: @videos\n");
     
     return encode_json(\@videos);
+}
+
+sub get_streaming_video_comments {
+    my ($client_socket, $route) = @_;
+
+    my ($video_id, $last_comment) = $route =~ /\/video\/comments\/(.*)\/(.*)/;
+    if (!$video_id) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Video not found"));
+        return;
+    }
+
+    my $comments_ref = video_utils::get_comments($video_id, $last_comment);
+
+    if (!$comments_ref || !@$comments_ref) {
+        http_utils::send_http_response($client_socket, HTTP_RESPONSE::NO_MORE_CONTENT_204());
+        return;
+    }
+
+    foreach my $comment (@$comments_ref) {  
+        $comment->{author_displayname} = user_utils::get_displayname_by_uuid($comment->{author_uuid});
+        $comment->{author_username} = user_utils::get_username_by_uuid($comment->{author_uuid});
+        $comment->{comment_date} = streaming_html::parse_date($comment->{commented_at});
+    }
+    return encode_json($comments_ref); 
+
 }
 1;

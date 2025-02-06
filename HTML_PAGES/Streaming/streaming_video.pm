@@ -33,7 +33,7 @@ HTML
                 </div>
                 <div class="streaming_video_info">
                     <div class="VideoTitle">
-                        <h1>$video_metadata->{title}</h1>
+                        <h1>@{[user_utils::decode_uri($video_metadata->{title})]}</h1>
                     </div>
                     <div class="Group">
                         <div class="ChannelInfo">
@@ -42,7 +42,7 @@ HTML
                             </div>
                             <div class="ChannelText">
                                 <div class="ChannelName">
-                                    <a href="/streaming/channel/$video_metadata->{channel_username}">$video_metadata->{channel_name}</a>
+                                    <a href="/streaming/channel/$video_metadata->{channel_username}">@{[user_utils::decode_uri($video_metadata->{channel_name})]}</a>
                                 </div>
                                 <div class="Subscribers" id="SubscriberCount">
                                     @{[$channel_metadata->{subscriberCount} ? $channel_metadata->{subscriberCount} : 0]} Subscribers
@@ -100,11 +100,11 @@ HTML
                     <h2>Comments</h2>
                     <div class="CommentInput">
                         <div class="CommentUser">
-                            <img src="/streaming/image/channel_icon/#!user_uuid" alt="User Icon" onclick="window.location.href='/streaming/channel/#!username'" onload="loadNextComments(`#!video_id`)"/>
+                            <img src="/streaming/image/channel_icon/$main::user->{uuid}" alt="User Icon" onclick="window.location.href='/streaming/channel/@{[user_utils::get_username_by_uuid($main::user->{uuid})]}" onload="loadNextComments(`$video_id`)"/>
                         </div>
                         <div class="CommentSetup">
                             <textarea placeholder="Write a comment..." id="CommentInput"></textarea>
-                            <button type="button" onclick="commentVideo(`#!video_id`)">Comment</button>
+                            <button type="button" onclick="commentVideo(`$video_id`)">Comment</button>
                         </div>
                     </div>
                     <div class="CommentsList"></div>
@@ -160,7 +160,7 @@ HTML
         var isLoading = false;
         var noMoreComments = false;
         var textWritten;
-        var myUUID = ``; //#! channel_uuid
+        var myUUID = `$main::user->{uuid}`; 
 SCRIPT
     
     $script .= <<'SCRIPT';
@@ -271,13 +271,17 @@ SCRIPT
             startLoading();
             var commentList = document.getElementsByClassName('CommentsList')[0];
             var comments = document.getElementsByClassName('Comment');
-            var lastCommentID;
+            var lastCommentID = 0;
             if (comments.length > 0) {
-                lastCommentID = comments[comments.length - 1].id;
+                for (var i = 0; i < comments.length; i++) {
+                    var commentID = parseInt(comments[i].id);
+                    if (commentID > lastCommentID) {
+                        lastCommentID = commentID;
+                    }
+                }
             } else {
                 lastCommentID = 0;
             }
-
             
             fetch(`/streaming/video/comments/${video_id}/${lastCommentID}`, {
                 method: 'GET',

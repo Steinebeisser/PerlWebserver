@@ -94,24 +94,12 @@ sub get_video_metadata {
         # print("VALUE: $file->{$key}\n");
     # }
         # $video->{filepath} = $file->{filepath};
-    my %new_video_data;
-
-    $new_video_data{title} = user_utils::decode_uri($video_data->{title});
-    $new_video_data{thumbnail} = $video_data->{thumbnail};
-    $new_video_data{video_id} = $video_data->{video_id};
-    $new_video_data{channel_name} = user_utils::get_displayname_with_uuid($video_data->{channel_uuid});
+    my %new_video_data = %$video_data;
+    $new_video_data{channel_name} = user_utils::get_displayname_by_uuid($video_data->{channel_uuid});
     $new_video_data{channel_username} = user_utils::get_username_by_uuid($video_data->{channel_uuid});
     $new_video_data{description} = user_utils::decode_uri($video_data->{description});
     $new_video_data{description} =~ s/\+/ /g;
-    $new_video_data{enabled} = $video_data->{enabled};
-    $new_video_data{private} = $video_data->{private};
-    $new_video_data{channel_uuid} = $video_data->{channel_uuid};
-    $new_video_data{views} = $video_data->{views};
-    $new_video_data{uploaded_at} = $video_data->{uploaded_at};
-    $new_video_data{likes} = $video_data->{likes};
-    $new_video_data{dislikes} = $video_data->{dislikes};
-    $new_video_data{metadata_filepath} = $video_data->{metadata_filepath};
-    $new_video_data{filepath} = $video_data->{filepath};
+
 
     # print("VIDEO DATA: $new_video_data{title}\n");
         
@@ -454,5 +442,46 @@ sub add_user_to_timeout {
     open $fh, '>', $video_timeout_metadata_file or die;
     print $fh encode_json($json);
     close $fh;
+}
+
+sub get_comments {
+    my ($video_id, $last_comment) = @_;
+    if (!$last_comment) {
+        $last_comment = 0;
+    }
+    $last_comment++;
+    my $channel_uuid = get_video_publisher($video_id);
+    my $base_dir = getcwd();
+
+    my $comments_file = "$base_dir/Data/UserData/Users/$channel_uuid/Streaming/Videos/$video_id/Comments/comments.json";
+    if (!-e $comments_file) {
+        return;
+    }
+
+    open my $fh, "<", $comments_file or die;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+
+    my @comments;
+    my $counter = 0;
+    my $comments_amount = 4;
+    for (my $comment_id = $last_comment; $comment_id <= scalar(keys %$json) && $counter < $comments_amount; $comment_id++) {
+        last if $counter >= $comments_amount + $last_comment;
+        if ($json->{$comment_id}->{deleted}) {
+            $counter++;
+            next;
+        }
+        if (!$json->{$comment_id}) {
+            $counter++;
+            next;
+        }
+        my $comment = $json->{$comment_id};
+        push(@comments, $comment);
+        $counter++;
+    }
+
+    return \@comments;
 }
 1;

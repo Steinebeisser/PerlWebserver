@@ -843,7 +843,7 @@ sub save_used_emails {
     close($file);
 }
 
-sub get_displayname_with_uuid {
+sub get_displayname_by_uuid {
     my ($uuid) = @_;
     my $username = get_username_by_uuid($uuid);
     my $displayname = get_user_stat($uuid, "displayname");

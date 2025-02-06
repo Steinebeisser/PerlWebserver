@@ -109,6 +109,7 @@ my %index_router = (
 
     "/streaming" => \&get_streaming_pages::get_streaming_home,
     "/streaming/videos" => \&get_streaming_pages::get_streaming_videos,
+    "/streaming/video/comments/" => \&get_streaming_pages::get_streaming_video_comments,
     "/streaming/upload" => \&get_streaming_pages::get_streaming_upload,
     "/streaming/watch" => \&get_streaming_pages::get_streaming_watch,
     "/streaming/video/src" => \&get_streaming_pages::get_streaming_video_src,
