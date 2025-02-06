@@ -370,7 +370,7 @@ sub create_streaming_update_path {
     my ($filepath, $dir_path) = $update_categorys{$category}($streaming_path, $video_id, $item, $client_fd);
 
 
-    my $filepath = "$dir_path/$epoll::clients{$client_fd}{filename}";
+    $filepath = "$dir_path/$epoll::clients{$client_fd}{filename}";
     # print("FILEPATH: $filepath\n");
 
     
@@ -696,7 +696,7 @@ sub handle_form_metadata {
                 die;
             }
         } 
-        open my $meta_fh, '>', $upload_meta_data_file or die "Cannot open file: $!";
+        open $meta_fh, '>', $upload_meta_data_file or die "Cannot open file: $!";
         binmode $meta_fh;
         print $meta_fh encode_json(\%upload_meta_data);
         close $meta_fh;
