@@ -133,6 +133,9 @@ sub get_streaming_video_comments {
         $comment->{author_username} = user_utils::get_username_by_uuid($comment->{author_uuid});
         $comment->{comment_date} = streaming_html::parse_date($comment->{commented_at});
         $comment->{liked} = video_utils::get_comment_liked_status($video_id, $comment->{comment_id});
+        if ($comment->{comment} =~ /class="user-mention"/) {
+            $comment->{comment} = video_utils::parse_mentions($comment->{comment});
+        }
         my $replies = $comment->{replies};
         if ($replies) {
             foreach my $reply (keys %$replies) {
@@ -142,6 +145,9 @@ sub get_streaming_video_comments {
                 $reply->{comment_date} = streaming_html::parse_date($reply->{commented_at});
                 $reply->{parent_comment_id} = $comment->{comment_id};
                 $reply->{liked} = video_utils::get_comment_liked_status($video_id, $reply->{comment_id}, $comment->{comment_id});
+                if ($reply->{comment} =~ /class="user-mention"/) {
+                    $reply->{comment} = video_utils::parse_mentions($reply->{comment});
+                }
             }
         }
     }

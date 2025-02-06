@@ -954,6 +954,29 @@ sub manage_video_replies {
     }
 
     $video_reply_items{$category}->($video_id, $comment_id, $temp_file, $client_socket, $parent_comment_id);
+}
 
+sub parse_mentions {
+    my ($comment) = @_;
+
+    print("COMMENT: $comment\n");
+    # foreach ($comment =~ /(<span\b(?=[^>]*\bdata-uuid\s*=\s*["']([^"']+)["'])[^>]*>)(.*?)(<\/span>)/g) {
+    #     my $uuid = $2;
+    #     my $displayname = user_utils::get_displayname_by_uuid($uuid);
+    #     $displayname = "\@$displayname";
+    #     my $full_match = $1 . $3 . $4;
+    #     my $replacement = $1 .$displayname . $4;
+        
+    #     $comment =~ s/\Q$full_match\E/$replacement/;
+    # }
+    # ? absolut kein plan was da abgeht, frag mich nicht, frag deepseek
+    $comment =~ s/(<span\b(?=[^>]*\bdata-uuid\s*=\s*["']([^"']+)["'])[^>]*>)(.*?)(<\/span>)/ 
+        my ($opening, $uuid, $content, $closing) = ($1, $2, $3, $4);
+        my $displayname = user_utils::get_displayname_by_uuid($uuid);
+        $displayname = "\@$displayname";
+        "$opening$displayname$closing";
+    /xge;
+
+    return $comment;
 }
 1;
