@@ -77,7 +77,8 @@ sub is_verification_link_valid {
     };
     my $line = <$fh>;
     close $fh;
-    my ($link, $username, $email, $timestamp) = split('\n', $line);
+    my ($username, $timestamp);
+    ($link, $username, $email, $timestamp) = split('\n', $line);
     my $current_timestamp = time();
     if ($timestamp < $current_timestamp) {
         return 1;

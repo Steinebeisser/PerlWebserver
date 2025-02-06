@@ -366,7 +366,7 @@ sub remove_from_user_json {
     my ($uuid) = @_;
     my $username = get_username_by_uuid($uuid);
     my $filename = "$userdata_folder/usernames.json";
-    open(my $file, '<', $filename) or return 0;
+    open my $file, '<', $filename or return 0;
     my $json = do { local $/; <$file> };
     close $file;
     my $data = decode_json($json);
@@ -376,7 +376,7 @@ sub remove_from_user_json {
     my $user_to_uuid = $data->{user_to_uuid};
     delete $uuid_to_user->{$uuid} or die "Could not delete $uuid from uuid_to_user $!";
     delete $user_to_uuid->{$username} or die "Could not delete $username from user_to_uuid $!";
-    open(my $file, '>', $filename) or return 0;
+    open $file, '>', $filename or return 0;
     print $file encode_json($data);
     close($file);
 }

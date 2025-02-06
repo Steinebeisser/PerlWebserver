@@ -34,7 +34,7 @@ sub update_channel_item {
     my ($username, $category, $video_id, $update_item, $temp_file, $client_socket) = @_;
 
 
-    my $category = $categories_server_style{$category};
+    $category = $categories_server_style{$category};
     if (!has_manage_access(user_utils::get_uuid_by_username($username))) {
         return;
     }
@@ -131,7 +131,7 @@ sub update_channel_displayname {
 
     $uuid_to_displayname->{$main::user->{uuid}} = $new_displayname;
 
-    open my $fh, ">", $displayname_file;
+    open $fh, ">", $displayname_file;
     print $fh encode_json($json);
     close $fh;
 
@@ -140,7 +140,7 @@ sub update_channel_displayname {
     close $user_data_fh;
     $json = decode_json($data);
     $json->{displayname} = $new_displayname;
-    open my $user_data_fh, ">", $user_file;
+    open $user_data_fh, ">", $user_file;
     print $user_data_fh encode_json($json);
     close $user_data_fh;
 }
@@ -179,7 +179,7 @@ sub enable_video {
     # print("DATA: $data\n");
     my $json = decode_json($data);
     # print("JSON: $json\n");
-    open my $fh, ">", $meta_data_file;
+    open $fh, ">", $meta_data_file;
     $json->{enabled} = 1;
     print $fh encode_json($json);
     close $fh;
@@ -198,11 +198,11 @@ sub update_video_title {
     }
     my $meta_data_file = "$video_file/metadata.json";
     open my $fh, "<", $meta_data_file;
-    my $data = do { local $/; <$fh> };
+    $data = do { local $/; <$fh> };
     close $fh;
-    my $json = decode_json($data);
+    $json = decode_json($data);
     $json->{title} = $new_title;
-    open my $fh, ">", $meta_data_file;
+    open $fh, ">", $meta_data_file;
     print $fh encode_json($json);
     close $fh;
 }
@@ -220,11 +220,11 @@ sub update_video_description {
     }
     my $meta_data_file = "$video_file/metadata.json";
     open my $fh, "<", $meta_data_file;
-    my $data = do { local $/; <$fh> };
+    $data = do { local $/; <$fh> };
     close $fh;
-    my $json = decode_json($data);
+    $json = decode_json($data);
     $json->{description} = $new_description;
-    open my $fh, ">", $meta_data_file;
+    open $fh, ">", $meta_data_file;
     print $fh encode_json($json);
     close $fh;
 }
@@ -239,7 +239,7 @@ sub disable_video {
     # print("DATA: $data\n");
     my $json = decode_json($data);
     # print("JSON: $json\n");
-    open my $fh, ">", $meta_data_file;
+    open $fh, ">", $meta_data_file;
     $json->{enabled} = 0;
     print $fh encode_json($json);
     close $fh;
@@ -255,7 +255,7 @@ sub make_video_public {
     # print("DATA: $data\n");
     my $json = decode_json($data);
     # print("JSON: $json\n");
-    open my $fh, ">", $meta_data_file;
+    open $fh, ">", $meta_data_file;
     $json->{private} = 0;
     print $fh encode_json($json);
     close $fh;
@@ -271,7 +271,7 @@ sub make_video_private {
     # print("DATA: $data\n");
     my $json = decode_json($data);
     # print("JSON: $json\n");
-    open my $fh, ">", $meta_data_file;
+    open $fh, ">", $meta_data_file;
     $json->{private} = 1;
     print $fh encode_json($json);
     close $fh;
@@ -322,7 +322,7 @@ sub remove_from_index {
         push @videos, $line;
     }
     close $fh;
-    open my $fh, ">", $index_file;
+    open $fh, ">", $index_file;
     foreach my $video (@videos) {
         print $fh "$video\n";
     }
@@ -386,12 +386,12 @@ sub subscribe_to_channel {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Channel not found"));
         return;
     }
-    open my $fh, "<", $metadata_file;
+    open $fh, "<", $metadata_file;
     my $data = do { local $/; <$fh> };
     close $fh;
     my $json = decode_json($data);
     $json->{subscribedTo} = 1;
-    open my $fh, ">", $metadata_file;
+    open $fh, ">", $metadata_file;
     print $fh encode_json($json);
     close $fh;
 }
@@ -420,12 +420,12 @@ sub unsubscribe_from_channel {
     if (!$metadata_file) {
         return;
     }
-    open my $fh, "<", $metadata_file;
+    open $fh, "<", $metadata_file;
     my $data = do { local $/; <$fh> };
     close $fh;
     my $json = decode_json($data);
     $json->{subscribedTo} = 0;
-    open my $fh, ">", $metadata_file;
+    open $fh, ">", $metadata_file;
     print $fh encode_json($json);
     close $fh;
 }
@@ -592,7 +592,7 @@ sub like_video {
     my $json = decode_json($data);
 
     $json->{liked} = 1;
-    open my $fh, ">", $metadata_file;
+    open $fh, ">", $metadata_file;
     print $fh encode_json($json);
     close $fh;   
 }
@@ -630,7 +630,7 @@ sub dislike_video {
     close $fh;
     my $json = decode_json($data);
     $json->{liked} = -1;
-    open my $fh, ">", $metadata_file;
+    open $fh, ">", $metadata_file;
     print $fh encode_json($json);
     close $fh;
 }
@@ -707,13 +707,13 @@ sub remove_like {
         return;
     }
 
-    open my $fh, "<", $metadata_file;
+    open $fh, "<", $metadata_file;
     my $data = do { local $/; <$fh> };
     close $fh;
     my $json = decode_json($data);
 
     $json->{liked} = 0;
-    open my $fh, ">", $metadata_file;
+    open $fh, ">", $metadata_file;
     print $fh encode_json($json);
     close $fh;
 }
@@ -752,12 +752,12 @@ sub remove_dislike {
         return;
     }
 
-    open my $fh, "<", $metadata_file;
+    open $fh, "<", $metadata_file;
     my $data = do { local $/; <$fh> };
     close $fh;
     my $json = decode_json($data);
     $json->{liked} = 0;
-    open my $fh, ">", $metadata_file;
+    open $fh, ">", $metadata_file;
     print $fh encode_json($json);
     close $fh;
 }

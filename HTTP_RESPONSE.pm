@@ -39,7 +39,7 @@ sub OK {
 
 sub OK_ACCEPT_RANGE {
     my ($video_data, $content_length, $content_type) = @_;
-    my $content_length = length($video_data);
+    # my $content_length = length($video_data);
     my $response = "HTTP/1.1 200 OK\r\n"
                 . "Accept-Ranges: bytes\r\n"
                 . "Content-Length: $content_length\r\n"

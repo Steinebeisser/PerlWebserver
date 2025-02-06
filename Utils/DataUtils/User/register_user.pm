@@ -185,7 +185,7 @@ sub register_user {
     my $json = encode_json(\%user_data);
 
 
-    open(my $file, '>', $filename) or do {
+    open $file, '>', $filename or do {
         warn "Cannot open file: $!"; 
         return 0;
     };
