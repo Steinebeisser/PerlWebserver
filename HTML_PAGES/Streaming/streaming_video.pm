@@ -381,7 +381,7 @@ SCRIPT
                 initReplyInput = `
                     <div class="ReplyInput">
                         <div class="UserSuggestions" id="UserSuggestions"></div>
-                        <div class="ReplyTextfield" placeholder="Write a reply..." contenteditable="true"><span class="user-mention" data-uuid="${userUUID}" onclick="showUser('${userUUID}')">@${displayName}</span> </div>
+                        <div class="ReplyTextfield" placeholder="Write a reply..." contenteditable="true"><span class="user-mention" data-uuid="${userUUID}" onclick="showUser('${userUUID}')" contenteditable="false">@${displayName}</span> </div>
                         <button type="button" class="ReplyReplyButton" onclick="replyToComment('${comment.comment_id}')">Reply</button>
                         <button type="button" class="ReplyCloseButton" onclick="closeReply('${comment.comment_id}')">X</button>
                     </div>
@@ -390,7 +390,7 @@ SCRIPT
                 initReplyInput = `
                     <div class="ReplyInput">
                         <div class="UserSuggestions" id="UserSuggestions"></div>
-                        <div class="ReplyTextfield" placeholder="Write a reply..." contenteditable="true"><span class="user-mention" data-uuid="${userUUID}" onclick="showUser('${userUUID}')">@${displayName}</span> </div>
+                        <div class="ReplyTextfield" placeholder="Write a reply..." contenteditable="true"><span class="user-mention" data-uuid="${userUUID}" onclick="showUser('${userUUID}')" contenteditable="false">@${displayName}</span> </div>
                         <button type="button" class="ReplyReplyButton" onclick="replyToReply('${comment.parent_comment_id}', '${comment.comment_id}')">Reply</button>
                         <button type="button" class="ReplyCloseButton" onclick="closeReply('${comment.comment_id}', '${comment.parent_comment_id}')">X</button>
                     </div>
@@ -464,19 +464,17 @@ SCRIPT
             if (commentText.match(/class="user-mention"/))
             {
                 console.log("MENTIONS SOMEONE");
-                var match = commentText.match(/data-uuid="(.*)" onclick/);
-                var $skip;
-                if (!match) {
-                    $skip = 1;
-                }
-                if (!$skip) {
-                    var mention_uuid = match[1];
-                    console.log("MENTION_UUID", mention_uuid);
-                    console.log("MY UUID", myUUID);
-                    if (mention_uuid === myUUID) {
-                        console.log("MENTIONS MEEEEEEE");
-                        commentText = commentText.replace(/class="user-mention"/, 'class="user-mention" id="MentionedMe"');
-                    }
+                var matches = commentText.match(/data-uuid="([^"]+)"/g);
+                if (matches) {
+                    matches.forEach(function(match) {
+                        var mention_uuid = match.match(/data-uuid="([^"]+)"/)[1];
+                        console.log("MENTION_UUID", mention_uuid);
+                        console.log("MY UUID", myUUID);
+                        if (mention_uuid === myUUID) {
+                            console.log("MENTIONS MEEEEEEE");
+                            commentText = commentText.replace(/class="user-mention"/g, 'class="user-mention" id="MentionedMe"');
+                        }
+                    });
                 }
             }
             
@@ -829,7 +827,9 @@ SCRIPT
         preCaretRange.selectNodeContents(target);
         preCaretRange.setEnd(range.endContainer, range.endOffset);
 
-        textBeforeCursor = preCaretRange.toString().trim();
+        const div = document.createElement('div');
+        div.appendChild(preCaretRange.cloneContents());
+        textBeforeCursor = div.innerHTML.trim();
 
         const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
         const userPart = mentionMatch ? mentionMatch[1] : null;
@@ -892,14 +892,15 @@ SCRIPT
                 </div>
             `;
             userElement.onclick = function() {
-                var currentText = target.innerText;
+                var currentText = target.innerHTML;
                 console.log("CURRENT TEXT:", currentText);
                 console.log("USERMATCH", userMatching);
                 console.log("TEXT BEFORE CURSOR", textBeforeCursor);
                 console.log("CURRENT TEXT", currentText);
 
-                var regex = new RegExp("@" + userMatching + "$");
-                var newTextBeforeCursor = textBeforeCursor.replace(regex, `<span class="user-mention" data-uuid="${user.uuid}" onclick="showUser('${user.uuid}')">@${decodeURI(user.displayname)}</span> `);
+                var mentionRegex = new RegExp(`@${userMatching}$`);
+                console.log("REPLACING", textBeforeCursor.match(mentionRegex));
+                var newTextBeforeCursor = textBeforeCursor.replace(mentionRegex, `<span class="user-mention" data-uuid="${user.uuid}" onclick="showUser('${user.uuid}')" contenteditable="false">@${decodeURI(user.displayname)}</span> `);
                 var newText = newTextBeforeCursor + currentText.substring(textBeforeCursor.length);
                 target.innerHTML = newText;
                 UserSuggestions.innerHTML = '';
