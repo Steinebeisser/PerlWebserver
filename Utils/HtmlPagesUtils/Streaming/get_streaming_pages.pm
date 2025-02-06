@@ -3,6 +3,8 @@ package get_streaming_pages;
 use strict;
 use warnings;
 
+use JSON;
+
 sub get_streaming_home {
     my ($client_socket) = @_;
     return streaming_html::get_streaming_home();
@@ -94,4 +96,22 @@ sub get_streaming_manage_channel {
     return streaming_manage_channel::get_streaming_manage_channel($username, $client_socket, $path);
 }
 
+sub get_streaming_videos {
+    my ($client_socket, $route) = @_;
+
+    my ($last_video) = $route =~ /\/videos\/(.*)/;
+    if (!$last_video) {
+        $last_video = 0;
+    }
+
+    my @videos = video_utils::get_top_videos($last_video);
+    if (!@videos) {
+        http_utils::send_http_response($client_socket, HTTP_RESPONSE::NO_MORE_CONTENT_204());
+        return;
+    }
+
+    print("VIDEOS: @videos\n");
+    
+    return encode_json(\@videos);
+}
 1;

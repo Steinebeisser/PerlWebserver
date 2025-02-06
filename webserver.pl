@@ -108,6 +108,7 @@ my %index_router = (
     "/support/request/new" => \&support_utils::handle_new_request,
 
     "/streaming" => \&get_streaming_pages::get_streaming_home,
+    "/streaming/videos" => \&get_streaming_pages::get_streaming_videos,
     "/streaming/upload" => \&get_streaming_pages::get_streaming_upload,
     "/streaming/watch" => \&get_streaming_pages::get_streaming_watch,
     "/streaming/video/src" => \&get_streaming_pages::get_streaming_video_src,

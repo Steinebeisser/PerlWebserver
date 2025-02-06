@@ -148,6 +148,14 @@ sub OK_WITH_DATA_HEADER {
     return $response;
 }
 
+sub NO_MORE_CONTENT_204 {
+    my $response = "HTTP/1.1 204 No Content\r\n"
+                . "Connection: close\r\n"
+                . "\r\n";
+
+    return $response;
+}
+
 sub PARTIAL_CONTENT_206 {
     my ($data, $start_range, $end_range, $file_size, $content_type) = @_;
     my $content_length = length($data);

@@ -7,7 +7,7 @@ sub get_streaming_home {
 
     my $translations = language_utils::load_language("streaming");
 
-    my @videos = video_utils::get_top_videos();
+    my @videos = video_utils::get_top_videos(0);
     my $html = <<HTML;
     <div class="StreamingView">
 HTML
@@ -28,6 +28,9 @@ HTML
 
     $html .= <<HTML;
                     </div>
+                    <div class="Loading">
+                        Loading Videos
+                    </div>
                 </div>
             </div>
 HTML
@@ -37,6 +40,8 @@ HTML
     </div>
 HTML
 
+    my $video_loading_script = get_video_loading_script();
+    $html .= $video_loading_script;
     my $html_content = html_structure::get_html($html, "Streaming");
 
     return $html_content;
@@ -67,7 +72,6 @@ HTML
     return $html;
 }
 
-#! NEED TO GET FOLLOWING AGAIN
 sub get_streaming_left {
     my @following = user_utils::get_subscribed_to();
     print("FOLLOWING: @following\n");
@@ -208,7 +212,7 @@ sub get_video_loading_script  {
     my ($channel_uuid) = @_;
     my $script = <<SCRIPT;
     <script>
-        var channelUuid = $channel_uuid;
+        var channelUuid = `$channel_uuid`;
         var noMoreVideos = false;
         var isLoading = false;
 
@@ -219,8 +223,14 @@ sub get_video_loading_script  {
             startLoading();
 
             var videos = document.getElementsByClassName("Video");
-            var lastVideoID = videos.length - 1;
-            lastVideoID++;
+            var lastVideoID;
+            var lastVideo = videos[videos.length - 1];
+            if (lastVideo.id) {
+                lastVideoID = lastVideo.id.split("_")[1];
+            } else {
+                lastVideoID = videos.length - 1;
+                lastVideoID++;
+            }
             
             var fetchUri;
             if (channelUuid) {
@@ -280,6 +290,9 @@ sub get_video_loading_script  {
             }
             var videoTemplate = document.getElementsByClassName("Video")[0];
             var newVideo = videoTemplate.cloneNode(true);
+
+            var newVideoID = "video_" + video.counter_id;
+            newVideo.id = newVideoID;
 
             var thumbnailButton = newVideo.querySelector(".Thumbnail");
             var thumbnailImg = thumbnailButton.querySelector("img");
@@ -349,6 +362,7 @@ sub get_video_loading_script  {
         }
 
         const observer = new IntersectionObserver(entries => {
+            console.log(entries);
             if (!noMoreVideos && !isLoading) {
                 loadMoreVideos();
             }

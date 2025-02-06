@@ -11,12 +11,11 @@ use JSON;
 sub get_top_videos {
     my ($last_video) = @_;
     if (!$last_video) {
-        return;
+        $last_video = 0;
     }
     my $base_dir = getcwd();
     my $video_path = "$base_dir/Data/Streaming/Videos";
     my $videos_file = "$video_path/videos.txt";
-    
     my @videos = get_videos($videos_file, $last_video);
     # foreach my $video (@videos) {
         # print("VIDEO: $video\n");
@@ -26,9 +25,10 @@ sub get_top_videos {
 
 sub get_videos {
     my ($videos_file, $last_video) = @_;
-    if ($last_video) {
-        return;
+    if (!$last_video) {
+        $last_video = 0;
     }
+    $last_video++;
     my $counter = 0;
     my $videos_amount = 4;
 
@@ -48,11 +48,21 @@ sub get_videos {
         my $meta_data_file = "$base_dir/$line";
         
         my $video_data = get_video_metadata($meta_data_file);
+        if (!$video_data) {
+            $counter++;
+            $last_video++;
+            next;
+        }
         # print("VIDEO DATA: $video_data\n");
         # print("IS ENABLED: $video_data->{enabled}\n");
         if ($video_data->{enabled} && !$video_data->{private}) {
             # print("PUSHING VIDEO: $video_data->{title}\n");
+            $video_data->{counter_id} = $counter;
             push(@videos, $video_data);
+        } else {
+            $counter++;
+            $last_video++;
+            next;
         }
         $counter++;
 
@@ -66,7 +76,6 @@ sub get_video_metadata {
     my ($meta_data_file) = @_;
 
     open my $meta_fh, "<", $meta_data_file or do {
-        warn "Could not open file $meta_data_file: $!";
         return;
     };
     my $base_dir = getcwd();
@@ -90,7 +99,7 @@ sub get_video_metadata {
     $new_video_data{title} = user_utils::decode_uri($video_data->{title});
     $new_video_data{thumbnail} = $video_data->{thumbnail};
     $new_video_data{video_id} = $video_data->{video_id};
-    $new_video_data{channel_name} = user_utils::decode_uri(user_utils::get_displayname_with_uuid($video_data->{channel_uuid}));
+    $new_video_data{channel_name} = user_utils::get_displayname_with_uuid($video_data->{channel_uuid});
     $new_video_data{channel_username} = user_utils::get_username_by_uuid($video_data->{channel_uuid});
     $new_video_data{description} = user_utils::decode_uri($video_data->{description});
     $new_video_data{description} =~ s/\+/ /g;
@@ -279,14 +288,15 @@ sub create_video_emblem {
     my ($video) = @_;
 
     my $video_id = $video->{video_id};
+    my $counter_id = $video->{counter_id};
     my $video_title = user_utils::decode_uri($video->{title});
     my $base_dir = getcwd();
     my $thumbnail_path = "$base_dir/$video->{thumbnail}";
-    my $channel_name = $video->{channel_name} || "Cant fetch Channel";
+    my $channel_name = user_utils::decode_uri($video->{channel_name}) || "Cant fetch Channel";
     my $channel_username = $video->{channel_username};
     my $channel_uuid = $video->{channel_uuid};
     my $html .= <<HTML;
-                        <div class="Video">
+                        <div class="Video" id="video_$counter_id">
                             <button type="button" class="Thumbnail" onclick="window.location.href='/streaming/watch/v=$video_id'">
                                 <img src="/streaming/image/src/$video_id" alt="Video Thumbnail: $video_title">
                             </button>
@@ -303,13 +313,13 @@ sub create_video_emblem {
                                     </div>
                                     <div class="VideoInline">
                                         <div class="VideoViews">
-                                            0 views
+                                            $video->{views} views
                                         </div>
                                         <div class="VideoSeparator">
                                             •
                                         </div>
                                         <div class="VideoUploadDate">
-                                            0 days ago
+                                            @{[timeAgo($video->{uploaded_at})]} ago
                                         </div>
                                     </div>
                                 </div>
@@ -318,6 +328,22 @@ sub create_video_emblem {
 HTML
 
     return $html;
+}
+
+sub timeAgo {
+    my ($time) = @_;
+    my $now = time();
+    my $diff = $now - $time;
+    
+    if ($diff < 60) {
+        return "$diff seconds";
+    } elsif ($diff < 3600) {
+        return int($diff / 60) . " minutes";
+    } elsif ($diff < 86400) {
+        return int($diff / 3600) . " hours";
+    } else {
+        return int($diff / 86400) . " days";
+    }
 }
 
 sub get_private_video_stats {
