@@ -334,4 +334,99 @@ sub get_private_video_stats {
     return $video_stats_json;
 }
 
+sub add_view {
+    my ($video_id) = @_;
+
+    if (is_user_in_timeout($main::user->{uuid}, $video_id)) {
+        return;
+    }
+
+    if (!increase_view_count($video_id)) {
+        return;
+    }
+
+    add_user_to_timeout($main::user->{uuid}, $video_id);
+}
+
+sub is_user_in_timeout {
+    my ($uuid, $video_id) = @_;
+    my $timeout_time = 60*60*6; # 6h
+
+    my $base_dir = getcwd();
+    my $timeout_file = "$base_dir/Data/Streaming/Videos/Timeouts/$video_id/timeouts.json";
+    if (!-e $timeout_file) {
+        return 0;
+    }
+    open my $fh, "<", $timeout_file or die;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+
+    if (!$json->{$uuid}) {
+        return 0;
+    }
+
+    my $timeout_timestamp = $json->{$uuid};
+    my $now_time = time();
+
+    if ($timeout_timestamp + $timeout_time < $now_time) {
+        return 0;
+    }
+
+    return 1;
+}
+
+sub increase_view_count {
+    my ($video_id) = @_;
+
+    my $video_metadata = get_video_metadata_with_video_id($video_id);
+    if (!$video_metadata) {
+        return 0;
+    }
+
+    $video_metadata->{views}++;
+
+    my $base_dir = getcwd();
+    open my $fh, '>', "$base_dir/$video_metadata->{metadata_filepath}" or die;
+    print $fh encode_json($video_metadata);
+    close $fh;
+}
+# $base_dir/Data/Streaming/Videos/Timeouts/$video_id/timeouts.json"
+sub add_user_to_timeout {
+    my ($uuid, $video_id) = @_;
+
+    my $base_dir = getcwd();
+    my $videos_path = "$base_dir/Data/Streaming/Videos";
+    if (!-d $videos_path) {
+        return;
+    }
+
+    my $timeout_path = "$videos_path/Timeouts";
+    if (!-d $timeout_path) {
+        mkdir $timeout_path or die ":$!";
+    }
+    my $video_timeout_path = "$timeout_path/$video_id";
+    if (!-d $video_timeout_path) {
+        mkdir $video_timeout_path;
+    }
+
+    my $video_timeout_metadata_file = "$video_timeout_path/timeouts.json";
+    if (!-e $video_timeout_metadata_file) {
+        open my $fh, '>', $video_timeout_metadata_file;
+        print $fh "{}";
+        close $fh;
+    }
+
+    open my $fh, '<', $video_timeout_metadata_file or die "$!";
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+    $json->{$uuid} = time();
+
+    open $fh, '>', $video_timeout_metadata_file or die;
+    print $fh encode_json($json);
+    close $fh;
+}
 1;

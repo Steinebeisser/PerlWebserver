@@ -12,6 +12,7 @@ sub get_streaming_video {
     my $private_video_stats = video_utils::get_private_video_stats($video_id);
     my $isLiked = $private_video_stats->{liked} == 1 ? 1 : 0;
     my $isDisliked = $private_video_stats->{liked} == -1 ? 1 : 0;
+    video_utils::add_view($video_id);
     # print("VIDEO METADATA: $video_metadata\n");
     if (!$video_metadata || $video_metadata->{enabled} == 0) {
         return "Video not found"; 
