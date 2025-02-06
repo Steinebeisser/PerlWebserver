@@ -69,6 +69,8 @@ HTML
 
 #! NEED TO GET FOLLOWING AGAIN
 sub get_streaming_left {
+    my @following = user_utils::get_subscribed_to();
+    print("FOLLOWING: @following\n");
     my $html = <<HTML;
             <div class="StreamingMainLeft">
                 <div class="StreamingMainLeftTop">
@@ -78,6 +80,17 @@ sub get_streaming_left {
                 </div>
                 <div class="StreamingMainLeftCenter">
                     <div class="Following">
+HTML
+    foreach my $channel_uuid (@following) {
+        my $channel_username = user_utils::get_username_by_uuid($channel_uuid);
+        my $channel_displayname = user_utils::decode_uri(user_utils::get_displayname_with_uuid($channel_uuid));
+        $html .= <<HTML;
+                        <div class="Channel">
+                            <a href="/streaming/channel/channel_username">$channel_displayname</a>
+                        </div>
+HTML
+    }
+    $html .= <<HTML;
                     </div>
                 </div>
             </div>
