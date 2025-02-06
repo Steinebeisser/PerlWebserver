@@ -345,7 +345,9 @@ SCRIPT
                 repliesHTML = `
                     <div class="Replies">
                         <button class="RepliesButton" onclick="toggleReplies('${comment.comment_id}')">
-                            Show replies 
+                            <div class="RepliesText">
+                                Show replies 
+                            </div>
                             <div class="RepliesAmount">
                                  (${Object.keys(comment.replies).length})
                             </div>
@@ -575,6 +577,19 @@ SCRIPT
         }).catch(error => {
             console.log('Failed to reply');
         })
+    }
+
+    function toggleReplies(commentID) {
+        var comment = document.getElementById(commentID);
+        var repliesText = comment.getElementsByClassName('RepliesText')[0];
+        var replies = comment.getElementsByClassName('RepliesContainer')[0];
+        if (replies.style.display === 'none') {
+            repliesText.innerHTML = repliesText.innerHTML = 'Hide replies';
+            replies.style.display = 'block';
+        } else {
+            repliesText.innerHTML = repliesText.innerHTML = 'Show replies';
+            replies.style.display = 'none';
+        }
     }
 
     function replyToReply(ParentCommentID, commentID) {

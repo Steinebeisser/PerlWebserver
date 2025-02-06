@@ -487,6 +487,8 @@ sub get_comments {
 
 my %video_comment_items = (
     "reply" => \&reply_to_comment,
+    "like" => \&like_comment,
+    "dislike" => \&dislike_comment,
 );
 
 sub manage_video_comments {
@@ -497,10 +499,379 @@ sub manage_video_comments {
     }
 
     if (!$video_comment_items{$category}) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Not found"));
         return;
     }
 
     $video_comment_items{$category}->($video_id, $parent_comment_id, $temp_file, $client_socket);
+}
+
+sub get_comment_liked_status {
+    my ($video_id, $comment_id, $parent_comment_id) = @_;
+
+    my $comment_state_file = get_comment_state_file($video_id, $comment_id, $parent_comment_id);
+    if (!$comment_state_file) {
+        return;
+    }
+    open my $fh, "<", $comment_state_file or die;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+    return $json->{liked};
+}
+
+sub like_comment {
+    my ($video_id, $comment_id, $temp_file, $client_socket, $parent_comment_id) = @_;
+
+    if (is_comment_liked($video_id, $comment_id, $parent_comment_id)) {
+        if (!remove_comment_like($video_id, $comment_id, $parent_comment_id)) {
+            http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Internal Server Error"));
+            return;
+        }
+        return 1;
+    }
+
+    if (is_comment_disliked($video_id, $comment_id, $parent_comment_id)) {
+        if (!remove_comment_dislike($video_id, $comment_id, $parent_comment_id)) {
+            http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Internal Server Error"));
+            return;
+        }
+    }
+
+    if (!add_comment_like($video_id, $comment_id, $parent_comment_id)) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Internal Server Error"));
+        return;
+    }
+
+    return 1;
+}
+
+sub dislike_comment {
+    my ($video_id, $comment_id, $temp_file, $client_socket, $parent_comment_id) = @_;
+    if (is_comment_disliked($video_id, $comment_id, $parent_comment_id)) {
+        if (!remove_comment_dislike($video_id, $comment_id, $parent_comment_id)) {
+            http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Internal Server Error1"));
+            return;
+        }
+        return 1;
+    }
+
+    if (is_comment_liked($video_id, $comment_id, $parent_comment_id)) {
+        if (!remove_comment_like($video_id, $comment_id, $parent_comment_id)) {
+            http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Internal Server Error2"));
+            return;
+        }
+    }
+
+    if (!add_comment_dislike($video_id, $comment_id, $parent_comment_id)) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Internal Server Error3"));
+        return;
+    }
+
+    return 1;
+}
+
+sub is_comment_liked {
+    my ($video_id, $comment_id, $parent_comment_id) = @_;
+
+    my $comment_state_file = get_comment_state_file($video_id, $comment_id, $parent_comment_id);
+    if (!$comment_state_file) {
+        return 0;
+    }
+
+    open my $fh, "<", $comment_state_file or die "$!";
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+
+    if ($json->{liked} == 1) {
+        return 1;
+    }
+
+    return 0;
+}
+
+sub remove_comment_like {
+    my ($video_id, $comment_id, $parent_comment_id) = @_;
+
+    my $comment_state_file = get_comment_state_file($video_id, $comment_id, $parent_comment_id);
+    if (!$comment_state_file) {
+        return;
+    }
+
+    open my $fh, "<", $comment_state_file or die;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+
+    $json->{liked} = 0;
+
+    open $fh, ">", $comment_state_file or die;
+    print $fh encode_json($json);
+    close $fh;
+
+    my $channel_uuid = get_video_publisher($video_id);
+    my $base_dir = getcwd();
+    my $comments_file = "$base_dir/Data/UserData/Users/$channel_uuid/Streaming/Videos/$video_id/Comments/comments.json";
+    if (!-e $comments_file) {
+        return;
+    }
+
+    open my $fh, "<", $comments_file or die;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+
+    my $comment;
+    if ($parent_comment_id) {
+        $comment = $json->{$parent_comment_id}->{replies}->{comment_id};
+    } else {
+        $comment = $json->{$comment_id};
+    }
+    if (!$comment) {
+        return;
+    }
+
+    $comment->{likes}--;
+
+    open $fh, ">", $comments_file or die;
+    print $fh encode_json($json);
+    close $fh;
+}
+
+sub add_comment_like {
+    my ($video_id, $comment_id, $parent_comment_id) = @_;
+
+    my $comment_state_file = get_comment_state_file($video_id, $comment_id, $parent_comment_id);
+    if (!$comment_state_file) {
+        return;
+    }
+    print("EXISTING FILE: $comment_state_file\n");
+
+    open my $fh, "<", $comment_state_file or die;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+
+    $json->{liked} = 1;
+
+    open $fh, ">", $comment_state_file or die;
+    print $fh encode_json($json);
+    close $fh;
+
+    my $channel_uuid = get_video_publisher($video_id);
+    my $base_dir = getcwd();
+    my $comments_file = "$base_dir/Data/UserData/Users/$channel_uuid/Streaming/Videos/$video_id/Comments/comments.json";
+    if (!-e $comments_file) {
+        return;
+    }
+
+    open my $fh, "<", $comments_file or die;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+
+    my $comment;
+    if ($parent_comment_id) {
+        $comment = $json->{$parent_comment_id}->{replies}->{$comment_id};
+    } else {
+        $comment = $json->{$comment_id};
+    }
+
+    if (!$comment) {
+        return;
+    }
+
+    $comment->{likes}++;
+
+    open $fh, ">", $comments_file or die;
+    print $fh encode_json($json);
+    close $fh;
+}
+
+sub add_comment_dislike {
+    my ($video_id, $comment_id, $parent_comment_id) = @_;
+
+    my $comment_state_file = get_comment_state_file($video_id, $comment_id, $parent_comment_id);
+    if (!$comment_state_file) {
+        return;
+    }
+
+    open my $fh, "<", $comment_state_file or die;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+
+    $json->{liked} = -1;
+
+    open $fh, ">", $comment_state_file or die;
+    print $fh encode_json($json);
+    close $fh;
+
+    my $channel_uuid = get_video_publisher($video_id);
+    my $base_dir = getcwd();
+    my $comments_file = "$base_dir/Data/UserData/Users/$channel_uuid/Streaming/Videos/$video_id/Comments/comments.json";
+    if (!-e $comments_file) {
+        return;
+    }
+
+    open my $fh, "<", $comments_file or die;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+
+    my $comment;
+    if ($parent_comment_id) {
+        $comment = $json->{$parent_comment_id}->{replies}->{comment_id};
+    } else {
+        $comment = $json->{$comment_id};
+    }
+    if (!$comment) {
+        return;
+    }
+
+    $comment->{dislikes}++;
+
+    open $fh, ">", $comments_file or die;
+    print $fh encode_json($json);
+    close $fh;
+}
+
+sub remove_comment_dislike {
+    my ($video_id, $comment_id, $parent_comment_id) = @_;
+
+    my $comment_state_file = get_comment_state_file($video_id, $comment_id, $parent_comment_id);
+    if (!$comment_state_file) {
+        return;
+    }
+
+    open my $fh, "<", $comment_state_file or die;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+
+    $json->{liked} = 0;
+
+    open $fh, ">", $comment_state_file or die;
+    print $fh encode_json($json);
+    close $fh;
+
+    my $channel_uuid = get_video_publisher($video_id);
+    my $base_dir = getcwd();
+    my $comments_file = "$base_dir/Data/UserData/Users/$channel_uuid/Streaming/Videos/$video_id/Comments/comments.json";
+    if (!-e $comments_file) {
+        return;
+    }
+
+    open my $fh, "<", $comments_file or die;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+
+    my $comment;
+    if ($parent_comment_id) {
+        $comment = $json->{$parent_comment_id}->{replies}->{comment_id};
+    } else {
+        $comment = $json->{$comment_id};
+    }
+    if (!$comment) {
+        return;
+    }
+
+    $comment->{dislikes}--;
+
+    open $fh, ">", $comments_file or die;
+    print $fh encode_json($json);
+    close $fh;
+}
+
+sub is_comment_disliked {
+    my ($video_id, $comment_id, $parent_comment_id) = @_;
+
+    my $comment_state_file = get_comment_state_file($video_id, $comment_id, $parent_comment_id);
+    if (!$comment_state_file) {
+        return;
+    }
+
+    open my $fh, "<", $comment_state_file or die;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+
+    if ($json->{liked} == -1) {
+        return 1;
+    }
+
+    return 0;
+}
+
+sub get_comment_state_file {
+    my ($video_id, $comment_id, $parent_comment_id) = @_;
+
+    if (!$main::user) {
+        return;
+    }
+    my $base_dir = getcwd();
+    my $user_path = "$base_dir/Data/UserData/Users/$main::user->{uuid}";
+    if (!-d $user_path) {
+        return;
+    }
+
+    my $streaming_path = "$user_path/Streaming";
+    if (!-d $streaming_path) {
+        mkdir $streaming_path;
+    }
+
+    my $other_people_info_path = "$streaming_path/OtherPeopleInfo";
+    if (!-d $other_people_info_path) {
+        mkdir $other_people_info_path;
+    }
+
+    my $channel_uuid = get_video_publisher($video_id);
+
+    my $user_other_people_info_path = "$other_people_info_path/$channel_uuid";
+    if (!-d $user_other_people_info_path) {
+        mkdir $user_other_people_info_path;
+    }
+    my $videos_path = "$user_other_people_info_path/Videos";
+    if (!-d $videos_path) {
+        mkdir $videos_path;
+    }
+    my $video_path = "$videos_path/$video_id";
+    if (!-d $video_path) {
+        mkdir $video_path;
+    }
+    my $comment_path = "$video_path/Comments";
+    if (!-d $comment_path) {
+        mkdir $comment_path;
+    }
+    my $file_name;
+    if ($parent_comment_id) {
+        $file_name = "$parent_comment_id-$comment_id.json";
+    } else {
+        $file_name = "$comment_id.json";
+    }
+
+    my $comment_state_file = "$comment_path/$file_name";
+    if (!-e $comment_state_file) {
+        print("DOESNT EXIST\n");
+        open my $fh, ">", $comment_state_file or die "$! $comment_state_file";
+        print $fh "{ \"liked\": 0 }";
+        close $fh;
+    }
+
+    return $comment_state_file;
 }
 
 sub reply_to_comment {
@@ -563,5 +934,26 @@ sub reply_to_comment {
     }
 
     http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK_WITH_DATA(encode_json(\%reply)));
+}
+
+my %video_reply_items = (
+    "like" => \&like_comment,
+    "dislike" => \&dislike_comment,
+);
+
+sub manage_video_replies {
+    my ($category, $video_id, $parent_comment_id, $comment_id, $temp_file, $client_socket) = @_;
+
+    if (!$main::user) {
+        return;
+    }
+
+    if (!$video_reply_items{$category}) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Not found"));
+        return;
+    }
+
+    $video_reply_items{$category}->($video_id, $comment_id, $temp_file, $client_socket, $parent_comment_id);
+
 }
 1;

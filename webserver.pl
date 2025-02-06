@@ -160,6 +160,7 @@ my %post_router = (
     "/streaming/channel" => \&post_streaming_pages::post_streaming_channel,
     "/update/streaming/video" => \&post_streaming_pages::post_streaming_video,
     "/update/streaming/video/comments" => \&post_streaming_pages::post_streaming_video_comments,
+    "/update/streaming/video/replies" => \&post_streaming_pages::post_streaming_video_replies,
 );
 
 print("Creating main::Epoll\n");
