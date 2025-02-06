@@ -109,7 +109,7 @@ my %index_router = (
 
     "/streaming" => \&get_streaming_pages::get_streaming_home,
     "/streaming/videos" => \&get_streaming_pages::get_streaming_videos,
-    "/streaming/video/comments/" => \&get_streaming_pages::get_streaming_video_comments,
+    "/streaming/video/comments" => \&get_streaming_pages::get_streaming_video_comments,
     "/streaming/upload" => \&get_streaming_pages::get_streaming_upload,
     "/streaming/watch" => \&get_streaming_pages::get_streaming_watch,
     "/streaming/video/src" => \&get_streaming_pages::get_streaming_video_src,
@@ -159,6 +159,7 @@ my %post_router = (
     "/update/streaming/manage/channel/" => \&post_streaming_pages::post_streaming_manage_channel,
     "/streaming/channel" => \&post_streaming_pages::post_streaming_channel,
     "/update/streaming/video" => \&post_streaming_pages::post_streaming_video,
+    "/update/streaming/video/comments" => \&post_streaming_pages::post_streaming_video_comments,
 );
 
 print("Creating main::Epoll\n");

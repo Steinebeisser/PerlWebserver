@@ -1915,6 +1915,7 @@ CSS
     }
     .RepliesButton {
         margin-right: auto;
+        display: flex;
     }
     .Replies {
         display: flex;

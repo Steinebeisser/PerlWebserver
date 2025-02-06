@@ -484,4 +484,84 @@ sub get_comments {
 
     return \@comments;
 }
+
+my %video_comment_items = (
+    "reply" => \&reply_to_comment,
+);
+
+sub manage_video_comments {
+    my ($category, $video_id, $parent_comment_id, $temp_file, $client_socket) = @_;
+
+    if (!$main::user) {
+        return;
+    }
+
+    if (!$video_comment_items{$category}) {
+        return;
+    }
+
+    $video_comment_items{$category}->($video_id, $parent_comment_id, $temp_file, $client_socket);
+}
+
+sub reply_to_comment {
+    my ($video_id, $parent_comment_id, $temp_file, $client_socket) = @_;
+
+    my $channel_uuid = get_video_publisher($video_id);
+    my $base_dir = getcwd();
+
+    my $comments_file = "$base_dir/Data/UserData/Users/$channel_uuid/Streaming/Videos/$video_id/Comments/comments.json";
+    if (!-e $comments_file) {
+        return;
+    }
+
+    open my $fh, "<", $comments_file or die;
+    my $data = do { local $/; <$fh> };
+    close $fh;
+
+    my $json = decode_json($data);
+
+    my $reply_data = body_utils::load_temp_file($temp_file);
+    my $reply_json = decode_json($reply_data);
+    my $reply_comment_text = $reply_json->{reply};
+    print("REPLY DATA: $reply_data\n");
+    print("REPLY JSON: $reply_json\n");
+    print("REPLY COMMENT TEXT: $reply_comment_text\n");
+    my $parent_comment = $json->{$parent_comment_id};
+    if (!$parent_comment) {
+        return;
+    }
+
+    my $replies = $parent_comment->{replies};
+    if (!$replies) {
+        $replies = {};
+    }
+
+    my $reply_id = scalar(keys %$replies) + 1;
+    my %reply = (
+        author_uuid => $main::user->{uuid},
+        comment => $reply_comment_text,
+        commented_at => time(),
+        deleted => 0,
+        likes => 0,
+        dislikes => 0,
+        comment_id => $reply_id,
+        video_id => $video_id,
+    );
+
+
+    $replies->{$reply_id} = \%reply;
+
+    open $fh, ">", $comments_file or die;
+    print $fh encode_json($json);
+    close $fh;
+
+    $reply{author_username} = user_utils::get_username_by_uuid($reply{author_uuid});
+    $reply{author_displayname} = user_utils::get_displayname_by_uuid($reply{author_uuid});
+    $reply{comment_date} = streaming_html::parse_date($reply{commented_at});
+    if ($parent_comment_id) {
+        $reply{parent_comment_id} = $parent_comment_id;
+    }
+
+    http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK_WITH_DATA(encode_json(\%reply)));
+}
 1;
