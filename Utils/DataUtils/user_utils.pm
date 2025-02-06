@@ -868,4 +868,62 @@ sub get_subscribed_to {
     close $file;
     return @subscribed_to;
 }
+
+sub get_users {
+    my ($fragment) = @_;
+
+    my @possible_users;
+
+    my $skip;
+    my $displaynames_file = "$userdata_folder/displaynames.json";
+    if (!-e $displaynames_file) {
+        $skip = 1;
+    }
+
+    if (!$skip) {
+        open my $file, '<', $displaynames_file;
+        my $json = do { local $/; <$file> };
+        close $file;
+        my $data = decode_json($json);
+        my $displaynames = $data->{displaynames};
+
+        foreach my $displayname (keys %$displaynames) {
+            if ($displayname =~ /$fragment/) {
+                foreach my $uuid (@{$displaynames->{$displayname}}) {
+                    my $username = get_username_by_uuid($uuid);
+                    my %user = (
+                        username => $username,
+                        displayname => $displayname,
+                        uuid => $uuid
+                    );
+                    push @possible_users, \%user;
+                }
+            }
+        }
+    } 
+
+    my $usernames_file = "$userdata_folder/usernames.json";
+    if (!-e $usernames_file) {
+        return;
+    }
+    open my $file, '<', $usernames_file;
+    my $json = do { local $/; <$file> };
+    close $file;
+    my $data = decode_json($json);
+    my $user_to_uuid = $data->{user_to_uuid};
+    foreach my $username (keys %$user_to_uuid) {
+        my $displayname = get_displayname_by_uuid($user_to_uuid->{$username});
+        if ($username =~ /$fragment/) {
+            my %user = (
+                username => $username,
+                displayname => $displayname,
+                uuid => $user_to_uuid->{$username}
+            );
+            push @possible_users, \%user;
+        }
+    }
+
+    return @possible_users;
+
+}
 1;
