@@ -26,7 +26,7 @@ sub post_streaming_manage_channel {
     # print("VIDEO ID: $video_id\n");
     # print("UPDATE ITEM: $update_item\n");
 
-    if (!channel_utils::has_manage_access(user_utils::get_uuid_by_channel_username($channel_username))) {
+    if (!channel_utils::has_manage_access(user_utils::get_uuid_by_username($channel_username))) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("Unauthorized"));
     }
 

@@ -464,12 +464,19 @@ SCRIPT
             if (commentText.match(/class="user-mention"/))
             {
                 console.log("MENTIONS SOMEONE");
-                var mention_uuid = commentText.match(/data-uuid="(.*)" onclick/)[1];
-                console.log("MENTION_UUID", mention_uuid);
-                console.log("MY UUID", myUUID);
-                if (mention_uuid === myUUID) {
-                    console.log("MENTIONS MEEEEEEE");
-                    commentText = commentText.replace(/class="user-mention"/, 'class="user-mention" id="MentionedMe"');
+                var match = commentText.match(/data-uuid="(.*)" onclick/);
+                var $skip;
+                if (!match) {
+                    $skip = 1;
+                }
+                if (!$skip) {
+                    var mention_uuid = match[1];
+                    console.log("MENTION_UUID", mention_uuid);
+                    console.log("MY UUID", myUUID);
+                    if (mention_uuid === myUUID) {
+                        console.log("MENTIONS MEEEEEEE");
+                        commentText = commentText.replace(/class="user-mention"/, 'class="user-mention" id="MentionedMe"');
+                    }
                 }
             }
             
@@ -892,7 +899,7 @@ SCRIPT
                 console.log("CURRENT TEXT", currentText);
 
                 var regex = new RegExp("@" + userMatching + "$");
-                var newTextBeforeCursor = textBeforeCursor.replace(regex, `<span class="user-mention" data-uuid="${user.uuid}">@${decodeURI(user.displayname)}</span> `);
+                var newTextBeforeCursor = textBeforeCursor.replace(regex, `<span class="user-mention" data-uuid="${user.uuid}" onclick="showUser('${user.uuid}')">@${decodeURI(user.displayname)}</span> `);
                 var newText = newTextBeforeCursor + currentText.substring(textBeforeCursor.length);
                 target.innerHTML = newText;
                 UserSuggestions.innerHTML = '';

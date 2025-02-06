@@ -1889,7 +1889,7 @@ CSS
         width: 100%;
         white-space: pre-wrap;
         word-wrap: break-word;
-        height: 17px;
+        height: 20px;
         background-color: white;
         color: black;
         border: 3px black solid;
@@ -1971,6 +1971,10 @@ CSS
         background-color: #1a06ff;
         border-radius: 15px;
         padding: 3px;
+    }
+    .user-mention {
+        background-color: darkkhaki;
+        border-radius: 5px;
     }
 CSS
     }

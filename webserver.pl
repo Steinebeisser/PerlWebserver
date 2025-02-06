@@ -118,6 +118,8 @@ my %index_router = (
     "/streaming/image/channel_banner" => \&get_streaming_pages::get_streaming_image_channel_banner,
     "/streaming/channel" => \&get_streaming_pages::get_streaming_channel,
     "/streaming/manage/channel" => \&get_streaming_pages::get_streaming_manage_channel,
+
+    "/get/users" => \&get_users::get_users,
 );
 
 my %post_router = (
