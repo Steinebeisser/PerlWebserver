@@ -55,7 +55,7 @@ sub get_channel_icon {
         get_default_channel_icon($client_socket);
         return;
     }
-    my $channel_metadata_file = "$channel_path/Icon/channel_icon.txt";
+    my $channel_metadata_file = "$channel_path/Icon/channel_icon.json";
     if (!-e $channel_metadata_file) {
         warn "no icon file\n";
         get_default_channel_icon($client_socket);
@@ -63,9 +63,15 @@ sub get_channel_icon {
     }
     my $full_file_path;
     open my $fh, "<", $channel_metadata_file;
-    my $icon_path = do { local $/; <$fh> };
-    $icon_path =~ s/\n//g;
+    my $icon_data = do { local $/; <$fh> };
     close $fh;
+    my $icon_data_json = decode_json($icon_data);
+    my $icon_path = $icon_data_json->{icon};
+    if (!$icon_path) {
+        warn "no icon file1\n";
+        get_default_channel_icon($client_socket);
+        return;
+    }
     $full_file_path = "$base_dir/$icon_path";
     if (!-e $full_file_path) {
         warn "no icon file2\n";
@@ -138,7 +144,8 @@ sub get_image {
         return;
     }
     my $file_size = -s $full_file_path;
-    # print("FILE PATH: $full_file_path\n");
+    print("FILE PATH: $full_file_path\n");
+    print("FILE SIZE: $file_size\n");
     open my $fh, '<', $full_file_path or die "Cannot open file: $!";
     $epoll::clients{fileno $client_socket}{filestream} = {
         file => $fh,
