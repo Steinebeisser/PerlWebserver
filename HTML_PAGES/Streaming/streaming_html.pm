@@ -214,6 +214,7 @@ sub get_video_loading_script  {
         var channelUuid = `$channel_uuid`;
         var noMoreVideos = false;
         var isLoading = false;
+        var isFirstLoad = true;
 
         function loadMoreVideos() {
             if(isLoading) {
@@ -224,11 +225,17 @@ sub get_video_loading_script  {
             var videos = document.getElementsByClassName("Video");
             var lastVideoID;
             var lastVideo = videos[videos.length - 1];
-            if (lastVideo.id) {
-                lastVideoID = lastVideo.id.split("_")[1];
-            } else {
-                lastVideoID = videos.length - 1;
-                lastVideoID++;
+            if (lastVideo){
+                if (lastVideo.id) {
+                    lastVideoID = lastVideo.id.split("_")[1];
+                } else {
+                    lastVideoID = videos.length - 1;
+                    lastVideoID++;
+                }
+                isFirstLoad = false;
+            } else if (isFirstLoad) {
+                lastVideoID = 0;
+                isFirstLoad = false;
             }
             
             var fetchUri;

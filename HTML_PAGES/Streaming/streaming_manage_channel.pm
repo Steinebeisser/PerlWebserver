@@ -476,7 +476,6 @@ sub get_main_manage {
     </div>
 HTML
 
-    #! img size validation perl on uplaod again
     my $script = <<SCRIPT;
     <script>
         var channelUsername = "$username";

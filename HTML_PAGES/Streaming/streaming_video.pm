@@ -116,36 +116,12 @@ HTML
             <div class="StreamingMainRight">
                 <div class="OtherVideos">
                     <h2>Other videos</h2>
-                    #! get videos
-                    <div class="Video">
-                        <button type="button" class="Thumbnail" onclick="window.location.href='/streaming/watch/v=NGUwNzQwODU'">
-                            <img src="/streaming/image/src/NGUwNzQwODU" alt="Video Thumbnail: YEYE">
-                        </button>
-                        <div class="VideoMetadata">
-                            <button type="button" class="ChannelIcon" onclick="window.location.href='/streaming/channel/%E2%99%A5'">
-                                <img src="/streaming/image/channel_icon/b5ab5ec9-7ccb-f96c-0f42-89715eb52cd9" alt="Channel Icon">
-                            </button>
-                            <div class="OtherMetadata">
-                                <div class="VideoTitle">
-                                    <a href="/streaming/watch/v=NGUwNzQwODU" title="YEYE">YEYE</a>
-                                </div>
-                                <div class="ChannelName">
-                                    <a href="/streaming/channel/%E2%99%A5">aye♥</a>
-                                </div>
-                                <div class="VideoInline">
-                                    <div class="VideoViews">
-                                        3 views
-                                    </div>
-                                    <div class="VideoSeparator">
-                                        •
-                                    </div>
-                                    <div class="VideoUploadDate">
-                                        6 days ago
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+HTML
+    my @videos = video_utils::get_top_videos(0);
+    foreach my $video (@videos) {
+                    $html .= video_utils::create_video_emblem($video);
+    }
+    $html .= <<HTML;
                 </div>
             </div>
 HTML
