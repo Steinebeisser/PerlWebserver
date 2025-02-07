@@ -21,7 +21,7 @@ my $aioPerlDomain = "aioperl.de";
 
 $smtp::epoll = epoll_create(1024) or die "Failed to create epoll: $!";
 
-my $secret_key = no_upload::get_secret_key();
+my $secret_key = no_upload::get_srs_secret_key();
 sub start_smtp_server {
     my $server_thread = threads->create(\&run_smtp_server);
     $server_thread->detach();
@@ -358,7 +358,7 @@ sub try_with_gmail {
     my $smtp_server = "smtp.gmail.com";
     my $port = 465;
     my $username = "aioperl.dev.info\@gmail.com";
-    my $app_pw = no_upload::get_gmail_pw();
+    my $app_pw = no_upload::get_google_app_password();
     # print("APPP PW: $app_pw\n");
 
     my $smtp = Net::SMTP::SSL->new(

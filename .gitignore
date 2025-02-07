@@ -20,7 +20,6 @@ Data/Emails/*
 !Data/Emails/.gitkeep
 Data/DevLists/*
 !Data/DevLists/.gitkeep
-Utils/DataUtils/Important/no_upload.pm
 Data/UserData/used_emails.json
 RememberMeCookies/*
 !RememberMeCookies/.gitkeep
@@ -29,3 +28,5 @@ Sessions/*
 STRACE/*
 Data/Streaming/Videos/*
 Data/UserData/displaynames.json
+Data/Private/*
+!Data/Private/.gitkeep
