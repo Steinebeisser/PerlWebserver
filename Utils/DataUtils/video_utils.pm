@@ -23,13 +23,29 @@ sub get_top_videos {
     return @videos;
 }
 
+sub get_channel_videos {
+    my ($channel_uuid, $last_video) = @_;
+
+    if (!$last_video) {
+        $last_video = 0;
+    }
+
+    my $base_dir = getcwd();
+    my $channel_path = "$base_dir/Data/UserData/Users/$channel_uuid/Streaming";
+    my $videos_file = "$channel_path/videos.txt";
+    if (!-e $videos_file) {
+        die;
+    }
+    my @videos = get_videos($videos_file, $last_video);
+}
+
 sub get_videos {
     my ($videos_file, $last_video) = @_;
     if (!$last_video) {
         $last_video = 0;
     }
     $last_video++;
-    my $counter = 0;
+    my $counter = 1;
     my $videos_amount = 4;
 
     my $base_dir = getcwd();
@@ -40,6 +56,7 @@ sub get_videos {
     my @videos;
     while (my $line = <$fh>) {
         last if $counter >= $videos_amount + $last_video;
+        print("COUNTER: $counter\n");
         if ($counter < $last_video) {
             $counter++;
             next;

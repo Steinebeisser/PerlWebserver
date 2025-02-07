@@ -1421,7 +1421,6 @@ CSS
         height: 200px;
     }
     .ChannelIcon {
-        margin-left: 30%;
         margin-top: unset;
         justify-content: center;
         display: flex;
@@ -1437,7 +1436,6 @@ CSS
     }
     .ChannelName {
         position: relative;
-        top: 30%;
         margin: unset;
         width: 100%;
         height: fit-content;

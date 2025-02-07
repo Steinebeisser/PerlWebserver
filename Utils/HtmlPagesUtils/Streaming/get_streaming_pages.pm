@@ -98,12 +98,17 @@ sub get_streaming_manage_channel {
 sub get_streaming_videos {
     my ($client_socket, $route) = @_;
 
-    my ($last_video) = $route =~ /\/videos\/(.*)/;
+    my ($uuid, $last_video) = $route =~ /\/videos(?:\/([^\/]+))?\/(\d+)$/;
     if (!$last_video) {
         $last_video = 0;
     }
 
-    my @videos = video_utils::get_top_videos($last_video);
+    my @videos;
+    if ($uuid) {
+        @videos = video_utils::get_channel_videos($uuid, $last_video);
+    } else {
+        @videos = video_utils::get_top_videos($last_video);
+    }
     if (!@videos) {
         http_utils::send_http_response($client_socket, HTTP_RESPONSE::NO_MORE_CONTENT_204());
         return;
