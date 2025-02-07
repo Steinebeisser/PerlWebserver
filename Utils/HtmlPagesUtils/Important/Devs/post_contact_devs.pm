@@ -14,7 +14,7 @@ my %reasons = (
 sub post_contact_devs {
     my ($client_socket, $route, $temp_file) = @_;
 
-    print("CONTACT DEVS\n");
+    # print("CONTACT DEVS\n");
 
     my $body = body_utils::load_temp_file($temp_file);
     my $json = decode_json($body);

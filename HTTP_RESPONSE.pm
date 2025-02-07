@@ -39,7 +39,7 @@ sub OK {
 
 sub OK_ACCEPT_RANGE {
     my ($video_data, $content_length, $content_type) = @_;
-    my $content_length = length($video_data);
+    # my $content_length = length($video_data);
     my $response = "HTTP/1.1 200 OK\r\n"
                 . "Accept-Ranges: bytes\r\n"
                 . "Content-Length: $content_length\r\n"
@@ -148,6 +148,30 @@ sub OK_WITH_DATA_HEADER {
     return $response;
 }
 
+sub OK_WITH_DATA_HEADER_AND_CACHE {
+    my ($file_size, $filename, $content_type) = @_;
+    if (!$content_type) {
+        $content_type = "application/octet-stream";
+    }
+    my $response = "HTTP/1.1 200 OK\r\n"
+                . "Content-Type: $content_type\r\n"
+                . "Content-Disposition: attachment; filename=\"$filename\"\r\n"
+                . "Cache-Control: inline, max-age=604800\r\n"
+                . "Content-Length: $file_size\r\n"
+                . "Connection: close\r\n"
+                . "\r\n";
+
+    return $response;
+}
+
+sub NO_MORE_CONTENT_204 {
+    my $response = "HTTP/1.1 204 No Content\r\n"
+                . "Connection: close\r\n"
+                . "\r\n";
+
+    return $response;
+}
+
 sub PARTIAL_CONTENT_206 {
     my ($data, $start_range, $end_range, $file_size, $content_type) = @_;
     my $content_length = length($data);
@@ -244,7 +268,7 @@ sub ERROR_400_WEBSOCKET_VERSION {
 
 sub ERROR_401 {
     my ($additional_info) = @_;
-    print("SENDING 401\n");
+    # print("SENDING 401\n");
     my $html_content = "<h1>401 Unauthorized</h1>";
     if ($additional_info) {
         $html_content .= "<p>$additional_info</p>";
@@ -262,7 +286,7 @@ sub ERROR_401 {
 
 sub ERROR_401_WITH_COOKIE {
     my ($additional_info, $cookie) = @_;
-    print("SENDING 401 WITH COOKIE\n");
+    # print("SENDING 401 WITH COOKIE\n");
     my $html_content = "<h1>401 Unauthorized</h1>";
     if ($additional_info) {
         $html_content .= "<p>$additional_info</p>";
@@ -281,7 +305,7 @@ sub ERROR_401_WITH_COOKIE {
 
 sub ERROR_404 {
     my ($additional_info) = @_;
-    print("SENDING 404\n");
+    # print("SENDING 404\n");
     my $html_content = "<h1>404 Not Found</h1>";
     if ($additional_info) {
         $html_content .= "<p>$additional_info</p>";
@@ -299,7 +323,7 @@ sub ERROR_404 {
 
 sub ERROR_404_WITH_COOKIE {
     my ($html_content, $cookie) = @_;
-    print("SENDING 404 WITH COOKIE\n");
+    # print("SENDING 404 WITH COOKIE\n");
     my $content_length = length($html_content);
     my $response = "HTTP/1.1 404 Not Found\r\n"
                 . "Content-Type: text/html; charset=utf-8\r\n"

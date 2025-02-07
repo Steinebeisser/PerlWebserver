@@ -45,7 +45,7 @@ sub receive_msg {
     # while (1) {
     #     recv($client_socket, my $buffer, 1024, 0);
     #     $message .= $buffer;
-    #     print("BONJOUR\n");
+        # print("BONJOUR\n");
     #     last if length($buffer) < 1024;
     # }
 

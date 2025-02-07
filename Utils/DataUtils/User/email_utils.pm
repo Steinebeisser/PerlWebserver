@@ -20,11 +20,11 @@ sub create_email_verification_link {
     }
     my $random_verify_id = user_utils::create_random_string(20);
     my $filename = "$EmailFolder/$random_verify_id";
-    my $link = "10.31.0.18/verify/email/$random_verify_id";
+    my $link = "$server::ip/verify/email/$random_verify_id";
     
     my $timeout = 15 * 60 * 24;
     my $timeout_timestamp = time() + $timeout;
-    print("LINK: $link\n");
+    # print("LINK: $link\n");
     open my $fh, '>', $filename or do {
         warn "Cannot open file: $!";
         return;
@@ -41,7 +41,7 @@ sub create_email_verification_link {
 sub add_to_email_router {
     my ($email, $link) = @_;
 
-    print("SENDING EMAIL\n");
+    # print("SENDING EMAIL\n");
     my $html_email = <<HTML;
 <!DOCTYPE html>
 <html>
@@ -77,7 +77,8 @@ sub is_verification_link_valid {
     };
     my $line = <$fh>;
     close $fh;
-    my ($link, $username, $email, $timestamp) = split('\n', $line);
+    my ($username, $timestamp);
+    ($link, $username, $email, $timestamp) = split('\n', $line);
     my $current_timestamp = time();
     if ($timestamp < $current_timestamp) {
         return 1;
@@ -94,9 +95,9 @@ sub handle_email_verification {
     my $EmailFolder = "$base_dir/Data/UserData/EmailVerification";
     # print("REQUEST: $request\n");
     my ($verification_link) = $route =~ /verify\/email\/(.*)/; 
-    print("VERIFICATION LINK: $verification_link\n");
+    # print("VERIFICATION LINK: $verification_link\n");
     my $filename = "$EmailFolder/$verification_link";
-    print("FILENAME: $filename\n");
+    # print("FILENAME: $filename\n");
     open my $fh, '<', $filename or do {
         warn "Cannot open file: $!";
         return;
@@ -121,8 +122,8 @@ sub handle_email_verification {
     }
     my $expire_timestamp = $data{timestamp};
     my $current_timestamp = time();
-    print("TIMESTAMP: $data{timestamp}\n");
-    print("CURRENT_TIMESTAMP: $current_timestamp\n");
+    # print("TIMESTAMP: $data{timestamp}\n");
+    # print("CURRENT_TIMESTAMP: $current_timestamp\n");
     if ($expire_timestamp < $current_timestamp) {
         return "Email expired<br><a href=\"/ \">Return to index</a>";
     }
@@ -151,8 +152,8 @@ sub post_add_email {
 
     my $json = decode_json($body);
     my $email = $json->{email};
-    print($body);
-    print("EMAIL: $email\n");
+    # print($body);
+    # print("EMAIL: $email\n");
     if (!$email) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Error fetching email, try again later"));
         return;

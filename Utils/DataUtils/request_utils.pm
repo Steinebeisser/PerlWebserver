@@ -26,7 +26,7 @@ sub get_range {
     my ($request) = @_;
     my $start_range;
     my $end_range;
-    print("RANGE REQUEST: $request\n");
+    # print("RANGE REQUEST: $request\n");
     if ($request =~ /Range: bytes=(\d+)-(\d*)/) {
         $start_range = $1;
         $end_range = $2;
@@ -34,7 +34,7 @@ sub get_range {
         return ("none", "none");
     }
     $end_range = "" unless defined $end_range;
-    print("RANGEIII: $start_range - $end_range\n");
+    # print("RANGEIII: $start_range - $end_range\n");
     if (!$start_range) {
         $start_range = "0";
     }

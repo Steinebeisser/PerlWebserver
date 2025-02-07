@@ -14,7 +14,7 @@ use html_pages;
 
 $SIG{PIPE} = 'IGNORE';
 
-
+$server::ip = "172.17.77.9";
 my $cookie_language;
 $main::max_storage = 1*1024*1024*1024; # 1GB
 my $cookie_dark_mode;
@@ -73,7 +73,7 @@ my %index_router = (
 
     "/gameroom" => \&get_gameroom_page::get_gameroom,
     "/gameroom/memory" => \&get_memory_pages::get_memory,
-    # "/gameroom/memory/src" => \&get_memory_pages::get_memory_src,
+    "/gameroom/memory/src" => \&get_memory_pages::get_memory_src,
     # "/gameroom/memory/src/card" => \&get_memory_pages::get_memory_src_card,
     "/gameroom/memory/alone" => \&get_memory_pages::get_memory_alone,
     "/gameroom/memory/2player" => \&get_memory_pages::get_memory_2player,
@@ -108,6 +108,8 @@ my %index_router = (
     "/support/request/new" => \&support_utils::handle_new_request,
 
     "/streaming" => \&get_streaming_pages::get_streaming_home,
+    "/streaming/videos" => \&get_streaming_pages::get_streaming_videos,
+    "/streaming/video/comments" => \&get_streaming_pages::get_streaming_video_comments,
     "/streaming/upload" => \&get_streaming_pages::get_streaming_upload,
     "/streaming/watch" => \&get_streaming_pages::get_streaming_watch,
     "/streaming/video/src" => \&get_streaming_pages::get_streaming_video_src,
@@ -116,6 +118,8 @@ my %index_router = (
     "/streaming/image/channel_banner" => \&get_streaming_pages::get_streaming_image_channel_banner,
     "/streaming/channel" => \&get_streaming_pages::get_streaming_channel,
     "/streaming/manage/channel" => \&get_streaming_pages::get_streaming_manage_channel,
+
+    "/get/users" => \&get_users::get_users,
 );
 
 my %post_router = (
@@ -155,6 +159,10 @@ my %post_router = (
     "/resend_verification_email" => \&email_utils::post_resend_verification_email,
 
     "/update/streaming/manage/channel/" => \&post_streaming_pages::post_streaming_manage_channel,
+    "/streaming/channel" => \&post_streaming_pages::post_streaming_channel,
+    "/update/streaming/video" => \&post_streaming_pages::post_streaming_video,
+    "/update/streaming/video/comments" => \&post_streaming_pages::post_streaming_video_comments,
+    "/update/streaming/video/replies" => \&post_streaming_pages::post_streaming_video_replies,
 );
 
 print("Creating main::Epoll\n");
@@ -230,7 +238,7 @@ sub epoll_loop {
                 $epoll::clients{fileno($client_socket)}{"has_in"} = 1;
 
             # } elsif ($event->[0] == fileno $udp_socket) {
-            #     print("RECEIVED UDP PACKET\n");
+                # print("RECEIVED UDP PACKET\n");
             #     die;
             } elsif ($event->[1] & EPOLLIN) {
                 # print("Handling client\n");
@@ -239,7 +247,7 @@ sub epoll_loop {
                 # print("Handling filestream\n");
                 handle_filestream($event->[0]);
             } else {
-                print("Unknown event\n");
+                # print("Unknown event\n");
             }
         }
     }
@@ -427,7 +435,7 @@ sub handle_normal_request {
     # print("USER: " . (defined $main::user ? $main::user : "undef") . "\n");
     # print("IMAIL: " . (defined $main::user && defined $main::user->{email} ? $main::user->{email} : "undef") . "\n");
     if (defined $main::user && !$main::user->{email} && !$skipidy) {
-        print("HELLO\n");
+        # print("HELLO\n");
         my $html = get_require_email::get_require_email();
         http_utils::send_response($client_socket, HTTP_RESPONSE::OK($html));
         close($client_socket);
@@ -435,7 +443,7 @@ sub handle_normal_request {
     }
     if ($main::user && !user_utils::is_email_verified && !$skipidy) {
         my $html = get_email_not_verified::get_email_not_verified();
-        print("HELLO\n");
+        # print("HELLO\n");
         http_utils::send_response($client_socket, HTTP_RESPONSE::OK($html));
         close($client_socket);
         return;
@@ -447,7 +455,7 @@ sub handle_normal_request {
 
     # print("8");
     if (!$epoll::clients{$client_fd}{"has_out"}) {
-        print("9");
+        # print("9");
         http_utils::send_response($client_socket, HTTP_RESPONSE::OK($response));
     }
     # print("SENT RESPONSE\n");
@@ -498,7 +506,7 @@ sub handle_index {
     }
 
     if (!defined($response)) {
-        print "Received an unknown request\n";
+        # print "Received an unknown request\n";
         # print("REQUEST: $request\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404);
     }

@@ -7,7 +7,7 @@ sub new {
     my ($username) = @_;
 
     my $translations = language_utils::load_language("login");
-    print("LOGOGO\n");
+    # print("LOGOGO\n");
 
     if (user_utils::is_encoded($username)) {
         $username = user_utils::decode_uri($username);

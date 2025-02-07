@@ -70,7 +70,7 @@ sub get_year_holidays {
         return 0;
     }
 
-    print("IM HERE\n");
+    # print("IM HERE\n");
     my $language = language_utils::get_user_language();
 
     my $json = holidays_exists($year, $language);
@@ -128,18 +128,18 @@ sub calculate_holidays {
         months => {}
     };
     my ($easter_day, $easter_month) = calculate_easter($year);
-    print("CALCING EASTER: $easter_day, $easter_month\n");
+    # print("CALCING EASTER: $easter_day, $easter_month\n");
     my $easter_holidays_ref = get_holidays_based_on_easter($year, $easter_day, $easter_month);
     my @easter_holidays = @$easter_holidays_ref;
     foreach my $easter_holiday (@easter_holidays) {
-        print("EASTER HOLIDAY: $easter_holiday\n");
+        # print("EASTER HOLIDAY: $easter_holiday\n");
     }
-    print("HOLIDAYS: @easter_holidays\n");
+    # print("HOLIDAYS: @easter_holidays\n");
 
     my $year_holidays = add_constant_holidays($year, \@easter_holidays);
-    print("HELLO?\n");
+    # print("HELLO?\n");
     foreach my $year_holiday (@$year_holidays) {
-        print("YEAR HOLIDAY: $year_holiday\n");
+        # print("YEAR HOLIDAY: $year_holiday\n");
     }
 
     # my $year_timestamp = get_timestamp_from_year($year);
@@ -160,16 +160,16 @@ sub calculate_holidays {
         my $holiday_day = $holiday_data[2];
         if ($holiday_month < 10) {
             if ($holiday_month =~ /0/) {
-                print("HAS ZERO $holiday_month\n");
+                # print("HAS ZERO $holiday_month\n");
             } else {
-                print("NO ZERO $holiday_month\n");
+                # print("NO ZERO $holiday_month\n");
                 $holiday_month = "0$holiday_month";
             }
         }
-        print("HOLIDAY: $holiday_name, $holiday_month, $holiday_day\n");
+        # print("HOLIDAY: $holiday_name, $holiday_month, $holiday_day\n");
 
         my $holiday_full_name = $holiday_name_mapping{$holiday_name}{$language};
-        print("HOLIDAY FULL NAME: $holiday_full_name\n");
+        # print("HOLIDAY FULL NAME: $holiday_full_name\n");
 
         $calender{lang}{$language}{months}{$holiday_month}{name} = number_to_month($holiday_month, $language);
         $calender{lang}{$language}{months}{$holiday_month}{days}{$holiday_day}{events} = [$holiday_full_name];
@@ -177,7 +177,7 @@ sub calculate_holidays {
     }
 
     foreach my $month (1..12) {
-        print("MONTH: $month\n");
+        # print("MONTH: $month\n");
         if ($month < 10) {
             $month = "0$month";
         }
@@ -202,15 +202,15 @@ sub calculate_holidays {
     my $base_dir = File::Spec->catdir($data_dir, 'Calender');
     if (!-d $base_dir) {
         if (!-d $data_dir) {
-            print "Creating directory $data_dir\n";
+            # print "Creating directory $data_dir\n";
             mkdir $data_dir;
         }
-        print "Creating directory $base_dir\n";
+        # print "Creating directory $base_dir\n";
         mkdir $base_dir;
     }
     my $json = encode_json(\%calender);
     open(my $file, '>', File::Spec->catfile($base_dir, "$year.json")) or do {
-        print "Could not open file $!\n";
+        # print "Could not open file $!\n";
         return;
     };
     print $file $json;
@@ -224,7 +224,7 @@ sub add_constant_holidays {
     my @holidays = @$holidays_ref;
 
     my ($buss_day, $buss_month) = calculate_buss($year);
-    print("BUSS DAY: $buss_day\n");
+    # print("BUSS DAY: $buss_day\n");
     
     push (@holidays, "neuj, 01, 01");
     push (@holidays, "hl3k, 01, 06");
@@ -246,7 +246,7 @@ sub add_constant_holidays {
 sub calculate_buss {
     my ($year) = @_;
     
-    print("CALCULATING BUSS");
+    # print("CALCULATING BUSS");
     my ($easter_day, $easter_month) = calculate_easter($year); # Sonntag
     my $wednesday = $easter_day + 3; # Mittwoch
     my $getting_buss_day = 1;
@@ -344,7 +344,7 @@ sub get_holidays_based_on_easter {
         }
         push (@holiday_ref, ("$holiday_name, $holiday_month, $holiday"));
     }
-    print("HOLIDAY REF: @holiday_ref\n");
+    # print("HOLIDAY REF: @holiday_ref\n");
 
     return \@holiday_ref;
 }
@@ -380,7 +380,7 @@ sub get_timestamp_from_year {
 
 sub get_max_timestamp {
     my $max_time = 2**31 - 1;
-    print("MAX TIME: $max_time\n");
+    # print("MAX TIME: $max_time\n");
     return $max_time;
 }
 sub holidays_exists {
@@ -396,14 +396,14 @@ sub holidays_exists {
     }
 
     open my $file, '<', File::Spec->catfile($base_dir, "$year.json") or do {
-        print("Could not open file $!\n");
+        # print("Could not open file $!\n");
         return 0;
     };
     my $json = do { local $/; <$file> };
     close $file;
     $json = decode_json($json);
 
-    print("LANG: $language\n");
+    # print("LANG: $language\n");
 
 
     if (!defined($json)) {
@@ -413,7 +413,7 @@ sub holidays_exists {
         $new_language = 1;
         return $json;
     }
-    print "EXISTIN\n";
+    # print "EXISTIN\n";
     return $json;
 }
 
@@ -423,7 +423,7 @@ sub get_stored_holidays {
     my $data_dir = File::Spec->catdir($current_dir, 'Data');
     my $base_dir = File::Spec->catdir($data_dir, 'Calender');
     open(my $file, '<', File::Spec->catfile($base_dir, "$year.json")) or do {
-        print "Could not open file $!\n";
+        # print "Could not open file $!\n";
         return;
     };
     my $json = do { local $/; <$file> };
@@ -435,23 +435,23 @@ sub get_weekday {
     my ($day, $month, $year) = @_;
 
     my $yearcode = calculate_yearcode($year);
-    print("YEARCODE: $yearcode\n");
+    # print("YEARCODE: $yearcode\n");
 
     my $monthcode = calculate_monthcode($month);
-    print("MONTHCODE: $monthcode\n");
+    # print("MONTHCODE: $monthcode\n");
 
     my $centurycode = calculate_centurycode($year);
-    print("CENTURYCODE: $centurycode\n");
+    # print("CENTURYCODE: $centurycode\n");
 
     my $leapcode_modifier = 0;
     if (is_leapyear($year) && ($month == 1 || $month == 2)) {
         $leapcode_modifier = -1;
     }
-    print("DAY: $day\n");
-    print("LEAPCODE MODIFIER: $leapcode_modifier\n");
+    # print("DAY: $day\n");
+    # print("LEAPCODE MODIFIER: $leapcode_modifier\n");
 
     my $weekday = ($yearcode + $monthcode + $centurycode + $day + $leapcode_modifier) % 7;
-    print("WEEKDAY: $weekday\n");
+    # print("WEEKDAY: $weekday\n");
 
     return $weekday;
 }
@@ -460,7 +460,7 @@ sub calculate_yearcode {
     my ($year) = @_;
 
     my $last_two_digits = substr($year, -2, 2);
-    print("LAST TWO DIGITS: $last_two_digits\n");
+    # print("LAST TWO DIGITS: $last_two_digits\n");
     
     my $yearcode = ($last_two_digits + int($last_two_digits / 4)) % 7;
     
@@ -565,7 +565,7 @@ HTML
             }
 
             if ($holidays{$month}{$scan_day}) {
-                print("HOLIDAY FOUND: $month $day\n");
+                # print("HOLIDAY FOUND: $month $day\n");
                 $html_body .= <<HTML;
                 <div class="day holiday">$day</div>
 HTML
@@ -588,7 +588,7 @@ HTML
 
 sub parse_date {
     my ($timestamp) = @_;
-    print("TIMESTAMP: $timestamp\n");
+    # print("TIMESTAMP: $timestamp\n");
 
     my ($sec, $min, $hour, $day, $month, $year) = localtime($timestamp);
     $year += 1900;
@@ -626,11 +626,11 @@ sub handle_calender {
         $is_month = 1;
         $year = $1;
         $month = $2;
-        print("YEAR: $year\n");
-        print("MONTH: $month\n");
+        # print("YEAR: $year\n");
+        # print("MONTH: $month\n");
     } elsif ($route =~ /\/calender\/year\/(.*)/) {
         $year = $1;
-        print("YEAR2: $year\n");
+        # print("YEAR2: $year\n");
     }
     if ($is_month) {
         return get_calender_pages::get_calender_month($client_socket, $route);

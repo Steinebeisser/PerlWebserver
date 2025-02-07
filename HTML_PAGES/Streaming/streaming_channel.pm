@@ -20,8 +20,7 @@ sub get_streaming_channel {
     my $channel_path = "$base_dir/Data/UserData/Users/$uuid/Streaming";
     my $videos_file = "$channel_path/videos.txt";
 
-    my $human_username = user_utils::decode_uri(user_utils::get_display_name_with_uuid($uuid));
-    my @videos = video_utils::get_videos($videos_file);
+    my $human_username = user_utils::decode_uri(user_utils::get_displayname_by_uuid($uuid));
 
     my $html = <<HTML;
     <div class="StreamingChannel">
@@ -80,11 +79,11 @@ sub get_streaming_channel_videos {
     my ($username, $client_socket) = @_;
 
     my $base_dir = getcwd();
-    my $uuid = user_utils::get_uuid_by_username($username);
-    my $channel_path = "$base_dir/Data/UserData/Users/$uuid/Streaming";
+    my $channel_uuid = user_utils::get_uuid_by_username($username);
+    my $channel_path = "$base_dir/Data/UserData/Users/$channel_uuid/Streaming";
     my $videos_file = "$channel_path/videos.txt";
 
-    my @videos = video_utils::get_videos($videos_file);
+    my @videos = video_utils::get_videos($videos_file, 0, $channel_uuid);
 
     my $html = <<HTML;
     <div class="channel_videos">
@@ -96,8 +95,14 @@ HTML
     }
     $html .= <<HTML;
         </div>
+        <div class="Loading">
+            Loading Videos
+        </div>
     </div>
 HTML
+
+    my $video_loading_script = streaming_html::get_video_loading_script($channel_uuid);
+    $html .= $video_loading_script;
 
     return $html;
 

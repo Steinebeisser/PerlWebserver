@@ -112,6 +112,7 @@ use Utils::DataUtils::User::logout_user;
 use Utils::DataUtils::User::ip_utils;
 use Utils::DataUtils::User::cookie_utils;
 use Utils::DataUtils::User::email_utils;
+use Utils::DataUtils::User::get_users;
 
 use Utils::DataUtils::Important::Devs::dev_utils;
 use Utils::DataUtils::Important::Devs::hardware_devs;

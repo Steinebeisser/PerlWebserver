@@ -47,7 +47,7 @@ sub get_profile_ploud_upgrade {
         my $html = get_profile_ploud_upgrade::get_profile_ploud_upgrade();
         return $html;
     } 
-    print("RANK: $rank\n");
+    # print("RANK: $rank\n");
     my $html = get_profile_ploud_upgrade_rank::get_profile_ploud_upgrade_rank($rank, $main::user->{username});
 
     return $html;

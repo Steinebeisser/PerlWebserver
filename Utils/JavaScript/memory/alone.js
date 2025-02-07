@@ -1,4 +1,4 @@
-var socket = new WebSocket("http://10.31.0.18/gameroom/memory/alone");
+var socket = new WebSocket("http://172.17.77.9/gameroom/memory/alone");
 
 socket.onopen = function(event) {
     console.log("WebSocket is open now.");

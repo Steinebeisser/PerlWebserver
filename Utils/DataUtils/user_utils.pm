@@ -366,7 +366,7 @@ sub remove_from_user_json {
     my ($uuid) = @_;
     my $username = get_username_by_uuid($uuid);
     my $filename = "$userdata_folder/usernames.json";
-    open(my $file, '<', $filename) or return 0;
+    open my $file, '<', $filename or return 0;
     my $json = do { local $/; <$file> };
     close $file;
     my $data = decode_json($json);
@@ -376,7 +376,7 @@ sub remove_from_user_json {
     my $user_to_uuid = $data->{user_to_uuid};
     delete $uuid_to_user->{$uuid} or die "Could not delete $uuid from uuid_to_user $!";
     delete $user_to_uuid->{$username} or die "Could not delete $username from user_to_uuid $!";
-    open(my $file, '>', $filename) or return 0;
+    open $file, '>', $filename or return 0;
     print $file encode_json($data);
     close($file);
 }
@@ -496,7 +496,7 @@ sub format_bytes {
 sub get_current_used_storage {
     my ($uuid) = @_;
 
-    print("GETTING USED STORAGE\n");
+    # print("GETTING USED STORAGE\n");
     if (!user_exists(undef, $uuid)) {
         return 0;
     }
@@ -650,9 +650,9 @@ sub read_file {
     $filename =~ s/\r\n$//; 
     $filename =~ s/\n$//;
     $filename =~ s/\r$//;
-    print("FILENAME: $filename HELLO");
+    # print("FILENAME: $filename HELLO");
     open(my $file, '<', $filename) or do {
-        print("Error opening file $filename: $!\n");
+        # print("Error opening file $filename: $!\n");
         return 0;
     };
     my $content = do { local $/; <$file> };
@@ -687,19 +687,19 @@ sub populate_user {
     # my $cookie_data = cookie_utils::read_cookie($cookie);
     my ($uuid, $session_id) = cookie_utils::validate_session($cookie);
     if (!$uuid || !$session_id) {
-        print("Invalid cookie\n");
+        # print("Invalid cookie\n");
         return 0;
     }
 
     my $user_stats = get_user_stats($uuid);
     if (!$user_stats) {
-        print("No user stats found\n");
+        # print("No user stats found\n");
         return;
     }
     # print("USER STATS: $user_stats\n");
     # foreach my $key (keys %$user_stats) {
-    #     print("KEY: $key\n");
-    #     print("VALUE: $user_stats->{$key}\n");
+        # print("KEY: $key\n");
+        # print("VALUE: $user_stats->{$key}\n");
     # }
     # print("creating User\n");
     $main::user = User->new($user_stats);
@@ -709,7 +709,7 @@ sub get_username_by_uuid {
     my ($uuid) = @_;
     my $filename = "$userdata_folder/usernames.json";
     open(my $file, '<', $filename) or do {
-        print("Error opening file $filename\n");
+        # print("Error opening file $filename\n");
         return 0;
     };
     my $json = do { local $/; <$file> };
@@ -729,8 +729,8 @@ sub get_user_stats {
         my $user_stats = decode_json($json);
         # print("USER STATS: $user_stats\n");
         # foreach my $key (keys %$user_stats) {
-        #     print("KEY: $key\n");
-        #     print("VALUE: $user_stats->{$key}\n");
+            # print("KEY: $key\n");
+            # print("VALUE: $user_stats->{$key}\n");
         # }
         return $user_stats;
     }
@@ -750,7 +750,7 @@ sub get_server_storage {
 
     my $total = `df $path`;
 
-    print("TOTAL: $total\n");
+    # print("TOTAL: $total\n");
     my %storage = ();
     if ($total =~/^.+?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+%)\s+\S+$/) {
         $storage{mount} = $1;
@@ -772,7 +772,7 @@ sub get_server_storage_json {
 
 sub hash_password {
     my ($password) = @_;
-    print("PASSWORD: $password\n");
+    # print("PASSWORD: $password\n");
     my $salt = create_random_string(16);          
     my $hash = crypt($password, "\$6\$$salt");    
     return $hash;                                 
@@ -780,9 +780,9 @@ sub hash_password {
 
 sub verify_password {
     my ($entered_password, $stored_hash) = @_;
-    print("STORED HASH:  $stored_hash\n");
+    # print("STORED HASH:  $stored_hash\n");
     my $entered_hash = crypt($entered_password, $stored_hash);
-    print("ENTERED HASH: $entered_hash\n");
+    # print("ENTERED HASH: $entered_hash\n");
     return $entered_hash eq $stored_hash;                     
 }
 
@@ -790,11 +790,11 @@ sub verify_password {
 sub is_wide {
     my ($string) = @_;
     
-    print("STRING: $string\n");
+    # print("STRING: $string\n");
     foreach my $char (split //, $string) {
-        print("CHAR: $char\n");
+        # print("CHAR: $char\n");
         if ($char =~ /[^\x00-\x7F]/) {
-            print("WIDE CHARACTER DETECTED: $char\n");
+            # print("WIDE CHARACTER DETECTED: $char\n");
             return 1;
         }
     }
@@ -820,7 +820,7 @@ sub get_used_emails {
         };
     }
     open(my $file, '<', $filename) or do {
-        print("Error opening file $filename\n");
+        # print("Error opening file $filename\n");
         return 0;
     };
     my $json = do { local $/; <$file> };
@@ -843,13 +843,87 @@ sub save_used_emails {
     close($file);
 }
 
-sub get_display_name_with_uuid {
+sub get_displayname_by_uuid {
     my ($uuid) = @_;
     my $username = get_username_by_uuid($uuid);
-    my $display_name = get_user_stat($uuid, "display_name");
-    if ($display_name) {
-        return $display_name;
+    my $displayname = get_user_stat($uuid, "displayname");
+    if ($displayname) {
+        return $displayname;
     }
     return $username;
+}
+
+sub get_subscribed_to {
+    my $filename = "$userdata_folder/Users/$main::user->{uuid}/Streaming/OtherPeopleInfo/subscribed_to.txt";
+    if (!-e $filename) {
+        return;
+    }
+    my @subscribed_to;
+    open my $file, '<', $filename;
+    while (my $line = <$file>) {
+        print("LINE: $line\n");
+        chomp $line;
+        push @subscribed_to, $line;
+    }
+    close $file;
+    return @subscribed_to;
+}
+
+sub get_users {
+    my ($fragment) = @_;
+
+    my @possible_users;
+
+    my $skip;
+    my $displaynames_file = "$userdata_folder/displaynames.json";
+    if (!-e $displaynames_file) {
+        $skip = 1;
+    }
+
+    if (!$skip) {
+        open my $file, '<', $displaynames_file;
+        my $json = do { local $/; <$file> };
+        close $file;
+        my $data = decode_json($json);
+        my $displaynames = $data->{displaynames};
+
+        foreach my $displayname (keys %$displaynames) {
+            if ($displayname =~ /$fragment/) {
+                foreach my $uuid (@{$displaynames->{$displayname}}) {
+                    my $username = get_username_by_uuid($uuid);
+                    my %user = (
+                        username => $username,
+                        displayname => $displayname,
+                        uuid => $uuid
+                    );
+                    push @possible_users, \%user;
+                }
+            }
+        }
+    } 
+
+    my $usernames_file = "$userdata_folder/usernames.json";
+    if (!-e $usernames_file) {
+        return;
+    }
+    open my $file, '<', $usernames_file;
+    my $json = do { local $/; <$file> };
+    close $file;
+    my $data = decode_json($json);
+    my $user_to_uuid = $data->{user_to_uuid};
+    foreach my $username (keys %$user_to_uuid) {
+        my $displayname = get_displayname_by_uuid($user_to_uuid->{$username});
+        if ($username =~ /$fragment/) {
+            my %user = (
+                username => $username,
+                displayname => $displayname,
+                uuid => $user_to_uuid->{$username}
+            );
+            push @possible_users, \%user;
+        }
+    }
+
+    return @possible_users;
+
 }
 1;

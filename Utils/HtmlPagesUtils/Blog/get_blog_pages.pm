@@ -137,7 +137,7 @@ sub announcement_switch_status {
 
 sub get_announcement_create {
     my ($client_socket) = @_;
-    print("HIHIHAHAHA\n");
+    # print("HIHIHAHAHA\n");
 
     my $html = get_announcement_create::get_announcement_create();
 

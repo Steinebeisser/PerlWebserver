@@ -23,10 +23,10 @@ sub query_ip_api {
     my $url = "http://ip-api.com/json/$ip";
     my $response = `curl -s $url`;
     my $json = decode_json($response);
-    print("JSON: $json\n");
-    foreach my $key (keys %$json) {
-        print("$key: $json->{$key}\n");
-    }
+    # print("JSON: $json\n");
+    # foreach my $key (keys %$json) {
+        # print("$key: $json->{$key}\n");
+    # }
     return $json;
 }
 

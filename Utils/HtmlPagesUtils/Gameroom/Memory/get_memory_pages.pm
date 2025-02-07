@@ -47,14 +47,18 @@ sub get_memory_alone {
 
 sub get_memory_src {
     my ($client_socket, $request) = @_;
-    print("TEST IF IN USE\n");
-    die "TEST IF IN USE";
+    # print("TEST IF IN USE\n");
+    # die "TEST IF IN USE";
     my $response;
 
-    $request =~ /\/memory\/src\/(.*) HTTP/ || $request =~ /\/memory\/src\/card\/2player\/(.*) HTTP/;
+    $request =~ /\/memory\/src\/(.*)/ || $request =~ /\/memory\/src\/card\/2player\/(.*)/;
     my $card = $1;
 
-    # print("CARD: $card\n");
+    if(!$card) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Card not found"));
+        return;
+    }
+    print("CARD: $card\n");
     my $base_dir = getcwd();
     my $card_path = "$base_dir/HTML_PAGES/Gameroom/Memory/src/$card";
     # print("CARD PATH: $card_path\n");
@@ -151,20 +155,20 @@ sub get_memory_2player {
     my $game_id = request_utils::get_memory_game_id_by_cookie();
 
     if (!$game_id) {
-        print("GAME ID EROR\n");
+        # print("GAME ID EROR\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page"));
         return;
     }
 
     
     if (!$memory::joining_games{$game_id}) {
-        print("NO JOINING GAMES\n");
+        # print("NO JOINING GAMES\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page"));
         return;
     }
 
     if (!$memory::game_controllers{"game_id"}{$game_id}) {
-        print("NO GAME CONTROLLERS\n");
+        # print("NO GAME CONTROLLERS\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page"));
         return;
     }
@@ -173,7 +177,7 @@ sub get_memory_2player {
     my $player2 = $memory::game_info{$game_id}{player2};
 
     if (!$player1 || !$player2) {
-        print("NO PLAYERS\n");
+        # print("NO PLAYERS\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Error loading players"));
         return;
     }
@@ -199,11 +203,11 @@ sub get_memory_2player_waiting {
     }
 
     if (!$game_id) {
-        print("NO GAME ID\n");
+        # print("NO GAME ID\n");
         foreach my $open_game_id (keys %memory::open_games) {
-            print("OPEN GAME ID2: $open_game_id\n");
+            # print("OPEN GAME ID2: $open_game_id\n");
             if ($memory::open_games{$open_game_id} == 1) {
-                print("OPEN GAME ID: $open_game_id\n");
+                # print("OPEN GAME ID: $open_game_id\n");
                 $game_id = $open_game_id;
                 last;
             }
@@ -238,7 +242,7 @@ sub get_memory_end {
     if (!$game_id) {
         $game_id = request_utils::get_memory_game_id_by_cookie(); 
         if (!$game_id) {
-            print("GAME ID EROR\n");
+            # print("GAME ID EROR\n");
             http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("You are not allowed to view this page"));
             return;
         }
