@@ -41,7 +41,7 @@ sub get_thumbnail {
     }
     close $fh;
     
-    get_image($full_file_path, $client_socket);
+    get_image($full_file_path, $client_socket, $video_id);
 }
 
 sub get_channel_icon {
@@ -136,13 +136,14 @@ sub get_default_channel_banner {
 }
 
 sub get_image {
-    my ($full_file_path, $client_socket) = @_;
+    my ($full_file_path, $client_socket, $filename) = @_;
 
     if (!-e $full_file_path) {
         my $error = HTTP_RESPONSE::ERROR_404("Image not found");
         http_utils::send_response($client_socket, $error);
         return;
     }
+
     my $file_size = -s $full_file_path;
     print("FILE PATH: $full_file_path\n");
     print("FILE SIZE: $file_size\n");
@@ -156,6 +157,12 @@ sub get_image {
     epoll_ctl($main::epoll, EPOLL_CTL_MOD, fileno $client_socket, EPOLLIN | EPOLLOUT) >= 0 || die "Can't add client socket to main::epoll: $!";
     $epoll::clients{fileno $client_socket}{"has_out"} = 1;
     # print("Added client socket to writeepoll\n");
+    my ($file_ext) = $full_file_path =~ /\.(\w+)$/; 
+    if (!$filename) {
+        $filename = "img";
+    }
+    my $header = HTTP_RESPONSE::OK_WITH_DATA_HEADER_AND_CACHE($file_size, "$filename.$file_ext", "image/$file_ext");
+    send($client_socket, $header, 0);
 
     main::handle_filestream(fileno $client_socket);
 }

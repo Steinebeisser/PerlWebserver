@@ -148,6 +148,22 @@ sub OK_WITH_DATA_HEADER {
     return $response;
 }
 
+sub OK_WITH_DATA_HEADER_AND_CACHE {
+    my ($file_size, $filename, $content_type) = @_;
+    if (!$content_type) {
+        $content_type = "application/octet-stream";
+    }
+    my $response = "HTTP/1.1 200 OK\r\n"
+                . "Content-Type: $content_type\r\n"
+                . "Content-Disposition: attachment; filename=\"$filename\"\r\n"
+                . "Cache-Control: inline, max-age=604800\r\n"
+                . "Content-Length: $file_size\r\n"
+                . "Connection: close\r\n"
+                . "\r\n";
+
+    return $response;
+}
+
 sub NO_MORE_CONTENT_204 {
     my $response = "HTTP/1.1 204 No Content\r\n"
                 . "Connection: close\r\n"
