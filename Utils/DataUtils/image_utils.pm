@@ -152,4 +152,44 @@ sub get_image {
 
     main::handle_filestream(fileno $client_socket);
 }
+
+my %supported_img_types = (
+    "png" => \&get_png_dimensions,
+);
+
+sub get_image_dimensions {
+    my ($filepath) = @_;
+
+    print("FILEPATH: $filepath\n");
+    my ($ext) = $filepath =~ /\.(\w+)$/;
+
+    print("EXT: $ext\n");
+    if (!$supported_img_types{$ext}) {
+        return;
+    }
+
+    return $supported_img_types{$ext}->($filepath);
+}
+
+sub get_png_dimensions {
+    my ($filepath) = @_;
+
+    open my $fh, '<', $filepath or die "Cannot open file: $!";
+    binmode $fh;
+    
+    read $fh, my $signature, 8;
+    print("SIGNATURE: $signature\n");
+    if ($signature ne "\x89PNG\x0d\x0a\x1a\x0a") {
+        print("Not a PNG file\n");
+        return;
+    }
+
+    read $fh, my $ihdr_chunk, 8;
+    read $fh, my $width_data, 4;
+    read $fh, my $height_data, 4;
+    my $width = unpack('N', $width_data);
+    my $height = unpack('N', $height_data);
+
+    return ($width, $height);
+}
 1;
