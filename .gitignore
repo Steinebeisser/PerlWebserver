@@ -27,3 +27,5 @@ RememberMeCookies/*
 Sessions/*
 !Sessions/.gitkeep
 STRACE/*
+Data/Streaming/Videos/*
+Data/UserData/displaynames.json

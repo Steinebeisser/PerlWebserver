@@ -77,8 +77,8 @@ sub get_streaming_manage_channel_videos {
     my $base_dir = getcwd();
     my $channel_path = "$base_dir/Data/UserData/Users/$uuid/Streaming";
     my $videos_file = "$channel_path/videos.txt";
-    print("VIDEOS FILE: $videos_file\n");
-    my @videos = video_utils::get_videos($videos_file);
+    # print("VIDEOS FILE: $videos_file\n");
+    my @videos = video_utils::get_videos($videos_file, 0, $uuid);
 
     my $html = <<HTML;
     <div class="channel_videos">
@@ -146,10 +146,10 @@ sub get_streaming_manage_channel_single_video {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Video not found"));
         return;
     }
-    print("FILE PATH: $file_path\n");
+    # print("FILE PATH: $file_path\n");
     my $video = video_utils::get_video_metadata($file_path);
     if (!$video) {
-        print("Video not found\n");
+        # print("Video not found\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_404("Video not found"));
         return;
     }
@@ -390,9 +390,9 @@ sub get_streaming_manage_channel_about {
     }
     my $about_file = "$channel_path/about.txt";
 
-    print("ABOUT FILE: $about_file\n");
+    # print("ABOUT FILE: $about_file\n");
     if (!-e $about_file) {
-        print("NO ABOUT FILE\n");
+        # print("NO ABOUT FILE\n");
         open(my $fh, ">", $about_file);
         print $fh "No about information";
         close $fh;
@@ -445,7 +445,7 @@ sub get_main_manage {
     my ($username, $client_socket) = @_;
     
     my $uuid = user_utils::get_uuid_by_username($username);
-    my $human_username = user_utils::decode_uri(user_utils::get_display_name_with_uuid($uuid));
+    my $displayname = user_utils::decode_uri(user_utils::get_displayname_by_uuid($uuid));
     my $html = <<HTML;
     <div class="ChannelInfo">
         <div class="ChannelBanner">
@@ -456,23 +456,69 @@ sub get_main_manage {
             </form>
         </div>
         <div class="ChannelIcon">
+            Must be 40x40 pixels<br>
             <img src="/streaming/image/channel_icon/$uuid" class="channel_icon">
             <form action="/update/streaming/manage/channel/$username/channel/icon" method="post" enctype="multipart/form-data">
-                <input type="file" name="icon" id="icon">
-                <input type="submit" value="Upload Icon">
+                <input type="file" name="icon" id="iconInput" accept="image/png">
+                <input type="submit" value="Upload Icon" id="iconSubmit">
             </form>
         </div>
         <div class="ChannelText">
             <div class="ChannelName">
-                <h1>$human_username</h1>
-                <form action="/streaming/manage/channel/$username/settings" method="post">
-                    <input type="text" name="displayname" placeholder="$human_username">
-                    <input type="submit" value="Change Display Name">
-                </form>
+                <div id="ChannelNameText" class="ChannelNameText">
+                    <h1>Channel Name</h1><br>
+                    <h1>$displayname</h1>
+                </div>
+                <input type="text" id="displayname" name="displayname" value="$displayname">
+                <button class="ChangeDisplaynameButton" onclick="changeDisplayname()">Change Displayname</button>
             </div>
         </div>
     </div>
 HTML
+
+    my $script = <<SCRIPT;
+    <script>
+        var channelUsername = "$username";
+        document.getElementById("iconInput").addEventListener("change", function(event) {
+            var iconFile = event.target.files[0];
+            
+            var img = new Image();
+            img.onload = function() {
+                if (img.width != 40 || img.height != 40) {
+                    alert("Icon must be 40x40 pixels");
+                    event.preventDefault();
+                    document.getElementById("iconInput").value = "";
+                } else {
+                    alert("Icon is 40x40 pixels");
+                }
+            };
+            img.src = URL.createObjectURL(iconFile);
+        });
+
+        function changeDisplayname() {
+            var displayname = document.getElementById("displayname").value;
+            fetch("/update/streaming/manage/channel/" + channelUsername + "/channel/displayname", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    displayname: displayname,
+                }),
+            }).then(response => {
+                if (response.ok) {
+                    document.getElementById("ChannelNameText").innerHTML = ("<h1>Channel Name</h1><br><h1>" + displayname + "</h1>");
+                } else {
+                    alert("Failed to change displayname");
+                }
+            }).catch(error => {
+                alert("Network error: " + error.message);
+            });
+        }
+    </script>
+SCRIPT
+
+    $html .= $script;
 
     return $html;
 }

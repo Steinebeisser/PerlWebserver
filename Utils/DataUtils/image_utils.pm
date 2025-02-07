@@ -41,7 +41,7 @@ sub get_thumbnail {
     }
     close $fh;
     
-    get_image($full_file_path, $client_socket);
+    get_image($full_file_path, $client_socket, $video_id);
 }
 
 sub get_channel_icon {
@@ -49,13 +49,13 @@ sub get_channel_icon {
 
     my $base_dir = getcwd();
     my $channel_path = "$base_dir/Data/UserData/Users/$channel_id/Streaming/Channel";
-    print("CHANNEL PATH: $channel_path\n");
+    # print("CHANNEL PATH: $channel_path\n");
     if (!-d $channel_path) {
-        warn "no channel path\n";
+        # warn "no channel path\n";
         get_default_channel_icon($client_socket);
         return;
     }
-    my $channel_metadata_file = "$channel_path/Icon/channel_icon.txt";
+    my $channel_metadata_file = "$channel_path/Icon/channel_icon.json";
     if (!-e $channel_metadata_file) {
         warn "no icon file\n";
         get_default_channel_icon($client_socket);
@@ -63,9 +63,15 @@ sub get_channel_icon {
     }
     my $full_file_path;
     open my $fh, "<", $channel_metadata_file;
-    my $icon_path = do { local $/; <$fh> };
-    $icon_path =~ s/\n//g;
+    my $icon_data = do { local $/; <$fh> };
     close $fh;
+    my $icon_data_json = decode_json($icon_data);
+    my $icon_path = $icon_data_json->{icon};
+    if (!$icon_path) {
+        warn "no icon file1\n";
+        get_default_channel_icon($client_socket);
+        return;
+    }
     $full_file_path = "$base_dir/$icon_path";
     if (!-e $full_file_path) {
         warn "no icon file2\n";
@@ -130,15 +136,17 @@ sub get_default_channel_banner {
 }
 
 sub get_image {
-    my ($full_file_path, $client_socket) = @_;
+    my ($full_file_path, $client_socket, $filename) = @_;
 
     if (!-e $full_file_path) {
         my $error = HTTP_RESPONSE::ERROR_404("Image not found");
         http_utils::send_response($client_socket, $error);
         return;
     }
+
     my $file_size = -s $full_file_path;
     print("FILE PATH: $full_file_path\n");
+    print("FILE SIZE: $file_size\n");
     open my $fh, '<', $full_file_path or die "Cannot open file: $!";
     $epoll::clients{fileno $client_socket}{filestream} = {
         file => $fh,
@@ -148,8 +156,54 @@ sub get_image {
     };
     epoll_ctl($main::epoll, EPOLL_CTL_MOD, fileno $client_socket, EPOLLIN | EPOLLOUT) >= 0 || die "Can't add client socket to main::epoll: $!";
     $epoll::clients{fileno $client_socket}{"has_out"} = 1;
-    print("Added client socket to writeepoll\n");
+    # print("Added client socket to writeepoll\n");
+    my ($file_ext) = $full_file_path =~ /\.(\w+)$/; 
+    if (!$filename) {
+        $filename = "img";
+    }
+    my $header = HTTP_RESPONSE::OK_WITH_DATA_HEADER_AND_CACHE($file_size, "$filename.$file_ext", "image/$file_ext");
+    send($client_socket, $header, 0);
 
     main::handle_filestream(fileno $client_socket);
+}
+
+my %supported_img_types = (
+    "png" => \&get_png_dimensions,
+);
+
+sub get_image_dimensions {
+    my ($filepath) = @_;
+
+    print("FILEPATH: $filepath\n");
+    my ($ext) = $filepath =~ /\.(\w+)$/;
+
+    print("EXT: $ext\n");
+    if (!$supported_img_types{$ext}) {
+        return;
+    }
+
+    return $supported_img_types{$ext}->($filepath);
+}
+
+sub get_png_dimensions {
+    my ($filepath) = @_;
+
+    open my $fh, '<', $filepath or die "Cannot open file: $!";
+    binmode $fh;
+    
+    read $fh, my $signature, 8;
+    print("SIGNATURE: $signature\n");
+    if ($signature ne "\x89PNG\x0d\x0a\x1a\x0a") {
+        print("Not a PNG file\n");
+        return;
+    }
+
+    read $fh, my $ihdr_chunk, 8;
+    read $fh, my $width_data, 4;
+    read $fh, my $height_data, 4;
+    my $width = unpack('N', $width_data);
+    my $height = unpack('N', $height_data);
+
+    return ($width, $height);
 }
 1;

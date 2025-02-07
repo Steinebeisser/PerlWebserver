@@ -10,7 +10,7 @@ sub get_profile_ploud_upgrade {
 
     my $translations = language_utils::load_language("profile, ploud");
 
-    print("UPGRADEEEEEEEEE\n");
+    # print("UPGRADEEEEEEEEE\n");
 
     my $html_body = <<HTML;
     <h1>$translations->{ploud}</h1>

@@ -1,4 +1,4 @@
-var socket = new WebSocket("http://10.31.0.18/gameroom/memory/multi");
+var socket = new WebSocket("http://172.17.77.9/gameroom/memory/multi");
 var timeout;
 var timeoutInSec = 15;
 

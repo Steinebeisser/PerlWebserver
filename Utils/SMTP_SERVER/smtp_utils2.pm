@@ -61,7 +61,7 @@ sub epoll_loop {
             my $fd = $event->[0];
             if ($fd == fileno $smtp_server) {
                 accept_client();
-                print("Added client to epoll\n");
+                # print("Added client to epoll\n");
             } else {
                 # print("Handling client\n");
                 handle_client($event->[0]);
@@ -75,14 +75,14 @@ sub accept_client {
     my $client_fd = fileno $smtp_client_socket;
     epoll_ctl($smtp::epoll, EPOLL_CTL_ADD, $client_fd, EPOLLIN) >= 0 || die "Can't add client socket to smtp::epoll: $!";
     $smtp::clients{$client_fd} = { smtp_socket => $smtp_client_socket, state => 'INIT' };
-    print("Accepted client\n");
+    # print("Accepted client\n");
     greet_client($client_fd);
 }
 
 sub greet_client {
     my ($client_fd) = @_;
     send_msg($client_fd, "220 UR HERE, IM HERE, WERE HERE");
-    print("greeted client\n");
+    # print("greeted client\n");
 }
 
 sub handle_client {
@@ -93,7 +93,7 @@ sub handle_client {
     recv($client_socket, $buffer, 1024, 0);
     $smtp::clients{$client_fd}{"buffer"} = $buffer;
     $smtp::clients{$client_fd}{"request"} .= $buffer;
-    print("RECEIVED FROM CLIENT: $buffer\n");
+    # print("RECEIVED FROM CLIENT: $buffer\n");
     if (length($buffer) < 1024) {
         process_request($client_fd);
     }
@@ -118,7 +118,7 @@ sub process_request {
             send_msg($client_fd, "250 OK");
             $smtp::clients{$client_fd}{"state"} = "MAIL_FROM";
         } else {
-            print("Syntax error\n");
+            # print("Syntax error\n");
             send_msg($client_fd, "500 Syntax error, command unrecognized");
         }
     } elsif ($state eq "MAIL_FROM") {
@@ -155,7 +155,7 @@ sub process_request {
             send_msg($client_fd, "500 Syntax error, command unrecognized");
         }
     } else {
-        print("Unknown state: $state\n");
+        # print("Unknown state: $state\n");
         send_msg($client_fd, "500 Syntax error, command unrecognized");
     }
 }
@@ -182,7 +182,7 @@ sub forward_email {
         return;
     };
 
-    print("BODY: $smtp::clients{$client_fd}{'body'}\n");
+    # print("BODY: $smtp::clients{$client_fd}{'body'}\n");
     my ($header, $content) = split(/\r\n\r\n/, $smtp::clients{$client_fd}{"body"}, 2);
 
     $smtp::clients{$client_fd}{"content"} = $content;
@@ -213,22 +213,22 @@ sub generate_srs_from {
 
     my $srs_addr = "SRS0+$srs_hash+$domain=$user\@$aioPerlDomain";
 
-    print("SRS ADDR: $srs_addr\n");
+    # print("SRS ADDR: $srs_addr\n");
     return $srs_addr;
 }
 
 sub get_mx_exchange {
     my ($to) = @_;
 
-    print("to: $to\n");
+    # print("to: $to\n");
     my $domain = (split /@/, $to)[1];
-    print("DOMAIN: $domain\n");
+    # print("DOMAIN: $domain\n");
     my @mx = mx($domain);
     foreach my $mx (@mx) {
-        print("MX: $mx\n");
-        foreach my $key (keys %$mx) {
-            print("$key: $mx->{$key}\n");
-        }
+        # print("MX: $mx\n");
+        # foreach my $key (keys %$mx) {
+            # print("$key: $mx->{$key}\n");
+        # }
     }
     my $mx_record = $mx[0];
     if (!$mx_record) {
@@ -236,7 +236,7 @@ sub get_mx_exchange {
         return;
     }
     my $mx_exchange = $mx_record->exchange;
-    print("MX EXCHANGE: $mx_exchange\n");
+    # print("MX EXCHANGE: $mx_exchange\n");
     if (!$mx_exchange) {
         warn "No MX record found for $domain";
         return;
@@ -248,8 +248,8 @@ sub handle_email {
     my ($client_fd) = @_;
     my $client_socket = $smtp::clients{$client_fd}{"smtp_socket"};
     my $request = $smtp::clients{$client_fd}{"request"};
-    print("Handling email\n");
-    print("REQUEST: \r\n$request\n"); 
+    # print("Handling email\n");
+    # print("REQUEST: \r\n$request\n"); 
     my $from;
     my $to;
     my $subject;
@@ -257,27 +257,27 @@ sub handle_email {
     if ($request =~ /MAIL FROM:<([^>]*)>/) {
         $from = $1;
         $smtp::clients{$client_fd}{"from"} = $from;
-        print "From: $from\n";
+        # print "From: $from\n";
     }
     if ($request =~ /TO:\s*<?([^>\r\n]*)>?/) {
         $to = $1;
         $smtp::clients{$client_fd}{"to"} = $to;
-        print "To: $to\n";
+        # print "To: $to\n";
     }
     if ($request =~ /DATA\r\n(.*?)\r\n\.\r\n/s) {
         $body = $1;
         $smtp::clients{$client_fd}{"body"} = $body;
-        print "Body: $body\n";
+        # print "Body: $body\n";
         if ($body =~ /Subject:\s*(.*?)\r\n/s) {
             $subject = $1;
             $smtp::clients{$client_fd}{"subject"} = $subject;
-            print "Subject: $subject\n";
+            # print "Subject: $subject\n";
         }
     }
 
-    print("TO: $to\n");
+    # print("TO: $to\n");
     if (!$body || !$subject || !$to) {
-        print("Invalid email\n");
+        # print("Invalid email\n");
         return;
     }
     $smtp::clients{$client_fd}{"to"} = $to;
@@ -293,7 +293,7 @@ sub remove_client {
 
 sub create_email {
     my ($body, $subject, $to) = @_;
-    print("TO: $to\n");
+    # print("TO: $to\n");
     my $base_dir = getcwd();
     my $email_dir = "$base_dir/Emails";
     if (!-d $email_dir) {
@@ -316,7 +316,7 @@ sub create_email {
     };
     print $fh $body;
     close($fh);
-    print("SAVED EMAIL TO $email_file\n");
+    # print("SAVED EMAIL TO $email_file\n");
 }
 
 sub send_msg {
@@ -326,7 +326,7 @@ sub send_msg {
     if (!$client_socket) {
         return;
     }
-    print("Sending $msg\n");
+    # print("Sending $msg\n");
     send($client_socket, "$msg\r\n", 0);
 }
 
@@ -338,12 +338,12 @@ sub send_and_receive {
         return;
     }
     send_msg($client_socket, $msg);
-    print("SENT $msg\n");
+    # print("SENT $msg\n");
     my $buffer;
     recv($client_socket, $buffer, 1024, 0);
-    print("RECEIVED: $buffer\n");
+    # print("RECEIVED: $buffer\n");
     if ($buffer =~ /^5/) {
-        print("ERROR: $buffer\n");
+        # print("ERROR: $buffer\n");
         if (!try_with_gmail($client_identification, $buffer, $sender_fd)) {
             return_to_sender($client_identification, $buffer, $sender_fd);
         }
@@ -354,12 +354,12 @@ sub send_and_receive {
 sub try_with_gmail {
     my ($client_identification, $error, $sender_fd) = @_;
 
-    print("SENDING WITH GMAIL\n");
+    # print("SENDING WITH GMAIL\n");
     my $smtp_server = "smtp.gmail.com";
     my $port = 465;
     my $username = "aioperl.dev.info\@gmail.com";
     my $app_pw = no_upload::get_gmail_pw();
-    print("APPP PW: $app_pw\n");
+    # print("APPP PW: $app_pw\n");
 
     my $smtp = Net::SMTP::SSL->new(
         $smtp_server,
@@ -402,7 +402,7 @@ sub return_to_sender {
 
     $client_fd = $sender_fd;
 
-    print("CLIENT FD: $client_fd\n");
+    # print("CLIENT FD: $client_fd\n");
 
     # $single_return = 1;
 
@@ -410,9 +410,9 @@ sub return_to_sender {
     my $mx_exchange = get_mx_exchange($to);
     my $failed_to = $smtp::clients{$client_fd}{"to"};
 
-    print("READ HERE\n");
-    print("$to\n");
-    print("$failed_to\n");
+    # print("READ HERE\n");
+    # print("$to\n");
+    # print("$failed_to\n");
 
     my $bounce_message = <<"Bounce";
 Unaible to deliver mail to <$failed_to>: \r\n\r\n$error
@@ -438,7 +438,7 @@ sub get_socket {
         $client_socket = $smtp::clients{$client_identification}{"smtp_socket"};
     }
     if (!$client_socket) {
-        print("Client socket not found\n");
+        # print("Client socket not found\n");
         return;
     }
     return $client_socket;

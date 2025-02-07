@@ -100,13 +100,13 @@ sub start_game {
 
 
     if (!$player1) {
-        print("NO PLAYER 1\n");
+        # print("NO PLAYER 1\n");
         return;
     }
 
     if ($player1 == $player2) {
         # print("p1 $player1\np2 $player2\n");
-        print("SAME PLAYER\n");
+        # print("SAME PLAYER\n");
         return;
     }
 
@@ -187,7 +187,7 @@ sub send_to_game_players {
             # print("SENDING TO SOLO GUY\n");
             send($client_socket, $frame_response, 0);
         } else {
-            print("DIDNT FIND PLAYERS\n");
+            # print("DIDNT FIND PLAYERS\n");
         }
         return;
     }
@@ -209,9 +209,9 @@ sub create_game {
 
     # my @connections = websocket_utils::get_active_connections($client_socket);
     # foreach my $connection (@connections) {
-    #     print("CONNECTION: @$connection\n");
+        # print("CONNECTION: @$connection\n");
     #     foreach my $key (@$connection) {
-    #         print("KEY: $key\disc");
+            # print("KEY: $key\disc");
     #     }
     # }
 
@@ -222,7 +222,7 @@ sub create_game {
     my $game_path = "$base_dir/HTML_PAGES/Gameroom/Memory/activeGames/$filename";
 
     if (-f $game_path) {
-        print("GAME ALREADY EXISTS\n");
+        # print("GAME ALREADY EXISTS\n");
         # http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Game already exists"));
         return "Game already exists";
     }
@@ -332,9 +332,9 @@ sub update_solved_cards {
     my $player = $message->{"player"};
     my $game_id = $message->{"game_id"};
 
-    print("SOLVI CARDI $solved_cards\n");
-    print("PLAYER: $player\n");
-    print("GAME ID: $game_id\n");
+    # print("SOLVI CARDI $solved_cards\n");
+    # print("PLAYER: $player\n");
+    # print("GAME ID: $game_id\n");
 
     my $filename = "$game_id.json";
     my $base_dir = getcwd();
@@ -418,9 +418,9 @@ sub remove_from_game {
     if (!$message) {
         $message = "opponent_disconnected";
     }
-    print("CONNECTIOOOON: $connection\n");
+    # print("CONNECTIOOOON: $connection\n");
     if ($connection =~ /Memory Game: (.*)/) {
-        print("REMOVING FROM GAME\n");
+        # print("REMOVING FROM GAME\n");
         my $game_id = $1;
         inform_opponents($game_id, $client_socket, $message);
         delete $memory::game_controllers{"game_id"}{$game_id};
@@ -430,7 +430,7 @@ sub remove_from_game {
         }
         move_game_file($game_id);
     }
-    print("DONE REMOVING FROM GAME\n");
+    # print("DONE REMOVING FROM GAME\n");
 }
 
 sub move_game_file {
