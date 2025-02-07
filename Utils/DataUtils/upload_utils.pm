@@ -49,6 +49,14 @@ sub handle_upload {
             # print("FINISHED UPLOAD 1\n");
             create_meta_data($client_fd);
         } else {
+            if ($epoll::clients{$client_fd}{is_icon}) {
+                my ($width, $height) = image_utils::get_image_dimensions($epoll::clients{$client_fd}{filepath});
+                if ($width != 40 || $height != 40) {
+                    restore_old_icon();
+                    http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_400("Icon must be 40x40"));
+                    return;
+                }
+            }
             # print("FINISHED UPDATE 2\n");
         }
         my $referer = $epoll::clients{$client_fd}{referer};
@@ -59,6 +67,37 @@ sub handle_upload {
         my $response = HTTP_RESPONSE::REDIRECT_303($referer);
         # print("RESPOSE: $response\n");
         http_utils::send_http_response($epoll::clients{$client_fd}{socket}, $response);
+    }
+}
+
+sub restore_old_icon {
+    my $base_dir = getcwd;
+    my $icon_file = "$base_dir/Data/UserData/Users/$main::user->{uuid}/Streaming/Channel/Icon/channel_icon.json";
+    if (!-e $icon_file) {
+        return;
+    }
+
+    open my $fh, '<', $icon_file or die "Cannot open file: $!";
+    my $data = do { local $/; <$fh> };
+    close $fh;
+    my $icon_data = decode_json($data);
+    my $old_icon = $icon_data->{old_icons}->[$#{$icon_data->{old_icons}}];
+    my $current_icon = $icon_data->{icon};
+    remove_icon($current_icon);
+    $icon_data->{icon} = $old_icon;
+    pop @{$icon_data->{old_icons}};
+    open my $icon_fh, '>', $icon_file or die "Cannot open file: $!";
+    print $icon_fh encode_json($icon_data);
+    close $icon_fh;    
+}
+
+sub remove_icon {
+    my ($icon) = @_;
+
+    my $base_dir = getcwd;
+    my $icon_path = "$base_dir/$icon";
+    if (-e $icon_path) {
+        unlink $icon_path or die "Cannot delete file: $!";
     }
 }
 
@@ -408,6 +447,7 @@ sub update_channel {
 
 sub update_channel_icon {
     my ($channel_path, $client_fd) = @_;
+    $epoll::clients{$client_fd}{is_icon} = 1;
 
     my $dir_path = "$channel_path/Icon";
     if (!-d $dir_path) {
@@ -421,15 +461,68 @@ sub update_channel_icon {
     my $base_dir = getcwd;
     my ($trimmed_filepath) = $filepath =~ /$base_dir\/(.*)/;
 
-    my $icon_file = "$dir_path/channel_icon.txt";
-    open my $fh, '>', $icon_file or do {
-        http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_500("Cannot create file"));
-        return;
-    };
-    print $fh $trimmed_filepath;
-    close $fh;
+    my $old_icon;
+    my $icon_file = "$dir_path/channel_icon.json";
+    if (!-e $icon_file) {
+        open my $fh, '>', $icon_file or die "Cannot open file: $!";
+        print $fh encode_json({icon => $trimmed_filepath});
+        close $fh;
+    } else {
+        open my $fh, '<', $icon_file or die "Cannot open file: $!";
+        my $data = do { local $/; <$fh> };
+        close $fh;
+        my $icon_data = decode_json($data);
+        $old_icon = $icon_data->{icon};
+        $icon_data->{icon} = $trimmed_filepath;
+        if ($old_icon) {
+            my $new_path = $old_icon;
+            if ($trimmed_filepath eq $old_icon) {
+                $new_path = rename_old_file($old_icon);
+            }
+            foreach my $old_file (@{$icon_data->{old_icons}}) {
+                if ($old_file eq $old_icon) {
+                    $new_path = rename_old_file($old_icon);
+                    last;
+                }
+            }
+            $icon_data->{old_icons}->[$#{$icon_data->{old_icons}} + 1] = $new_path;
+
+        }
+        open my $icon_fh, '>', $icon_file or die "Cannot open file: $!";
+        print $icon_fh encode_json($icon_data);
+        close $icon_fh;
+    }
 
     return ($filepath, $dir_path);
+}
+
+sub rename_old_file {
+    my ($filepath) = @_;
+
+    my ($part_path, $filename) = $filepath =~ /(.*)\/([^\/]+)$/;
+    my ($filename, $file_extension) = $filename =~ /(.*)\.(.*)$/;
+    my $new_filename;
+    my $counter = 1;
+    my $base_dir = getcwd;
+    my $new_filepath;
+    while (1) {
+        last if $counter > 10;
+        $new_filename = "$filename$counter.$file_extension";
+        $new_filepath = "$base_dir/$part_path/$new_filename";
+        if (!-e $new_filepath) {
+            my $old_path = "$base_dir/$filepath";
+            print("FILEPATH: $old_path\n");
+            rename $old_path, $new_filepath or die "Cannot rename file: $!";
+            $new_filepath = "$part_path/$new_filename";
+            last;
+        } else {
+            $counter++;
+        }
+    }
+    if (!$new_filepath) {
+        $new_filepath = $filepath;
+    }
+    return $new_filepath;
 }
 
 sub update_channel_banner {
