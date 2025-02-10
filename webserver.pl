@@ -189,6 +189,10 @@ listen($server, 5) || die "Can't listen: $!";
 
 print("Accepting connections\n");
 
+# my $base_dir = getcwd();
+# my $update_log_file = "$base_dir/Data/UpdateLog/update_log.json";
+# github_utils::push_to_github($update_log_file);
+
 
 # print("Creating UDP Socket\n");
 # socket(
@@ -213,9 +217,9 @@ my %user_in_queue;
 
 sub epoll_loop {
     while (1) {
-        # print("Waiting for events\n");
+        print("Waiting for events\n");
         my $events = epoll_wait($main::epoll, 10, -1);
-        # print("Received events\n");
+        print("Received events\n");
 
         for my $event (@$events) {
             if ($event->[0] == fileno $server) {
@@ -233,7 +237,7 @@ sub epoll_loop {
                 $epoll::clients{fileno($client_socket)}{"port"} = $client_port;
                 # $epoll::clients{fileno($client_socket)}{geo_location} = $geo_location;
 
-                # print("ADDING CLIENT '" . fileno($client_socket) . "'\n$client_socket\n");
+                print("ADDING CLIENT '" . fileno($client_socket) . "'\n$client_socket\n");
                 epoll_ctl($main::epoll, EPOLL_CTL_ADD, fileno $client_socket, EPOLLIN) >= 0 || die "Can't add client socket to main::epoll: $!";
                 $epoll::clients{fileno($client_socket)}{"has_in"} = 1;
 
@@ -259,8 +263,12 @@ close($server);
 sub handle_client {
     my ($client_fd) = @_;
     my $client_socket = $epoll::clients{$client_fd}{"socket"};
-    # print("CLIENT SOCKET: $client_socket\n");
-
+    print("CLIENT SOCKET: $client_socket\n");
+    $main::client_socket = $client_socket;
+    if ($epoll::clients{$client_fd}{"is_tls"}) {
+        print("IS TLS\n");
+        https_utils::handle_tls($client_socket);
+    }
 
     if (!$epoll::clients{$client_fd}{"content_length"}) {
         connection_utils::get_client_data($client_fd, $client_socket);
