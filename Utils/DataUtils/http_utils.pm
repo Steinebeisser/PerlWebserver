@@ -3,6 +3,7 @@ package http_utils;
 use strict;
 use warnings;
 
+use Socket;
 use Errno qw(EPIPE);
 
 
@@ -56,4 +57,51 @@ sub parse_input {
 
     return $string;
 }
+
+sub send_http_request {
+    my ($host, $port, $request) = @_;
+
+    socket(my $socket, PF_INET, SOCK_STREAM, getprotobyname('tcp')) or die "socket: $!";
+    my $ip = inet_aton($host);
+    $ip = inet_ntoa($ip);
+    print("IP: $ip\n");
+    connect($socket, sockaddr_in($port, inet_aton($host))) or die "connect: $!";
+
+    print("SENDING REQUEST: \n$request\n");
+    send($socket, $request, 0) or die "send: $!";
+
+    my $response = '';
+    recv($socket, $response, 1024, 0) or die "recv: $!";
+
+    print("RESPONSE: \n$response\n");
+    close($socket);
+
+    return $response;
+}
+
+sub create_http_request {
+    my ($method, $host, $path, $headers, $body) = @_;
+
+    my $http_request = <<HTTP_REQUEST;
+    $method $path HTTP/1.1\r
+    Host: $host\r
+HTTP_REQUEST
+
+    if ($headers) {
+        foreach my $header (keys %$headers) {
+            $http_request .= "    $header: $headers->{$header}\r\n";
+        }
+    }
+
+    if ($body) {
+        $http_request .= "Content-Length: " . length($body) . "\r\n";
+        $http_request .= "\r\n";
+        $http_request .= $body;
+    }
+
+    $http_request .= "\r\n";
+
+    return $http_request;
+}
+
 1;

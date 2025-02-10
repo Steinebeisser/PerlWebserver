@@ -23,7 +23,7 @@ HTML
         var updateID = BigInt("$update->{id}");
         function deleteUpdateLog() {
             console.log("deleteUpdateLog: " + updateID);
-            if (confirm("$translations->{deleteUpdateLog} $update->{title}?")) {
+            if (confirm(`$translations->{deleteUpdateLog} $update->{title}?`)) {
                 fetch("/admin/updateLog/delete/" + updateID, {
                     method: "POST",
                     headers: {
