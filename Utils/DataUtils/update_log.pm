@@ -81,9 +81,10 @@ sub add_update_log {
     my $decoded_json = $json ? decode_json($json) : {};
     $decoded_json = {} unless ref $decoded_json eq 'HASH';
 
-    my ($date, $title, $additionalInfo, $enabled, $updatePoints, $timestamp) = get_log_data($request);
+    my ($date, $title, $additionalInfo, $enabled, $updatePoints) = get_log_data($request);
  
-    my $new_id = time(); 
+    my $timestamp = time(); 
+    my $new_id = $timestamp;
     my @random_numbers = map { int(rand(100)) } (1..5);
     $new_id .= join('', @random_numbers);
     $new_id = "$new_id";
@@ -94,7 +95,7 @@ sub add_update_log {
         additionalInfo => $additionalInfo,
         enabled => $enabled,
         updatePoints => $updatePoints,
-        timestamp => $timestamp
+        timestamp => $timestamp,
     };
 
     $decoded_json->{$new_id} = $new_update;
@@ -102,6 +103,7 @@ sub add_update_log {
     print $fh encode_json($decoded_json);
     close $fh;
     # print("Added new update log: $title to $update_log_file\n");
+    # github_utils::push_to_github($update_log_file);
 }
 
 sub get_log_data {
@@ -295,6 +297,7 @@ sub edit_update_log {
     print $fh encode_json($decoded_json);
     close $fh;
 
+    # github_utils::push_to_github($update_log_file);
     return 1;
 }
 
@@ -395,6 +398,8 @@ sub delete_update_log {
 
     print $fh encode_json($decoded_json);
     close $fh;
+
+    # github_utils::push_to_github($update_log_file);
 }#
 
 sub parse_delete_request {

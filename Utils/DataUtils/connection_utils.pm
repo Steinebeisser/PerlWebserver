@@ -176,4 +176,42 @@ sub read_temp_file {
     return $next_chunk;
 }
 
+sub get_port_from_url {
+    my ($url) = @_;
+
+    my ($protocol, $host) = $url =~ /^(?:(\w+):\/\/)?([^:\/]+)/;
+
+    my $port;
+    if ($protocol && $protocol eq "http") {
+        $port = 80;
+    } elsif ($protocol && $protocol eq "https") {
+        $port = 443;
+    } else {
+        ($host, $port) = get_port_from_host($host);
+    }
+
+    if (!$port) {
+        $port = 80;
+    }
+
+    return $port;
+}
+
+sub get_host_and_path_from_url {
+    my ($url) = @_;
+
+    my ($host, $path) = $url =~ /^(?:.*:\/\/)?([^:\/]+)(?::\d+)?(\/.*)?$/;
+    $path ||= '/';
+    
+    return ($host, $path);
+}
+
+sub get_port_from_host {
+    my ($host) = @_;
+    my $port;
+    if ($host =~ /(.*):(\d+)$/) {
+        $port = $1;
+    }
+    return ($host, $port);
+}
 1;
