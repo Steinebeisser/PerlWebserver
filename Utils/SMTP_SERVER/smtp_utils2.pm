@@ -295,7 +295,7 @@ sub create_email {
     my ($body, $subject, $to) = @_;
     # print("TO: $to\n");
     my $base_dir = getcwd();
-    my $email_dir = "$base_dir/Emails";
+    my $email_dir = "$base_dir/Data/Emails";
     if (!-d $email_dir) {
         mkdir($email_dir) or do {
             warn "Could not create directory: $!";
