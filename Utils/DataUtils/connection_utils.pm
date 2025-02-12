@@ -17,6 +17,7 @@ sub get_client_data {
     recv($client_socket, $buffer, 1024, 0);
 
     my $request = $buffer;
+    # print("REQUEST: $request\n");
 
     if ($request =~ /Content-Length: (\d+)/) {
         $epoll::clients{$client_fd}{"content_length"} = $1;

@@ -4,16 +4,20 @@ use strict;
 use warnings;
 use Cwd;
 use JSON;
+use File::Copy;
 
 my %locations = (
     "streaming/upload" => \&create_streaming_path,
     "/profile/ploud/upload" => \&create_ploud_path,
-    "/update/streaming/manage/channel" => \&create_streaming_update_path
+    "/update/streaming/manage/channel" => \&create_streaming_update_path,
+    "/admin/gamelauncher/add" => \&create_game_launcher_path,
 );
 
 my %upload_name_list = (
     "title" => "metadata",
     "description" => "metadata",
+    "version" => "metadata",
+    "game_name" => "metadata",
     "thumbnail" => "thumbnail"
 );
 
@@ -174,8 +178,6 @@ sub create_meta_data {
         open my $user_fh, '>>', $user_videos_file or die "Cannot open file: $!";
         print($user_fh "$trimmed_filepath\n");
         close $user_fh;
-    } else {
-
     }
 
     my $skip;
@@ -194,8 +196,44 @@ sub create_meta_data {
         }
     }
 
-    if (!$epoll::clients{$client_fd}{video}) {
+    if (!$epoll::clients{$client_fd}{video} && !$epoll::clients{$client_fd}{game}) {
         user_utils::update_user_metadata($main::user->{uuid}, \%meta_data);
+    }
+
+    if ($epoll::clients{$client_fd}{game}) {
+        my $version = $meta_data{version};
+        if ($version) {
+            my $version_path = "$dir_path/$version";
+            if (-d $version_path) {
+                http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_409("Version already exists"));
+                return;
+            }
+            mkdir $version_path or die "Cannot create directory: $!";
+            $filepath = "$dir_path/$version/metadata.json";
+            my ($trimmed_filepath) = $filepath =~ /$base_dir\/(.*)/; 
+            $meta_data{metadata_filepath} = $trimmed_filepath;
+
+            $file_path = "$dir_path/$version/$filename";
+            my ($trimmed_file_path) = $file_path =~ /$base_dir\/(.*)/;
+            $meta_data{filepath} = $trimmed_file_path;
+
+            my $game_id = $epoll::clients{$client_fd}{game_id};
+            $meta_data{id} = $game_id;
+
+            my $game_name = $meta_data{game_name};
+            print("GAME NAME: $game_name\n");
+            
+            move($epoll::clients{$client_fd}{filepath}, $file_path);
+
+            my $file_hash = user_utils::create_file_hash("sha256", $file_path);
+            $meta_data{hash} = $file_hash;
+            print("HASH: $file_hash\n");
+            csharp_game::add_to_gamelist($game_id, $game_name);
+            csharp_game::update_game_metadata($game_id, $game_name, $version, $file_hash);
+        } else {
+            http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_400("Version not defined"));
+            return;
+        }
     }
 
     open my $fh, '>', $filepath or die "Cannot open file: $!";
@@ -204,63 +242,160 @@ sub create_meta_data {
     close $fh;
 }
 
+# sub get_metadata {
+#     my ($client_fd) = @_;
+
+#     # print("GETTING METADATA\n");
+#     if (!$epoll::clients{$client_fd}{upload_tries} > 3) {
+#         # ! KILL CONNECTION
+#         die "Too many tries";
+#     }
+#     if (!$epoll::clients{$client_fd}{read_temp_file}) {
+#         print("READING TEMP FILE\n");
+#         print($epoll::clients{$client_fd}{temp_file});
+#         my $data = body_utils::load_temp_file($epoll::clients{$client_fd}{temp_file});
+#         print("DATA: $data\n");
+#         $epoll::clients{$client_fd}{read_temp_file} = 1;
+#         if ($data =~ /\r\n\r\n/) {
+#             my ($metadata, $file_data) = split(/\r\n\r\n/, $data, 2);
+#             print("METADATA FOUND: $metadata\n");
+#             print("FILE DATA: $file_data\n");
+#             # print("DATA123: $file_data\n");
+#             extract_metadata($metadata, $client_fd, $file_data);
+#             $epoll::clients{$client_fd}{finished_metadata} = 1;
+#         } else {
+#             return;
+#         }
+#     } else {
+#         my $data = body_utils::load_temp_file($epoll::clients{$client_fd}{temp_file});
+#         my $bytes_read = sysread($epoll::clients{$client_fd}{socket}, my $buffer, 1024);
+#         $data .= $buffer;
+#         if ($bytes_read == 0) {
+#             return;
+#         }
+#         if ($data =~ /\r\n\r\n/) {
+#             my ($metadata, $file_data) = split(/\r\n\r\n/, $data, 2);
+#             # print("DATA123: $file_data\n");
+#             extract_metadata($metadata, $client_fd, $file_data);
+#             $epoll::clients{$client_fd}{finished_metadata} = 1;
+#         }
+#     }
+
+#     if (!$epoll::clients{$client_fd}{finished_metadata}) {
+#         $epoll::clients{$client_fd}{upload_tries}++;
+#     }
+# }
 sub get_metadata {
     my ($client_fd) = @_;
+    my $client = $epoll::clients{$client_fd};
 
-    # print("GETTING METADATA\n");
-    if (!$epoll::clients{$client_fd}{upload_tries} > 3) {
-        # ! KILL CONNECTION
-        die "Too many tries";
-    }
-    if (!$epoll::clients{$client_fd}{read_temp_file}) {
-        my $data = body_utils::load_temp_file($epoll::clients{$client_fd}{temp_file});
-        $epoll::clients{$client_fd}{read_temp_file} = 1;
-        if ($data =~ /\r\n\r\n/) {
-            my ($metadata, $file_data) = split(/\r\n\r\n/, $data, 2);
-            # print("DATA123: $file_data\n");
-            extract_metadata($metadata, $client_fd, $file_data);
-            $epoll::clients{$client_fd}{finished_metadata} = 1;
+    return if $client->{upload_tries}++ > 3;
+
+    my $data = $client->{buffer} // '';
+    $data .= body_utils::load_temp_file($client->{temp_file}) if !$client->{read_temp_file};
+    $client->{read_temp_file} = 1;
+
+    my $bytes_read = sysread($client->{socket}, my $buffer, 1024);
+    $data .= $buffer if $bytes_read > 0;
+
+    my $boundary = $client->{boundary} or die "Boundary not defined";
+
+    # Split parts with proper boundary handling
+    my @parts = split(/\r?\n--\Q$boundary\E(?:--)?\r?\n?/, $data);
+
+    foreach my $part (@parts) {
+        $part =~ s/^.*?--\Q$boundary\E//s; # Clean leading fragments
+        $part =~ s/--\Q$boundary\E.*$//s;   # Clean trailing fragments
+        next if $part =~ /^\s*$/;            # Skip empty parts
+
+        last if $part =~ /^--\Q$boundary\E--/; # Closing boundary
+        print("PART: $part\n");
+        if ($part =~ /^([^\r\n]+)(?:\r\n|\r|\n)+(.*)$/s) {
+            my ($headers, $body) = ($1, $2);
+            if ($headers =~ /filename="([^"]*)"/) {
+                extract_metadata($headers, $client_fd, $body);
+                $client->{finished_metadata} = 1;
+                last;
+            } else {
+                # Handle metadata fields (e.g., "version", "game_name")
+                my ($name) = $headers =~ /name="([^"]*)"/;
+                next unless $name;
+                $name = user_utils::encode_uri($name);
+                my $upload_meta_data_file = "/tmp/upload_meta_data_$client_fd";
+                if (!-e $upload_meta_data_file) {
+                    open my $fh, '>', $upload_meta_data_file or die "Cannot open file: $!";
+                    binmode $fh;
+                    print $fh "{}";
+                    close $fh;
+                }
+                open my $meta_fh, '<', $upload_meta_data_file or die "Cannot open file: $!";
+                my $data = do { local $/; <$meta_fh> };
+                print("DATA: $data\n");
+                close $meta_fh;
+                my $json = decode_json($data);
+                print("NAME: $name\n");
+                print("BODY: $body\n");
+                $json->{$name} = $body;
+                print("BODY: $body\n");
+                open $meta_fh, '>', $upload_meta_data_file or die "Cannot open file: $!";
+                print $meta_fh encode_json($json);
+                close $meta_fh;
+            }
         } else {
-            return;
-        }
-    } else {
-        my $data = body_utils::load_temp_file($epoll::clients{$client_fd}{temp_file});
-        my $bytes_read = sysread($epoll::clients{$client_fd}{socket}, my $buffer, 1024);
-        $data .= $buffer;
-        if ($bytes_read == 0) {
-            return;
-        }
-        if ($data =~ /\r\n\r\n/) {
-            my ($metadata, $file_data) = split(/\r\n\r\n/, $data, 2);
-            # print("DATA123: $file_data\n");
-            extract_metadata($metadata, $client_fd, $file_data);
-            $epoll::clients{$client_fd}{finished_metadata} = 1;
+            $client->{buffer} = $part; # Save incomplete part
         }
     }
 
-    if (!$epoll::clients{$client_fd}{finished_metadata}) {
-        $epoll::clients{$client_fd}{upload_tries}++;
-    }
+    $client->{buffer} = '' if $client->{finished_metadata};
 }
 
+
 sub extract_metadata {
-    my ($metadata, $client_fd, $file_data) = @_;
-    # print("METADATA: $metadata\n");
-    # die;
-    my ($filename) = $metadata =~ /filename="(.*)"/;
-    $filename = user_utils::encode_uri($filename);
-    my ($content_type) = $metadata =~ /Content-Type: (.*)/; 
-    my ($name) = $metadata =~ /name="(.*)"; filename/;
-    $epoll::clients{$client_fd}{filename} = $filename;
-    $epoll::clients{$client_fd}{content_type} = $content_type;
-    $epoll::clients{$client_fd}{name} = $name;
-    # print("FILE DATA: $file_data\n");
+    my ($headers, $client_fd, $file_data) = @_;
+    my $client = $epoll::clients{$client_fd};
+
+    # Extract filename (more robust regex)
+    my ($filename) = $headers =~ /filename="([^"]*)"/;
+    $filename = user_utils::encode_uri($filename) if $filename;
+
+    # Extract Content-Type
+    my ($content_type) = $headers =~ /Content-Type:\s*([^\r\n]+)/i;
+
+    # Extract field name
+    my ($name) = $headers =~ /name="([^"]*)"/;
+
+    $client->{filename} = $filename;
+    $client->{content_type} = $content_type;
+    $client->{name} = $name;
+
+    print("FILENAME: $filename\n");
+    print("CONTENT TYPE: $content_type\n");
+    print("NAME: $name\n");
+
     create_file($client_fd, $file_data);
 }
 
+# sub extract_metadata {
+#     my ($metadata, $client_fd, $file_data) = @_;
+#     # print("METADATA: $metadata\n");
+#     # die;
+#     my ($filename) = $metadata =~ /filename="(.*)"/;
+#     $filename = user_utils::encode_uri($filename);
+#     my ($content_type) = $metadata =~ /Content-Type: (.*)/; 
+#     my ($name) = $metadata =~ /name="(.*)"; filename/;
+#     $epoll::clients{$client_fd}{filename} = $filename;
+#     $epoll::clients{$client_fd}{content_type} = $content_type;
+#     $epoll::clients{$client_fd}{name} = $name;
+#     # print("FILE DATA: $file_data\n");
+#     print("FILENAME: $filename\n");
+#     print("CONTENT TYPE: $content_type\n");
+#     print("NAME: $name\n");
+#     create_file($client_fd, $file_data);
+# }
+
 sub create_file {
     my ($client_fd, $file_data) = @_;
-
+    print("CREATING FILE\n");
     my $uuid = $main::user->{uuid};
 
     if (!$uuid) {
@@ -273,19 +408,24 @@ sub create_file {
     # print("USER PATH: $user_path\n");
     if (!-d $user_path) {
         # print("WADAFUCK\n");
-        mkdir $user_path or die "Cannot create directory: $!";
+        die;
     }
 
     my $filepath;
     my $dir_path;
 
+    print("LOCATION: $epoll::clients{$client_fd}{location}\n");
     foreach my $key (keys %locations) {
+        print("KEY: $key\n");
         if ($epoll::clients{$client_fd}{location} =~ /$key/) {
             ($filepath, $dir_path) = $locations{$key}($client_fd, $user_path);
             last
         } 
     }    
 
+    print("STILL ALIVE\n");
+    print("FILEPATH: $filepath\n");
+    print("DIR PATH: $dir_path\n");
     if (!$filepath) {
         http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_404());
         return;
@@ -301,7 +441,6 @@ sub create_file {
 
     $epoll::clients{$client_fd}{filepath} = $filepath;
     $epoll::clients{$client_fd}{dir_path} = $dir_path;
-
     # print("FILE DATA: $file_data\n");
 
     my $boundary = $epoll::clients{$client_fd}{boundary};
@@ -326,6 +465,42 @@ sub create_file {
     print $fh $write_data;
     close $fh;
     # print("FILE CREATED, now reading until finished\n");
+}
+
+sub create_game_launcher_path {
+    my ($client_fd, $user_path) = @_;
+    $epoll::clients{$client_fd}{game} = 1;
+    my $base_dir = getcwd();
+    my $game_id = csharp_game::create_game_id();
+    $epoll::clients{$client_fd}{game_id} = $game_id;
+
+    my $launcher_path = "$base_dir/Data/CSharpGameLauncher";
+    if (!-d $launcher_path) {
+        mkdir $launcher_path or die "Cannot create directory: $!";
+    }
+    my $games_path = "$launcher_path/Games";
+    if (!-d $games_path) {
+        mkdir $games_path or die "Cannot create directory: $!";
+    }
+    my $game_path = "$games_path/$game_id";
+    if (-d $game_path) {
+        http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_409("Game already exists"));
+        return;
+    }
+    mkdir $game_path or die "Cannot create directory: $!";
+    my $metadata_file = "$game_path/metadata.json";
+    open my $fh, '>', $metadata_file or die "Cannot open file: $!";
+    print $fh "{}";
+    close $fh;
+
+    $epoll::clients{$client_fd}{game_id} = $game_id;
+
+    my $games_path = "$game_path/Versions";
+    if (!-d $games_path) {
+        mkdir $games_path or die "Cannot create directory: $!";
+    }
+    my $file_path = "$games_path/$epoll::clients{$client_fd}{filename}";
+    return ($file_path, $games_path);
 }
 
 sub create_ploud_path {
