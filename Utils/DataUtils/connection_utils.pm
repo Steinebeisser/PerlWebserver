@@ -89,13 +89,20 @@ sub get_client_data {
                 #     http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_413("Server storage exceeded"));
                 #     return;
                 # }
-                if ($content_length > $max_file_size) {
-                    # print("File too large\n");
+                if ($content_length > $max_file_size && !$main::user->{"role"} eq "admin") {
+                    print("File too large\n");
 
-                    # print("CURRENT USED STORAGE: ".user_utils::get_current_used_storage($uuid)."\n");
-                    # print("MAX FILE SIZE: $max_file_size\n");
-                    # print("CONTENT LENGTH: $content_length\n");
+                    print("CURRENT USED STORAGE: ".user_utils::get_current_used_storage($uuid)."\n");
+                    print("MAX FILE SIZE: $max_file_size\n");
+                    print("CONTENT LENGTH: $content_length\n");
                     http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_413("File too large"));
+                    return;
+                }
+                my $server_storage = user_utils::get_server_storage();
+                my $free_server_storage = $server_storage->{"free"};
+                if ($content_length > $free_server_storage) {
+                    print("Server storage exceeded\n");
+                    http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_413("Server storage exceeded"));
                     return;
                 }
             }
