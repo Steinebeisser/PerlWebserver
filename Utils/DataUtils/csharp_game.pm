@@ -28,7 +28,8 @@ sub get_game_list {
 
 sub get_game_stats {
     my ($client_socket, $path) = @_;
-
+    # print("PATH: $path\n");
+    $path = lc $path;
     my ($game_id) = $path =~ /gamelauncher\/gamestats\/(.*)/;
     my $base_dir = getcwd();
     my $game_metadata_file = "$base_dir/Data/CSharpGameLauncher/Games/$game_id/metadata.json";
@@ -55,17 +56,28 @@ sub get_game_stats {
     my $json = decode_json($data);
     my $version = $json->{version};
     my $hash = $json->{hash};
-    my $name = $json->{name};
-    my $id = $json->{id};
+    my ($extension) = $json->{filename} =~ /\.(\w+)$/;
+    my $patch_name = "$json->{game_name}-$json->{version}.$extension";
+    my $name = $json->{game_name};
+    my $id = $json->{id} + 0;
+    # print "Type20: " . (0 + $id eq $id ? "Integer" : "String") . "\n";
     my $file_size = $json->{size};
     my $uploaded_at = $json->{uploaded_at};
+    my $force_new_version = $json->{force_new_version};
+    my $executable = $patch_name;
+    if (!$force_new_version) {
+        $force_new_version = JSON::false;
+    }
     my $send_data = {
-        Id => $game_id,
+        Id => $id,
         Version => $version,
         Hash => $hash,
         Name => $name,
+        PatchName => $patch_name,
         Size => $file_size,
         UploadedAt => $uploaded_at,
+        Executable => $executable,
+        ForceNewVersion => $force_new_version
     };
     $send_data = encode_json($send_data);
     my $response = HTTP_RESPONSE::OK_WITH_DATA($send_data, "gamestats.json");
@@ -86,7 +98,7 @@ sub create_game_id {
         $game_path = "$base_dir/Data/CSharpGame/$id";
     }
 
-
+    # print "Type: " . (0 + $id eq $id ? "Integer" : "String") . "\n";
     return $id;
 }
 
@@ -127,7 +139,7 @@ sub add_to_gamelist {
 }
 
 sub update_game_metadata {
-    my ($game_id, $game_name, $version, $hash) = @_;
+    my ($game_id, $game_name, $version, $hash, $force_new_version) = @_;
 
     my $base_dir = getcwd();
     my $game_path = "$base_dir/Data/CSharpGameLauncher/Games/$game_id";
@@ -145,6 +157,7 @@ sub update_game_metadata {
         name => $game_name,
         version => $version,
         hash => $hash,
+        forceNewVersion => $force_new_version
     };
     $new_data = encode_json($new_data);
     open my $fh, '>', $metadata_file or die "Could not open file '$metadata_file' $!";
@@ -155,6 +168,7 @@ sub update_game_metadata {
 sub download_game {
     my ($client_socket, $route) = @_;
 
+    $route = lc $route;
     my ($game_id) = $route =~ /gamelauncher\/download\/(.*)/;
     if ($game_id eq "launcher") {
         print("DOWNLOADING LAUNCHER\n");
@@ -194,7 +208,7 @@ sub download_game {
     my $json = decode_json($data);
     my $file_path = $json->{filepath};
     my $full_file_path = "$base_dir/$file_path";
-    my $name = $json->{name};
+    my $name = $json->{game_name};
     my $version = $json->{version};
     if (!-e $full_file_path) {
         return;
@@ -224,7 +238,8 @@ sub download_launcher {
     my ($client_socket) = @_;
 
     my $base_dir = getcwd();
-    my $launcher_file_name = "GameLauncher-0.1.exe";
+    # my $launcher_file_name = "GameLauncher-0.1.exe";
+    my $launcher_file_name = "GameLauncherSetup v0.1.exe";
     my $game_file = "$base_dir/Data/CSharpGameLauncher/Launcher/$launcher_file_name";
     print("BONJOUR\n");
     if (!-e $game_file) {
