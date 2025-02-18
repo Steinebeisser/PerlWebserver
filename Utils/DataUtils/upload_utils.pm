@@ -22,14 +22,12 @@ my %upload_name_list = (
 );
 
 my $client; 
-
 my $save_length = 50;
 
 sub handle_upload {
     my ($client_fd) = @_;
 
     $client = $epoll::clients{$client_fd};
-
     my $content_length = $epoll::clients{$client_fd}{content_length};
 
     if ($epoll::clients{$client_fd}{error}) {
@@ -38,6 +36,8 @@ sub handle_upload {
     }
 
     if (!$epoll::clients{$client_fd}{finished_metadata} && !$epoll::clients{$client_fd}{error}) {
+        my $boundary = $client->{boundary};
+        $save_length = length($boundary) + 8;
         # print("GETTING METADATA\n");
         get_metadata($client_fd);
         $epoll::clients{$client_fd}{write_file} = $epoll::clients{$client_fd}{filepath};
@@ -141,6 +141,7 @@ sub create_meta_data {
         filepath => $trimmed_filepath,
         metadata_filepath => $trimmed_metadata_filepath,
         uploaded_at => time(),
+        content_type => $content_type,
         size => -s $file_path
     );
 
@@ -193,6 +194,13 @@ sub create_meta_data {
         close $meta_fh;
         foreach my $key (keys %upload_meta_data) {
             $meta_data{$key} = $upload_meta_data{$key};
+            if ($key eq "force_new_version") {
+                if ($meta_data{$key} eq "true") {
+                    $meta_data{$key} = JSON::true;
+                } else {
+                    $meta_data{$key} = JSON::false;
+                }
+            }
         }
     }
 
@@ -218,7 +226,10 @@ sub create_meta_data {
             $meta_data{filepath} = $trimmed_file_path;
 
             my $game_id = $epoll::clients{$client_fd}{game_id};
+            print "Type3: " . (0 + $game_id eq $game_id ? "Integer" : "String") . "\n";
             $meta_data{id} = $game_id;
+            my $new_game_id = $meta_data{id};
+            print "Type4: " . (0 + $new_game_id eq $new_game_id ? "Integer" : "String") . "\n";
 
             my $game_name = $meta_data{game_name};
             print("GAME NAME: $game_name\n");
@@ -227,9 +238,12 @@ sub create_meta_data {
 
             my $file_hash = user_utils::create_file_hash("sha256", $file_path);
             $meta_data{hash} = $file_hash;
+
+            my $force_new_version = $meta_data{force_new_version};
+
             print("HASH: $file_hash\n");
             csharp_game::add_to_gamelist($game_id, $game_name);
-            csharp_game::update_game_metadata($game_id, $game_name, $version, $file_hash);
+            csharp_game::update_game_metadata($game_id, $game_name, $version, $file_hash, $force_new_version);
         } else {
             http_utils::serve_error($epoll::clients{$client_fd}{socket}, HTTP_RESPONSE::ERROR_400("Version not defined"));
             return;
@@ -289,80 +303,86 @@ sub get_metadata {
     my ($client_fd) = @_;
     my $client = $epoll::clients{$client_fd};
 
-    return if $client->{upload_tries}++ > 3;
+    if ($client->{upload_tries}++ > 6) {
+        return;
+    }
 
-    my $data = $client->{buffer} // '';
-    $data .= body_utils::load_temp_file($client->{temp_file}) if !$client->{read_temp_file};
-    $client->{read_temp_file} = 1;
+    my $data = $client->{buffer};
+    if (!$client->{read_temp_file}) {
+        $data .= body_utils::load_temp_file($client->{temp_file});
+        my $upload_meta_data_file = "/tmp/upload_meta_data_$client_fd";
+        open my $fh, '>', $upload_meta_data_file or die "Cannot open file: $!";
+        binmode $fh;
+        print $fh "{}";
+        close $fh;
+        $client->{read_temp_file} = 1;      
+    }
+    print("DATA: $data\n");
+    print("SOCKET: $client->{socket}\n");
 
     my $bytes_read = sysread($client->{socket}, my $buffer, 1024);
     $data .= $buffer if $bytes_read > 0;
 
     my $boundary = $client->{boundary} or die "Boundary not defined";
+    $client->{buffer} = '';
 
-    # Split parts with proper boundary handling
-    my @parts = split(/\r?\n--\Q$boundary\E(?:--)?\r?\n?/, $data);
+    my @parts = split(/(?:\r\n|^)--\Q$boundary\E(?:--)?(?=\r\n|--)/, $data);
+
+    shift @parts if @parts;
 
     foreach my $part (@parts) {
-        $part =~ s/^.*?--\Q$boundary\E//s; # Clean leading fragments
-        $part =~ s/--\Q$boundary\E.*$//s;   # Clean trailing fragments
-        next if $part =~ /^\s*$/;            # Skip empty parts
+        next if $part =~ /^\s*$/;
 
-        last if $part =~ /^--\Q$boundary\E--/; # Closing boundary
-        print("PART: $part\n");
-        if ($part =~ /^([^\r\n]+)(?:\r\n|\r|\n)+(.*)$/s) {
+        if ($part =~ /--\s*$/) {
+            $client->{finished_metadata} = 1;
+            last;
+        }
+
+        if ($part =~ /^(.*?)\r\n\r\n(.*)$/s) {
             my ($headers, $body) = ($1, $2);
+
             if ($headers =~ /filename="([^"]*)"/) {
                 extract_metadata($headers, $client_fd, $body);
                 $client->{finished_metadata} = 1;
                 last;
             } else {
-                # Handle metadata fields (e.g., "version", "game_name")
                 my ($name) = $headers =~ /name="([^"]*)"/;
                 next unless $name;
                 $name = user_utils::encode_uri($name);
+
                 my $upload_meta_data_file = "/tmp/upload_meta_data_$client_fd";
-                if (!-e $upload_meta_data_file) {
-                    open my $fh, '>', $upload_meta_data_file or die "Cannot open file: $!";
-                    binmode $fh;
-                    print $fh "{}";
-                    close $fh;
+                my $json = {};
+                if (-e $upload_meta_data_file) {
+                    open my $meta_fh, '<', $upload_meta_data_file or die "Cannot open file: $!";
+                    local $/;
+                    $json = decode_json(<$meta_fh>);
+                    close $meta_fh;
                 }
-                open my $meta_fh, '<', $upload_meta_data_file or die "Cannot open file: $!";
-                my $data = do { local $/; <$meta_fh> };
-                print("DATA: $data\n");
-                close $meta_fh;
-                my $json = decode_json($data);
-                print("NAME: $name\n");
-                print("BODY: $body\n");
+
                 $json->{$name} = $body;
-                print("BODY: $body\n");
-                open $meta_fh, '>', $upload_meta_data_file or die "Cannot open file: $!";
+
+                open my $meta_fh, '>', $upload_meta_data_file or die "Cannot open file: $!";
                 print $meta_fh encode_json($json);
                 close $meta_fh;
             }
         } else {
-            $client->{buffer} = $part; # Save incomplete part
+            $client->{buffer} .= $part;
         }
     }
-
-    $client->{buffer} = '' if $client->{finished_metadata};
 }
 
 
 sub extract_metadata {
     my ($headers, $client_fd, $file_data) = @_;
     my $client = $epoll::clients{$client_fd};
-
-    # Extract filename (more robust regex)
-    my ($filename) = $headers =~ /filename="([^"]*)"/;
+    print("HEADER: $headers\n");
+    print("FILE DATA: $file_data\n");
+    my ($filename) = $headers =~ /filename="(.*)"/;
     $filename = user_utils::encode_uri($filename) if $filename;
 
-    # Extract Content-Type
-    my ($content_type) = $headers =~ /Content-Type:\s*([^\r\n]+)/i;
+    my ($content_type) = $headers =~ /Content-Type: (.*)/; 
 
-    # Extract field name
-    my ($name) = $headers =~ /name="([^"]*)"/;
+    my ($name) = $headers =~ /name="(.*)"; filename/;
 
     $client->{filename} = $filename;
     $client->{content_type} = $content_type;
@@ -494,6 +514,8 @@ sub create_game_launcher_path {
     close $fh;
 
     $epoll::clients{$client_fd}{game_id} = $game_id;
+    my $new_game_id = $epoll::clients{$client_fd}{game_id};
+    print "Type2: " . (0 + $new_game_id eq $new_game_id ? "Integer" : "String") . "\n";
 
     my $games_path = "$game_path/Versions";
     if (!-d $games_path) {
@@ -787,7 +809,7 @@ sub write_file_until_boundary {
     }
     # print("SYSREAD BYTES: $bytes_read\n");
     # $sysread_bytes = $bytes_read;
-
+    # print("BUFFER: $client->{buffer}\n");
     $client->{buffer} .= $buffer;
 
     process_buffer($client_fd);
