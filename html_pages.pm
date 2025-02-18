@@ -103,6 +103,7 @@ use Utils::DataUtils::body_utils;
 use Utils::DataUtils::calender_utils;
 use Utils::DataUtils::channel_utils;
 use Utils::DataUtils::csharp_game;
+use Utils::DataUtils::friend_utils;
 use Utils::DataUtils::language_utils;
 use Utils::DataUtils::memory_utils;
 use Utils::DataUtils::websocket_utils;
@@ -143,6 +144,8 @@ use Utils::StyleUtils::scheme_utils;
 
 use Utils::HtmlPagesUtils::Blog::get_blog_pages;
 use Utils::HtmlPagesUtils::Blog::post_blog_pages;
+
+use Utils::HtmlPagesUtils::Friends::post_friends;
 
 use Utils::HtmlPagesUtils::Gameroom::get_gameroom_page;
 use Utils::HtmlPagesUtils::Gameroom::Memory::get_memory_pages;

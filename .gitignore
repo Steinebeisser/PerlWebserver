@@ -34,3 +34,5 @@ Data/CSharpGameLauncher/Games/*
 !Data/CSharpGameLauncher/Games/.gitkeep
 Data/CSharpGameLauncher/Launcher/*
 !Data/CSharpGameLauncher/Launcher/.gitkeep
+Data/Sessions/*
+!Data/Sessions/.gitkeep

@@ -42,6 +42,8 @@ my @skip_routes = (
 my %index_router = (
     "/" => \&get_index_page::get_index,
 
+    "/ownuser" => \&get_users::get_main_user,
+
     "/favicon.ico" => \&get_favicon::get_favicon,
 
     "/about" => \&get_about_page::get_about,
@@ -99,10 +101,10 @@ my %index_router = (
     "/admin/users/ban" => \&get_admin_users_pages::get_admin_ban_user,
     "/admin/users/delete" => \&get_admin_users_pages::get_admin_delete_user,
 
-    "/admin/updateLog" => \&get_admin_update_log_manage::get_admin_update_log_manage,
-    "/admin/updateLog/add" => \&get_admin_update_log_manage::get_admin_update_log_add,
-    "/admin/updateLog/edit" => \&get_admin_update_log_manage::get_admin_update_log_edit, 
-    "/admin/updateLog/delete" => \&get_admin_update_log_manage::get_admin_update_log_delete, 
+    "/admin/updatelog" => \&get_admin_update_log_manage::get_admin_update_log_manage,
+    "/admin/updatelog/add" => \&get_admin_update_log_manage::get_admin_update_log_add,
+    "/admin/updatelog/edit" => \&get_admin_update_log_manage::get_admin_update_log_edit, 
+    "/admin/updatelog/delete" => \&get_admin_update_log_manage::get_admin_update_log_delete, 
 
     "/admin/gamelauncher" => \&get_admin_game_launcher::get_admin_game_launcher,
     "/admin/gamelauncher/add" => \&get_admin_game_launcher::get_admin_game_launcher_add,
@@ -127,13 +129,17 @@ my %index_router = (
     "/gamelauncher/gamelist" => \&csharp_game::get_game_list,
     "/gamelauncher/gamestats" => \&csharp_game::get_game_stats,
     "/gamelauncher/download" => \&csharp_game::download_game,
+
+    
 );
 
 my %post_router = (
     "/add/email" => \&email_utils::post_add_email,
 
     "/login" => \&login_user::post_login,
+    "/login/launcher" => \&login_user::post_login_launcher,
     "/register" => \&register_user::post_register,
+    "/register/launcher" => \&register_user::post_register_launcher,
     "/logout" => \&logout_user::get_logout,
 
     "/profile/ploud/upload" => \&post_profile_pages::post_profile_ploud_upload,
@@ -155,9 +161,9 @@ my %post_router = (
     "/admin/users/ban" => \&post_admin_users_pages::post_admin_ban_user,
     "/admin/users/delete" => \&post_admin_users_pages::post_admin_delete_user,
 
-    "/admin/updateLog/add" => \&post_admin_update_log_manage::post_admin_update_log_add,
-    "/admin/updateLog/edit" => \&post_admin_update_log_manage::post_admin_update_log_edit, 
-    "/admin/updateLog/delete" => \&post_admin_update_log_manage::post_admin_update_log_delete,
+    "/admin/updatelog/add" => \&post_admin_update_log_manage::post_admin_update_log_add,
+    "/admin/updatelog/edit" => \&post_admin_update_log_manage::post_admin_update_log_edit, 
+    "/admin/updatelog/delete" => \&post_admin_update_log_manage::post_admin_update_log_delete,
 
     "/important/contact_devs" => \&post_contact_devs::post_contact_devs,
 
@@ -170,6 +176,8 @@ my %post_router = (
     "/update/streaming/video" => \&post_streaming_pages::post_streaming_video,
     "/update/streaming/video/comments" => \&post_streaming_pages::post_streaming_video_comments,
     "/update/streaming/video/replies" => \&post_streaming_pages::post_streaming_video_replies,
+
+    "/friend/request" => \&post_friends::post_friend_request,
 );
 
 print("Creating main::Epoll\n");
@@ -215,7 +223,7 @@ print("Accepting connections\n");
 epoll_ctl($main::epoll, EPOLL_CTL_ADD, fileno $server, EPOLLIN) >= 0 || die "Can't add server socket to main::epoll: $!";
 # epoll_ctl($main::epoll, EPOLL_CTL_ADD, fileno $udp_socket, EPOLLIN) >= 0 || die "Can't add udp socket to main::epoll: $!";
 # sleep(2);
-# smtp_send::send_email("KaiEdwin.Pohl\@sinc.de", "Paul.Geisthardt\@sinc.de", "Bonjour de la Kai", "Falsche Email Angegeben, Upsi");
+# smtp_send::send_email("paul.geisthardt\@sinc.de", "paul.geisthardt\@sinc.de", "Test", "Test2");
 epoll_loop();
 
 
@@ -389,8 +397,13 @@ sub remove_client_out {
 sub remove_client_complete {
     my ($client_fd) = @_;
     # print("REMOVING CLIENT\n");
-    close($epoll::clients{$client_fd}{"socket"});
-    delete $epoll::clients{$client_fd};
+    if ($epoll::clients{$client_fd}{"socket"}) {
+        close($epoll::clients{$client_fd}{"socket"});
+    }
+    if ($epoll::clients{$client_fd}) {
+        delete $epoll::clients{$client_fd};
+    }
+    return;
 }
 
 sub handle_normal_request {
@@ -408,7 +421,6 @@ sub handle_normal_request {
     $main::header = $epoll::clients{$client_fd}{"header"};
     # print("HEADER: $main::header\n");
     ($main::uri) = $main::header =~ /(?:GET|POST) (.*?) HTTP/;
-    $main::uri = lc $main::uri;
     # print("URI: $main::uri\n");
     # print("1");
     my $method = handle_method($client_socket, $main::header);
@@ -542,12 +554,13 @@ sub handle_get_index {
         return;
     }
 
+    my $lc_uri = lc $main::uri;
     # print("HANDLING GET REQUEST\n");
     # print("MAIN URI: $main::uri\n");
     foreach my $route (@sorted_routes) {
         $route = lc $route;
         # print "Checking route $route\n";
-        if ($main::uri =~ /^$route/) {
+        if ($lc_uri =~ /^$route/) {
             # print "Received a get request for $route\n";
             if ($route eq "/verify") {
                 # print("ROUTE: $route\n");
