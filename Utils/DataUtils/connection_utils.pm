@@ -222,4 +222,19 @@ sub get_port_from_host {
     }
     return ($host, $port);
 }
+
+sub get_server_ip {
+    my $ifconfig_output = `ifconfig`;
+    my @interfaces = split(/\n\n/, $ifconfig_output);
+    foreach my $interface (@interfaces) {
+        if ($interface =~ /^(.*?):\sflags=(?:.*)inet (.*?)\s/s) {
+            if ($1 =~ /lo/ && $2 == 127.0.0.1 || $1 =~ /docker/) {
+                next;
+            }
+            return $2;
+        }
+    }
+
+    return;
+}
 1;

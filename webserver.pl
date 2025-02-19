@@ -14,7 +14,6 @@ use html_pages;
 
 $SIG{PIPE} = 'IGNORE';
 
-$server::ip = "172.17.77.9";
 my $cookie_language;
 $main::max_storage = 1*1024*1024*1024; # 1GB
 my $cookie_dark_mode;
@@ -27,6 +26,11 @@ my $port = 80;
 my $udp_port = 8080;
 $server::storage_bottleneck = 0.8;
 # my %memory::spectate_games;
+$server::ip = connection_utils::get_server_ip();
+print("SERVER IP: $server::ip\n");
+if (!defined $server::ip) {
+    die "Can't get server ip\n";
+}
 
 my @skip_routes = (
     "/logout",
@@ -49,6 +53,8 @@ my %index_router = (
     "/about" => \&get_about_page::get_about,
 
     "/updateLog" => \&get_update_log_page::get_update_log,
+
+    "/friends/requests" => \&get_friends::get_friend_requests,
     
     "/login" => \&get_login_page::get_login,
     "/register" => \&get_register_page::get_register,
@@ -130,7 +136,7 @@ my %index_router = (
     "/gamelauncher/gamestats" => \&csharp_game::get_game_stats,
     "/gamelauncher/download" => \&csharp_game::download_game,
 
-    
+    "/server/ip" => \&get_server_ip::get_server_ip,
 );
 
 my %post_router = (
@@ -177,7 +183,7 @@ my %post_router = (
     "/update/streaming/video/comments" => \&post_streaming_pages::post_streaming_video_comments,
     "/update/streaming/video/replies" => \&post_streaming_pages::post_streaming_video_replies,
 
-    "/friend/request" => \&post_friends::post_friend_request,
+    "/friends/request" => \&post_friends::post_friend_request,
 );
 
 print("Creating main::Epoll\n");

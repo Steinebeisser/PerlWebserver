@@ -145,6 +145,7 @@ use Utils::StyleUtils::scheme_utils;
 use Utils::HtmlPagesUtils::Blog::get_blog_pages;
 use Utils::HtmlPagesUtils::Blog::post_blog_pages;
 
+use Utils::HtmlPagesUtils::Friends::get_friends;
 use Utils::HtmlPagesUtils::Friends::post_friends;
 
 use Utils::HtmlPagesUtils::Gameroom::get_gameroom_page;
@@ -157,6 +158,8 @@ use Utils::HtmlPagesUtils::Profile::get_profile_pages;
 use Utils::HtmlPagesUtils::Profile::post_profile_pages;
 
 use Utils::HtmlPagesUtils::Preferences::post_preferences;
+
+use Utils::HtmlPagesUtils::Server::get_server_ip;
 
 use Utils::HtmlPagesUtils::Admin::get_admin_page;
 use Utils::HtmlPagesUtils::Admin::Users::post_admin_users_pages;
