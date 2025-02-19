@@ -16,18 +16,22 @@ sub send_friend_request {
     my $json = decode_json($body);
 
     my $friend_username = $json->{username};
-
-    
+    print("FRIEND USERNAME: $friend_username\n");
+    if (user_utils::is_wide($friend_username)) {
+        print("IS WIDE\n");
+        $friend_username = user_utils::encode_uri($friend_username);
+    }
+    print("FRIEND USERNAME: $friend_username\n");
     my $friend_uuid = user_utils::get_uuid_by_username($friend_username);
     if (!$friend_uuid) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("User Not Found"));
         return;
     }
 
-    # if ($sender_uuid eq $friend_uuid) {
-    #     http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Cannot send friend request to yourself"));
-    #     return;
-    # }
+    if ($sender_uuid eq $friend_uuid) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Cannot send friend request to yourself"));
+        return;
+    }
 
     my $base_dir = getcwd();
     my $friend_path = "$base_dir/Data/UserData/Users/$friend_uuid/Friends";
@@ -73,6 +77,11 @@ sub send_friend_request {
         };
     }
 
+    if (are_users_friends($sender_uuid, $friend_uuid)) {
+        http_utils::send_http_response($client_socket, HTTP_RESPONSE::ERROR_400("Already friends"));
+        return;
+    }
+
     my $sent_requests_file = "$sender_path/sent_requests.json";
     if (!-e $sent_requests_file) {
         open $fh, '>', $sent_requests_file or do {
@@ -89,6 +98,11 @@ sub send_friend_request {
 
     my $sent_requests = decode_json($sent_requests_data);
 
+    if (has_pending_request($sender_uuid, $friend_uuid)) {
+        http_utils::send_http_response($client_socket, HTTP_RESPONSE::ERROR_400("Friend request already sent"));
+        return;
+    }
+
     my %sent_request = (
         UserId => $friend_uuid,
         TimeSentTimestamp => time()
@@ -99,6 +113,15 @@ sub send_friend_request {
     open $fh, '>', $sent_requests_file;
     print $fh encode_json($sent_requests);
     close $fh;
+
+    my %request = (
+            UserId => $friend_uuid,
+            UserName => user_utils::get_username_by_uuid($friend_uuid),
+            DisplayName => user_utils::get_displayname_by_uuid($friend_uuid),
+            TimeSentTimestamp => $sent_request{TimeSentTimestamp}
+    );
+
+    http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK_WITH_DATA(encode_json(\%request), "sent_request.json"));
 }
 
 sub get_received_requests {
@@ -193,15 +216,21 @@ sub accept_friend_request {
         return;
     }
 
-    remove_sent_friend_request($main::user->{uuid}, $friend_uuid, $client_socket);
+    remove_received_friend_request($main::user->{uuid}, $friend_uuid, $client_socket);
 
-    remove_received_friend_request($friend_uuid, $main::user->{uuid}, $client_socket);
+    remove_sent_friend_request($friend_uuid, $main::user->{uuid}, $client_socket);
 
-    add_friend($main::user->{uuid}, $friend_uuid, $client_socket);
+    if (are_users_friends($main::user->{uuid}, $friend_uuid)) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Already friends"));
+        return;
+    }
+
+    my $friend = add_friend($main::user->{uuid}, $friend_uuid, $client_socket);
 
     add_friend($friend_uuid, $main::user->{uuid}, $client_socket);
 
-    http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK("Friend Request Accepted"));
+
+    http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK_WITH_DATA(encode_json($friend), "friend.json"));
 }
 
 sub cancel_friend_request {
@@ -225,6 +254,29 @@ sub cancel_friend_request {
     remove_received_friend_request($friend_uuid, $main::user->{uuid}, $client_socket);
 
     http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK("Friend Request Cancelled"));
+}
+
+sub decline_friend_request {
+    my ($client_socket, $route, $temp_file) = @_;
+
+    my $body = body_utils::load_temp_file($temp_file);
+    my $json = decode_json($body);
+    my $friend_uuid = $json->{userId};
+    if (!$friend_uuid) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Invalid Request"));
+        return;
+    }
+
+    if (!user_utils::user_exists($client_socket, $friend_uuid)) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("User not found"));
+        return;
+    }
+
+    remove_sent_friend_request($friend_uuid, $main::user->{uuid}, $client_socket);
+
+    remove_received_friend_request($main::user->{uuid}, $friend_uuid, $client_socket);
+
+    http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK("Friend Request Declined"));
 }
 
 sub remove_received_friend_request {
@@ -257,6 +309,11 @@ sub remove_received_friend_request {
         } else {
             push @new_requests, $request;
         }
+    }
+
+    if (!$found) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Internal Server Error"));
+        return;
     }
 
     open $fh, '>', $requests_file;
@@ -328,13 +385,272 @@ sub add_friend {
 
     my %friend = (
         UserId => $friend_uuid,
-        TimeAddedTimestamp => time()
+        FriendsSinceTimestamp => time()
     );
 
     push @$friends, \%friend;
 
     open $fh, '>', $friends_file;
     print $fh encode_json($friends);
+    close $fh;
+
+    $friend{UserName} = user_utils::get_username_by_uuid($friend_uuid);
+    $friend{DisplayName} = user_utils::get_displayname_by_uuid($friend_uuid);
+    $friend{Status} = "Unknown";
+
+    return \%friend;
+}
+
+sub are_users_friends {
+    my ($uuid, $friend_uuid) = @_;
+
+    my $base_dir = getcwd();
+    my $friend_path = "$base_dir/Data/UserData/Users/$uuid/Friends";
+    if (!-d $friend_path) {
+        return 0;
+    }
+
+    my $friends_file = "$friend_path/friends.json";
+    if (!-e $friends_file) {
+        return 0;
+    }
+
+    open my $fh, '<', $friends_file;
+    my $friends_data = do { local $/; <$fh> };
+    close $fh;
+
+    my $friends = decode_json($friends_data);
+
+    foreach my $friend (@$friends) {
+        if ($friend->{UserId} eq $friend_uuid) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+sub has_pending_request {
+    my ($uuid, $friend_uuid) = @_;
+
+    my $base_dir = getcwd();
+    
+    my $friend_path = "$base_dir/Data/UserData/Users/$uuid/Friends";
+    if (!-d $friend_path) {
+        return 0;
+    }
+
+    my $requests_file = "$friend_path/sent_requests.json";
+    if (!-e $requests_file) {
+        return 0;
+    }
+
+    open my $fh, '<', $requests_file;
+    my $requests_data = do { local $/; <$fh> };
+    close $fh;
+
+    my $requests = decode_json($requests_data);
+
+    foreach my $request (@$requests) {
+        if ($request->{UserId} eq $friend_uuid) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+sub get_friends {
+    my ($client_socket, $route) = @_;
+
+    my $base_dir = getcwd();
+    my $friend_path = "$base_dir/Data/UserData/Users/$main::user->{uuid}/Friends";
+    if (!-d $friend_path) {
+        http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK("{}"));
+        return;
+    }
+
+    my $friends_file = "$friend_path/friends.json";
+    if (!-e $friends_file) {
+        http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK("{}"));
+        return;
+    }
+
+    open my $fh, '<', $friends_file;
+    my $friends_data = do { local $/; <$fh> };
+    close $fh;
+
+    my $friends = decode_json($friends_data);
+
+    my @friends;
+    foreach my $friend (@$friends) {
+        my $uuid = $friend->{UserId};
+        if (!user_utils::user_exists($client_socket, $uuid)) {
+            next;
+        }
+
+        my $displayname = user_utils::get_displayname_by_uuid($uuid) || "failed to fetch";
+        my $username = user_utils::get_username_by_uuid($uuid) || "failed to fetch"; 
+        my $friendsince = $friend->{FriendsSinceTimestamp} || 0;
+        my $status = "Unknown";
+        my %friend = (
+            UserId => $uuid,
+            UserName => $username,
+            DisplayName => $displayname,
+            FriendsSinceTimestamp => $friendsince,
+            Status => $status
+        );
+        push @friends, \%friend;
+    }
+
+    my $response = HTTP_RESPONSE::OK_WITH_DATA(encode_json(\@friends), "friends.json");
+    http_utils::send_http_response($client_socket, $response);
+}
+
+sub get_blocked_users {
+    my ($client_socket, $route) = @_;
+
+    my $base_dir = getcwd();
+    my $friend_path = "$base_dir/Data/UserData/Users/$main::user->{uuid}/Friends";
+    if (!-d $friend_path) {
+        http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK("{}"));
+        return;
+    }
+
+    my $blocked_users_file = "$friend_path/blocked_users.json";
+    if (!-e $blocked_users_file) {
+        http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK("{}"));
+        return;
+    }
+
+    open my $fh, '<', $blocked_users_file;
+    my $blocked_users_data = do { local $/; <$fh> };
+    close $fh;
+
+    my $blocked_users = decode_json($blocked_users_data);
+
+    my @sending_blocked_users;
+
+    foreach my $blocked_user (@$blocked_users) {
+        my $uuid = $blocked_user->{UserId};
+        if (!user_utils::user_exists($client_socket, $uuid)) {
+            next;
+        }
+
+        my $displayname = user_utils::get_displayname_by_uuid($uuid) || "failed to fetch";
+        my $username = user_utils::get_username_by_uuid($uuid) || "failed to fetch"; 
+        my $status = "Unknown";
+        my %blocked_user = (
+            UserId => $uuid,
+            UserName => $username,
+            DisplayName => $displayname
+        );
+        push @sending_blocked_users, \%blocked_user;
+    }
+
+    my $response = HTTP_RESPONSE::OK_WITH_DATA(encode_json(\@sending_blocked_users), "blocked_users.json");
+    http_utils::send_http_response($client_socket, $response);
+}
+
+sub block_user {
+    my ($client_socket, $route, $temp_file) = @_;
+
+    my $body = body_utils::load_temp_file($temp_file);
+    my $json = decode_json($body);
+    my $blocked_uuid = $json->{userId};
+    if (!$blocked_uuid) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Invalid Request"));
+        return;
+    }
+
+    if (!user_utils::user_exists($client_socket, $blocked_uuid)) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("User not found"));
+        return;
+    }
+
+    my $base_dir = getcwd();
+    my $friend_path = "$base_dir/Data/UserData/Users/$main::user->{uuid}/Friends";
+    if (!-d $friend_path) {
+        mkdir($friend_path) or do {
+            http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Internal Server Error"));
+            return;
+        };
+    }
+
+    my $blocked_users_file = "$friend_path/blocked_users.json";
+    if (!-e $blocked_users_file) {
+        open my $fh, '>', $blocked_users_file or do {
+            http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Internal Server Error"));
+            return;
+        };
+        print $fh "[]";
+        close($fh);
+    }
+
+    if (has_pending_request($main::user->{uuid}, $blocked_uuid)) {
+        remove_sent_friend_request($main::user->{uuid}, $blocked_uuid, $client_socket);
+        remove_received_friend_request($blocked_uuid, $main::user->{uuid}, $client_socket);
+    }
+
+    if (has_pending_request($blocked_uuid, $main::user->{uuid})) {
+        remove_sent_friend_request($blocked_uuid, $main::user->{uuid}, $client_socket);
+        remove_received_friend_request($main::user->{uuid}, $blocked_uuid, $client_socket);
+    }
+
+    if (are_users_friends($user->{uuid}, $blocked_uuid)) {
+        remove_friend($main::user->{uuid}, $blocked_uuid, $client_socket);
+        remove_friend($blocked_uuid, $main::user->{uuid}, $client_socket);
+    }
+
+    open my $fh, '<', $blocked_users_file;
+    my $blocked_users_data = do { local $/; <$fh> };
+    close $fh;
+
+    my $blocked_users = decode_json($blocked_users_data);
+
+    my %blocked_user = (
+        UserId => $blocked_uuid,
+        TimeBlockedTimestamp => time()
+    );
+
+    push @$blocked_users, \%blocked_user;
+
+    open $fh, '>', $blocked_users_file;
+    print $fh encode_json($blocked_users);
+    close $fh;
+}
+
+sub remove_friend {
+    my ($uuid, $friend_uuid, $client_socket) = @_;
+
+    my $base_dir = getcwd();
+    my $friend_path = "$base_dir/Data/UserData/Users/$uuid/Friends";
+    if (!-d $friend_path) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Internal Server Error"));
+        return;
+    }
+    my $friends_file = "$friend_path/friends.json";
+    if (!-e $friends_file) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_500("Internal Server Error"));
+        return;
+    }
+
+    open my $fh, '<', $friends_file;
+    my $friends_data = do { local $/; <$fh> };
+    close $fh;
+
+    my $friends = decode_json($friends_data);
+
+    my @new_friends;
+
+    foreach my $friend (@$friends) {
+        if ($friend->{UserId} ne $friend_uuid) {
+            push @new_friends, $friend;
+        }
+    }
+
+    open $fh, '>', $friends_file;
+    print $fh encode_json(\@new_friends);
     close $fh;
 }
 1;

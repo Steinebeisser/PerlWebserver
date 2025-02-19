@@ -54,6 +54,7 @@ my %index_router = (
 
     "/updateLog" => \&get_update_log_page::get_update_log,
 
+    "/friends" => \&get_friends::get_friends,
     "/friends/requests" => \&get_friends::get_friend_requests,
     
     "/login" => \&get_login_page::get_login,
