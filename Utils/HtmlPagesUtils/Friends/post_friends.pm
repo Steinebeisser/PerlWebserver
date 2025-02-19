@@ -8,9 +8,10 @@ use JSON;
 
 my %request_types = (
     "accept" => \&friend_utils::accept_friend_request,
-    "reject" => \&friend_utils::reject_friend_request,
+    "decline" => \&friend_utils::decline_friend_request,
     "cancel" => \&friend_utils::cancel_friend_request,
-    "add" => \&friend_utils::send_friend_request
+    "add" => \&friend_utils::send_friend_request,
+    "block" => \&friend_utils::block_user,
 );
 sub post_friend_request {
     my ($client_socket, $route, $temp_file) = @_;

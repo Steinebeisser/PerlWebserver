@@ -27,4 +27,25 @@ sub get_friend_requests {
     return $request_types{$request_type}->($client_socket, $route);
 }
 
+sub get_friends {
+    my ($client_socket, $route) = @_;
+
+    if (!$main::user) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("Unauthorized"));
+        return;
+    }
+
+    return friend_utils::get_friends($client_socket, $route);
+}
+
+sub get_blocked_users {
+    my ($client_socket, $route) = @_;
+
+    if (!$main::user) {
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("Unauthorized"));
+        return;
+    }
+
+    return friend_utils::get_blocked_users($client_socket, $route);
+}
 1;
