@@ -6,30 +6,34 @@ use warnings;
 use Cwd;
 use JSON;
 
+my %request_types = (
+    "accept" => \&friend_utils::accept_friend_request,
+    "reject" => \&friend_utils::reject_friend_request,
+    "cancel" => \&friend_utils::cancel_friend_request,
+    "add" => \&friend_utils::send_friend_request
+);
 sub post_friend_request {
-    my ($client_socket, $route) = @_;
-
+    my ($client_socket, $route, $temp_file) = @_;
+    print($route."\n");
+    print("HELLO\n");
     my $sender_uuid = $main::user->{uuid};
-    
+
+    my ($type) = $route =~ /friends\/request\/(.*)/;
+    print("TYPE: $type\n");
+
     if (!$sender_uuid) {
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_401("Unauthorized"));
         return;
     }
 
-    my ($friend_username) = $route =~ /friend\/request\/(.+)/;
-
-    my $friend_uuid = user_utils::get_uuid_by_username($friend_username);
-    if (!$friend_uuid) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("User Not Found"));
+    
+    if (!exists $request_types{$type}) {
+        print("BAD REQUEST\n");
+        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Bad Request"));
         return;
     }
 
-    if ($sender_uuid eq $friend_uuid) {
-        http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Cannot send friend request to yourself"));
-        return;
-    }
-
-    friend_utils::send_friend_request($sender_uuid, $friend_uuid, $client_socket);
+    return $request_types{$type}->($client_socket, $route, $temp_file);
 }
 
 1;
