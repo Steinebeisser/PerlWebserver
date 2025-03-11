@@ -52,10 +52,11 @@ my %index_router = (
 
     "/about" => \&get_about_page::get_about,
 
-    "/updateLog" => \&get_update_log_page::get_update_log,
+    "/updatelog" => \&get_update_log_page::get_update_log,
 
     "/friends" => \&get_friends::get_friends,
     "/friends/requests" => \&get_friends::get_friend_requests,
+    "/friends/blocked" => \&get_friends::get_blocked_users,
     
     "/login" => \&get_login_page::get_login,
     "/register" => \&get_register_page::get_register,
@@ -115,6 +116,8 @@ my %index_router = (
 
     "/admin/gamelauncher" => \&get_admin_game_launcher::get_admin_game_launcher,
     "/admin/gamelauncher/add" => \&get_admin_game_launcher::get_admin_game_launcher_add,
+    "/admin/gamelauncher/add/new" => \&get_admin_game_launcher::get_admin_game_launcher_add_new,
+    "/admin/gamelauncher/edit" => \&get_admin_game_launcher::get_admin_game_edit,
 
     "/support" => \&get_support_pages::get_starting_page,
     "/support/request/new" => \&support_utils::handle_new_request,
@@ -171,6 +174,10 @@ my %post_router = (
     "/admin/updatelog/add" => \&post_admin_update_log_manage::post_admin_update_log_add,
     "/admin/updatelog/edit" => \&post_admin_update_log_manage::post_admin_update_log_edit, 
     "/admin/updatelog/delete" => \&post_admin_update_log_manage::post_admin_update_log_delete,
+
+    "/admin/gamelauncher/initialize" => \&post_admin_game_launcher::post_admin_initialize_game,
+    "/admin/gamelauncher/upload/github" => \&post_admin_game_launcher::post_admin_upload_github,
+    "/admin/gamelauncher/publish/github" => \&post_admin_game_launcher::post_admin_publish_github,
 
     "/important/contact_devs" => \&post_contact_devs::post_contact_devs,
 
@@ -242,7 +249,7 @@ sub epoll_loop {
         # print("Waiting for events\n");
         my $events = epoll_wait($main::epoll, 10, -1);
         # print("Received events\n");
-
+        $main::user = undef;
         for my $event (@$events) {
             if ($event->[0] == fileno $server) {
                 my $client_addr = accept(my $client_socket, $server);
@@ -285,6 +292,9 @@ close($server);
 sub handle_client {
     my ($client_fd) = @_;
     my $client_socket = $epoll::clients{$client_fd}{"socket"};
+    if (!$main::user) {
+        $main::user = $epoll::clients{$client_fd}{main_user};
+    }
     # print("CLIENT SOCKET: $client_socket\n");
     $main::client_socket = $client_socket;
     if ($epoll::clients{$client_fd}{"is_tls"}) {
@@ -403,8 +413,12 @@ sub remove_client_out {
 
 sub remove_client_complete {
     my ($client_fd) = @_;
+    if (!$client_fd) {
+        return;
+    }
     # print("REMOVING CLIENT\n");
     if ($epoll::clients{$client_fd}{"socket"}) {
+        shutdown($epoll::clients{$client_fd}{"socket"}, 2);
         close($epoll::clients{$client_fd}{"socket"});
     }
     if ($epoll::clients{$client_fd}) {

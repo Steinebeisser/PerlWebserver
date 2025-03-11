@@ -18,6 +18,19 @@ sub get_client_data {
 
     my $request = $buffer;
     # print("REQUEST: $request\n");
+    my $session_cookie = request_utils::get_session_cookie($buffer);
+    # print("SESSION COOKIE: $session_cookie\n");
+    my ($uuid, $session_id) = cookie_utils::validate_session($session_cookie);
+    # print("UUID: $uuid\n");
+    # print("SESSION ID: $session_id\n");
+
+    if ($uuid) {
+        if(!user_utils::exist_not_banned($client_socket, $uuid)) {
+            return;
+        }
+        user_utils::populate_user($session_cookie);
+        $epoll::clients{$client_fd}{main_user} = $main::user;
+    }
 
     if ($request =~ /Content-Length: (\d+)/) {
         $epoll::clients{$client_fd}{"content_length"} = $1;
@@ -51,18 +64,7 @@ sub get_client_data {
         close $fh;
         $epoll::clients{$client_fd}{"temp_file"} = $temp_file;
     
-        my $session_cookie = request_utils::get_session_cookie($header);
-        # print("SESSION COOKIE: $session_cookie\n");
-        my ($uuid, $session_id) = cookie_utils::validate_session($session_cookie);
-        # print("UUID: $uuid\n");
-        # print("SESSION ID: $session_id\n");
-
-        if ($uuid) {
-            if(!user_utils::exist_not_banned($client_socket, $uuid)) {
-                return;
-            }
-            user_utils::populate_user($session_cookie);
-        }
+        
         # my $session_cookie = request_utils::get_session_cookie($header);
         # my $uuid;
         # my $session_id;

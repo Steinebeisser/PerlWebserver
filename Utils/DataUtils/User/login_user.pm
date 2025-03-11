@@ -123,6 +123,7 @@ sub login_user {
 sub post_login_launcher {
     my ($client_socket, $route, $temp_file) = @_;
     my $is_launcher = 1;
+    # print("LAUNCHER LOGIN\n");
     return post_login($client_socket, $route, $temp_file, $is_launcher);
 }
 1;

@@ -69,6 +69,7 @@ sub get_admin_game_launcher {
     <h1>Game Launcher</h1>
     <br>
     <a href="/admin/gamelauncher/add">Add a New Game</a>
+    <a href="/admin/gamelauncher/add/new">Add a New Game, but better</a>
     <br>
     <br>
     <table>
