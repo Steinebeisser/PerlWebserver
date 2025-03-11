@@ -62,10 +62,13 @@ sub get_session_cookie {
     };
     my $json = do { local $/; <$fh> };
     close $fh;
+    if (!$json) {
+        $json = "{}";
+    }
     my $sessions = decode_json($json);
     print("SESSIONS: $sessions\n");
     $sessions->{$session_data} = time() + $session_timeout;
-    open my $fh, '>', $sessions_file or do {
+    open $fh, '>', $sessions_file or do {
         warn "Can't open file $sessions_file: $!";
         return;
     };
@@ -108,7 +111,10 @@ sub validate_session {
     };
     my $json = do { local $/; <$fh> };
     close $fh;
-
+    # print("JSON: $json\n");
+    if (!$json) {
+        return 0;
+    }
     my $sessions = decode_json($json);
     
     my $timeout = $sessions->{$session_data};
@@ -122,7 +128,7 @@ sub validate_session {
 
     $sessions->{$session_data} = time() + $session_timeout;
     
-    open(my $fh, '>', $sessions_file) or do {
+    open $fh, '>', $sessions_file or do {
         warn "Can't open file $sessions_file: $!";
         return 0;
     };
@@ -155,7 +161,7 @@ sub delete_session_cookie {
     close $fh;
     my $sessions = decode_json($json);
     delete $sessions->{$session_data};
-    open my $fh, '>', "$session_folder/sessions.json" or do {
+    open $fh, '>', "$session_folder/sessions.json" or do {
         warn "Can't open file $session_folder/sessions.json: $!";
         return;
     };

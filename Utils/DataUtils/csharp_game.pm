@@ -42,19 +42,19 @@ sub get_game_stats {
     my $data = do { local $/; <$fh> };
     close $fh;
     my $json = decode_json($data);
-    print("JSON: $json\n");
+    # print("JSON: $json\n");
     my $version = $json->{version};
     my $game_stats_file = "$base_dir/Data/CSharpGameLauncher/Games/$game_id/Versions/$version/metadata.json";
     if (!-e $game_stats_file) {
         return;
     }
-    open my $fh, '<', $game_stats_file or do {
+    open $fh, '<', $game_stats_file or do {
         return;
     };
-    my $data = do { local $/; <$fh> };
+    $data = do { local $/; <$fh> };
     close $fh;
-    my $json = decode_json($data);
-    my $version = $json->{version};
+    $json = decode_json($data);
+    $version = $json->{version};
     my $hash = $json->{hash};
     my ($extension) = $json->{filename} =~ /\.(\w+)$/;
     my $patch_name = "$json->{game_name}-$json->{version}.$extension";
@@ -77,7 +77,7 @@ sub get_game_stats {
         Size => $file_size,
         UploadedAt => $uploaded_at,
         Executable => $executable,
-        ForceNewVersion => $force_new_version
+        ForceNewVersion => \$force_new_version
     };
     $send_data = encode_json($send_data);
     my $response = HTTP_RESPONSE::OK_WITH_DATA($send_data, "gamestats.json");
@@ -89,19 +89,29 @@ sub get_game_stats {
 sub create_game_id {
     my ($client_socket) = @_;
 
-    my $base_dir = getcwd();
     
     my $id = user_utils::random_number(6);
-    my $game_path = "$base_dir/Data/CSharpGame/$id";
-    while (-d $game_path) {
-        $id = user_utils::random_number(6);
-        $game_path = "$base_dir/Data/CSharpGame/$id";
+    
+    while (game_exists($id)) {
+        $id = user_utils::random_number(6);;
     }
 
     # print "Type: " . (0 + $id eq $id ? "Integer" : "String") . "\n";
     return $id;
 }
 
+sub game_exists {
+    my ($game_id) = @_;
+
+    my $base_dir = getcwd();
+    my $game_path = "$base_dir/Data/CSharpGameLauncher/Games/$game_id";
+    print("GAME PATH: $game_path\n");
+    if (-d $game_path) {
+        return 1;
+    }
+
+    return 0;
+}
 sub add_to_gamelist {
     my ($game_id, $game_name) = @_;
     print("GAME NAME1: $game_name\n");
@@ -124,15 +134,15 @@ sub add_to_gamelist {
         die "Could not open file '$game_list' $!";
     };
     my $data = do { local $/; <$fh> };
-    print("DATA: $data\n");
+    # print("DATA: $data\n");
     my $json = decode_json($data);
-    print("GAME ID $game_id\n");
-    print("GAME NAME $game_name\n");
+    # print("GAME ID $game_id\n");
+    # print("GAME NAME $game_name\n");
     $json->{$game_id} = $game_name;
-    print("JSON: $json\n");
+    # print("JSON: $json\n");
     my $new_data = encode_json($json);
-    print("NEW DATA: $new_data\n");
-    open my $fh, '>', $game_list or die "Could not open file '$game_list' $!";
+    # print("NEW DATA: $new_data\n");
+    open $fh, '>', $game_list or die "Could not open file '$game_list' $!";
     print $fh $new_data;
     close $fh;
     return;
@@ -200,23 +210,23 @@ sub download_game {
     if (!-e $metadata_version_file) {
         return;
     }
-    open my $fh, '<', $metadata_version_file or do {
+    open $fh, '<', $metadata_version_file or do {
         return;
     };
-    my $data = do { local $/; <$fh> };
+    $data = do { local $/; <$fh> };
     close $fh;
-    my $json = decode_json($data);
+    $json = decode_json($data);
     my $file_path = $json->{filepath};
     my $full_file_path = "$base_dir/$file_path";
     my $name = $json->{game_name};
-    my $version = $json->{version};
+    $version = $json->{version};
     if (!-e $full_file_path) {
         return;
     }
     my $file_size = -s $full_file_path;
     print("FILE PATH: $full_file_path\n");
     print("FILE SIZE: $file_size\n");
-    open my $fh, '<', $full_file_path or die "Cannot open file: $!";
+    open $fh, '<', $full_file_path or die "Cannot open file: $!";
     $epoll::clients{fileno $client_socket}{filestream} = {
         file => $fh,
         file_size => $file_size,
@@ -239,7 +249,7 @@ sub download_launcher {
 
     my $base_dir = getcwd();
     # my $launcher_file_name = "GameLauncher-0.1.exe";
-    my $launcher_file_name = "GameLauncherSetup v0.1.exe";
+    my $launcher_file_name = "GameLauncherSetup v0.3.exe";
     my $game_file = "$base_dir/Data/CSharpGameLauncher/Launcher/$launcher_file_name";
     print("BONJOUR\n");
     if (!-e $game_file) {

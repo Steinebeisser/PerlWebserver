@@ -35,7 +35,11 @@ sub get_friends {
         return;
     }
 
-    return friend_utils::get_friends($client_socket, $route);
+    my $friends = friend_utils::get_friends($client_socket, $main::user->{uuid});
+    print("FRIEND1: $friends\n");
+    http_utils::send_http_response($client_socket, HTTP_RESPONSE::OK_WITH_DATA($friends, "friends.json"));
+    print("SENT FRIENDS\n");
+    # http_utils::send_http_response(HTTP_RESPONSE::OK_WITH_DATA(friend_utils::get_friends($client_socket, $main::user->{uuid}), "friends.json"));
 }
 
 sub get_blocked_users {

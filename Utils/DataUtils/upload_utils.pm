@@ -145,6 +145,8 @@ sub create_meta_data {
         size => -s $file_path
     );
 
+    print("MAIN USER: $main::user->{uuid}\n");
+
     if ($epoll::clients{$client_fd}{video}) {
         $meta_data{enabled} = 1;
         $meta_data{views} = 0;

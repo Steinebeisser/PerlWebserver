@@ -955,4 +955,11 @@ sub create_file_hash {
     return $hash->hexdigest;
 }
 
+sub is_int {
+    my ($number) = @_;
+    if ($number =~ /^\d+$/) {
+        return 1;
+    }
+    return 0;
+}
 1;
