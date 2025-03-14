@@ -6,6 +6,9 @@ use warnings;
 use JSON;
 use Cwd;
 
+use JSON;
+use Cwd;
+
 my %game_types = (
     "memory" => \&memory_game_utils::handle_memory,
 );
@@ -87,7 +90,6 @@ sub setup_github {
 
     # print("GITHUB URL: $github_url\n");
     # print("GITHUB ACCESS TOKEN: $github_access_token\n");
-    # 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
     if (!github_utils::validate_github_link($github_url, $github_access_token)) {
         # print("FAILED TO VALIDATE GITHUB LINK\n");
         http_utils::serve_error($client_socket, HTTP_RESPONSE::ERROR_400("Invalid github link"));
@@ -133,6 +135,9 @@ sub setup_github {
 
 sub publish_github {
     my ($client_socket, $temp_file) = @_;
+
+    # maybe do later
+    return 0;
 
     my $data = body_utils::load_temp_file($temp_file);
     my $json = decode_json($data);
