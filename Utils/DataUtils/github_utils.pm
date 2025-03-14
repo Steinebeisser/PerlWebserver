@@ -62,6 +62,10 @@ sub get_current_file_sha {
 sub validate_github_link {
     my ($github_url, $github_access_token) = @_;
 
+
+    return 0;
+    # will maybe do this later
+
     my ($RepoOwner, $RepoName) = $github_url =~ /https:\/\/github.com\/([^\/]+)\/([^\/]+)/;
     my $api_url = "https://api.github.com";
     my $repo_url = "$api_url/repos/$RepoOwner/$RepoName";
