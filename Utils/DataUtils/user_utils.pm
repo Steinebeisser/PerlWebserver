@@ -177,7 +177,7 @@ sub get_all_roles {
     return @roles;
 }
 
-sub                  {
+sub update_user_values {
     my ($uuid, $key, $value) = @_;
 
     #print("UUID: $uuid, KEY: $key, VALUE: $value\n");
